@@ -1,0 +1,34 @@
+import React from "react";
+import { Link } from "react-router-dom";
+import rubavuLogo from "../Rubavu.jpeg";
+
+function NotFound() {
+  return (
+    <div className="min-h-[80vh] bg-slate-50 flex flex-col justify-center items-center px-4 sm:px-6 py-12 text-center font-serif">
+      <div className="mb-6">
+        <img 
+          src={rubavuLogo} 
+          alt="Rubavu Logo" 
+          className="w-16 h-16 rounded-2xl object-cover mx-auto shadow-sm border border-slate-200" 
+        />
+      </div>
+      <h1 className="text-7xl sm:text-8xl font-black text-slate-800 tracking-tight font-sans">
+        404
+      </h1>
+      <p className="text-base sm:text-lg font-medium text-slate-500 mt-2 font-serif">
+        Page Not Found
+      </p>
+      <p className="text-sm text-slate-400 max-w-sm mt-1 font-serif">
+        The page you are looking for might have been removed, had its name changed, or is temporarily unavailable.
+      </p>
+      <Link
+        to="/"
+        className="mt-6 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-xl transition text-sm shadow-sm cursor-pointer font-sans"
+      >
+        Return to Dashboard
+      </Link>
+    </div>
+  );
+}
+
+export default NotFound;
