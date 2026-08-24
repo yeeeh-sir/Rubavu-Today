@@ -26,3 +26,24 @@ img {
 a {
   text-decoration: none;
 }
+
+@keyframes rubavuTicker {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.rubavu-ticker-scroll {
+  display: inline-flex;
+  white-space: nowrap;
+  animation: rubavuTicker 120s linear infinite;
+  will-change: transform;
+}
+
+.rubavu-ticker-scroll:hover {
+  animation-play-state: paused;
+}

@@ -1895,34 +1895,9 @@ const Navbar = ({ showHomeContent = true }) => {
           opacity: 1 !important;
         }
 
-        @keyframes tvTicker {
-          from {
-            transform: translateX(0);
-          }
-
-          to {
-            transform: translateX(-50%);
-          }
-        }
-
-        .animate-tv-ticker {
-          display: inline-flex;
-          white-space: nowrap;
-          animation: tvTicker 60s linear infinite;
-        }
-
-        .animate-tv-ticker:hover {
-          animation-play-state: paused;
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          .animate-tv-ticker {
-            animation: none;
-          }
-        }
       `}</style>
 
-      
+
 
       <div className="relative z-30 border-b border-slate-800 bg-slate-950 font-body text-slate-300">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-3 py-2 text-[9px] uppercase tracking-[0.1em] sm:px-6 sm:text-[11px]">
@@ -1944,7 +1919,7 @@ const Navbar = ({ showHomeContent = true }) => {
         </div>
       </div>
 
-      
+
 
       {showHomeContent && tickerHeadlines.length > 0 && (
         <div className="relative z-30 flex overflow-hidden border-b border-red-700 bg-red-600 font-body text-xs font-semibold text-white">
@@ -1961,7 +1936,13 @@ const Navbar = ({ showHomeContent = true }) => {
           </div>
 
           <div className="relative flex w-full overflow-hidden whitespace-nowrap py-2">
-            <div className="animate-tv-ticker">
+            <div
+              className="rubavu-ticker-scroll"
+              style={{
+                animation: "rubavuTicker 120s linear infinite",
+                willChange: "transform",
+              }}
+            >
               {tickerHeadlines.map(
                 (
                   title,
@@ -2002,12 +1983,12 @@ const Navbar = ({ showHomeContent = true }) => {
         </div>
       )}
 
-      
+
 
       <header className="sticky top-0 z-40 border-b border-slate-800 bg-slate-950 text-white shadow-xl">
         <div className="relative mx-auto flex h-[76px] max-w-7xl items-center justify-center px-2 sm:h-[92px] sm:px-6 lg:h-[100px] lg:px-10">
 
-          
+
 
           <div className="absolute left-2 flex items-center sm:left-6 lg:left-10">
             <button
@@ -2049,7 +2030,7 @@ const Navbar = ({ showHomeContent = true }) => {
             </div>
           </div>
 
-          
+
 
           <button
             type="button"
@@ -2074,13 +2055,13 @@ const Navbar = ({ showHomeContent = true }) => {
             </span>
           </button>
 
-          
+
 
           <div className="absolute right-3 hidden sm:block sm:right-6 lg:right-10">
             <SocialLinks />
           </div>
 
-          
+
 
           <button
             type="button"
@@ -2102,7 +2083,7 @@ const Navbar = ({ showHomeContent = true }) => {
           </button>
         </div>
 
-        
+
 
         {isMobileSearchOpen && (
           <div className="border-t border-slate-800 bg-slate-900 px-3 py-3 sm:hidden navbar-search-input">
@@ -2134,11 +2115,11 @@ const Navbar = ({ showHomeContent = true }) => {
           </div>
         )}
 
-        
+
 
         <div className="border-t border-slate-800 bg-slate-950">
 
-          
+
 
           <div className="mx-auto hidden max-w-7xl items-center justify-center lg:flex">
             <div className="flex divide-x divide-slate-800 border-x border-slate-800">
@@ -2184,7 +2165,7 @@ const Navbar = ({ showHomeContent = true }) => {
             </div>
           </div>
 
-          
+
 
           <div className="hidden justify-center md:flex lg:hidden">
             <div className="flex max-w-full overflow-x-auto">
@@ -2229,7 +2210,7 @@ const Navbar = ({ showHomeContent = true }) => {
             </div>
           </div>
 
-          
+
 
           {isMenuOpen && (
             <div className="border-t border-slate-800 bg-slate-900 px-4 py-4 shadow-2xl sm:hidden">
@@ -2295,12 +2276,12 @@ const Navbar = ({ showHomeContent = true }) => {
         </div>
       </header>
 
-      
+
 
       {showHomeContent && (
         <main className="relative z-20 mx-auto w-full max-w-7xl px-0 pb-5 pt-0 sm:pb-6">
 
-          
+
 
           {advertisements.length > 0 && (
             <div className="m-0 w-full bg-white p-0">
@@ -2312,7 +2293,7 @@ const Navbar = ({ showHomeContent = true }) => {
             </div>
           )}
 
-          
+
 
           <div className="px-3 pt-5 sm:px-6 sm:pt-6 lg:px-10">
             {loading ? (
