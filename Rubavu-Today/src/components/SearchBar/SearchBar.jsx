@@ -66,7 +66,7 @@ const SearchBar = ({ value, onChange, searchHistory, onSelectHistory, isLoading,
           value={value}
           onChange={(event) => onChange(event.target.value)}
           onFocus={() => setIsFocused(true)}
-          className="w-full rounded-full border border-gray-300 bg-white py-3 pl-11 pr-14 text-sm sm:text-base shadow-sm outline-none transition focus:border-red-600 focus:ring-2 focus:ring-red-100"
+          className="w-full rounded-full border border-gray-300 bg-white py-3 pl-11 pr-14 text-sm text-black sm:text-base shadow-sm outline-none transition focus:border-red-600 focus:ring-2 focus:ring-red-100"
         />
 
         <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
