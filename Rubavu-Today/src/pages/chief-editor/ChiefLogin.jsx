@@ -16,9 +16,9 @@ export default function Login() {
     password: "",
   });
 
-  
-  
-  
+
+
+
 
   useEffect(() => {
     const checkAuthentication = async () => {
@@ -39,7 +39,7 @@ export default function Login() {
           return;
         }
 
-        
+
         localStorage.removeItem("admin_token");
         localStorage.removeItem("user");
       } catch (err) {
@@ -55,9 +55,9 @@ export default function Login() {
     checkAuthentication();
   }, [navigate]);
 
-  
-  
-  
+
+
+
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -72,9 +72,9 @@ export default function Login() {
     }
   };
 
-  
-  
-  
+
+
+
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -119,9 +119,9 @@ export default function Login() {
 
       console.log("Authenticated user:", user);
 
-      
-      
-      
+
+
+
 
       const roleType = String(user.role_type || "").toLowerCase();
       const role = String(user.role || "").toLowerCase();
@@ -143,9 +143,9 @@ export default function Login() {
         );
       }
 
-      
-      
-      
+
+
+
 
       localStorage.setItem("admin_token", result.token);
 
@@ -159,15 +159,15 @@ export default function Login() {
 
       console.log("Chief Editor authentication saved.");
 
-      
+
       setFormData({
         email: "",
         password: "",
       });
 
-      
-      
-      
+
+
+
 
       navigate("/chief-editor/dashboard", { replace: true });
     } catch (err) {
@@ -187,9 +187,9 @@ export default function Login() {
     }
   };
 
-  
-  
-  
+
+
+
 
   if (checkingAuth) {
     return (
@@ -198,27 +198,27 @@ export default function Login() {
           <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-slate-700 border-t-blue-500"></div>
 
           <p className="text-sm text-slate-400">
-            Checking authentication...
+            Birimo kugenzura umutekano...
           </p>
         </div>
       </div>
     );
   }
 
-  
-  
-  
+
+
+
 
   return (
     <div className="min-h-screen bg-slate-950 px-4 py-10">
       <div className="flex min-h-[90vh] items-center justify-center">
         <div className="w-full max-w-md">
 
-          
+
 
           <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-2xl sm:p-8">
 
-            
+
 
             <div className="mb-8 text-center">
               <img
@@ -228,15 +228,15 @@ export default function Login() {
               />
 
               <h1 className="mt-6 text-3xl font-bold text-white">
-                Chief Editor
+                Umwanditsi Mukuru
               </h1>
 
               <p className="mt-2 text-sm text-slate-400">
-                Sign in to manage Rubavu Today
+                Injira ucunge Rubavu Today
               </p>
             </div>
 
-            
+
 
             {error && (
               <div className="mb-5 rounded-xl border border-red-800 bg-red-950/50 px-4 py-3">
@@ -246,21 +246,21 @@ export default function Login() {
               </div>
             )}
 
-            
+
 
             <form
               onSubmit={handleLogin}
               className="space-y-5"
             >
 
-              
+
 
               <div>
                 <label
                   htmlFor="email"
                   className="mb-2 block text-sm font-medium text-slate-300"
                 >
-                  Email address
+                  Imeyili
                 </label>
 
                 <input
@@ -269,7 +269,7 @@ export default function Login() {
                   type="email"
                   value={formData.email}
                   onChange={handleChange}
-                  placeholder="chief@example.com"
+                  placeholder="umwanditsi@rubavu.today"
                   autoComplete="email"
                   disabled={loading}
                   className="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3.5 text-white outline-none placeholder:text-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 disabled:cursor-not-allowed disabled:opacity-60"
@@ -277,14 +277,14 @@ export default function Login() {
                 />
               </div>
 
-              
+
 
               <div>
                 <label
                   htmlFor="password"
                   className="mb-2 block text-sm font-medium text-slate-300"
                 >
-                  Password
+                  Ijambo ry'ibanga
                 </label>
 
                 <input
@@ -293,7 +293,7 @@ export default function Login() {
                   type="password"
                   value={formData.password}
                   onChange={handleChange}
-                  placeholder="Enter your password"
+                  placeholder="Andika ijambo ry'ibanga"
                   autoComplete="current-password"
                   disabled={loading}
                   className="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3.5 text-white outline-none placeholder:text-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 disabled:cursor-not-allowed disabled:opacity-60"
@@ -301,7 +301,7 @@ export default function Login() {
                 />
               </div>
 
-              
+
 
               <button
                 type="submit"
@@ -312,18 +312,18 @@ export default function Login() {
                   <>
                     <span className="mr-2 h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white"></span>
 
-                    Signing in...
+                    Birimo kwinjira...
                   </>
                 ) : (
-                  "Sign In"
+                  "Injira"
                 )}
               </button>
             </form>
 
-            
+
 
             <p className="mt-6 text-center text-xs text-slate-500">
-              Rubavu Today • Chief Editor Portal
+              Rubavu Today • Urubuga rw'Umwanditsi Mukuru
             </p>
           </div>
 

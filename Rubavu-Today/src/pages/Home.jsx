@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, Link } from "react-router-dom";
 import { getPosts } from "../services/api";
-import rubavuLogo from "../Rubavu.jpeg";
 
 
 const summarize = (text, maxWords = 10) => {
@@ -14,7 +13,7 @@ const summarize = (text, maxWords = 10) => {
 
 const formatDate = (dateStr) => {
   if (!dateStr) return "";
-  return new Date(dateStr).toLocaleDateString("en-GB", {
+  return new Date(dateStr).toLocaleDateString("rw-RW", {
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -30,7 +29,7 @@ const Home = () => {
   const location = useLocation();
 
 
-  
+
   useEffect(() => {
     const loadPosts = async () => {
       try {
@@ -45,14 +44,14 @@ const Home = () => {
     loadPosts();
   }, []);
 
-  
+
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     setQuery(params.get("q") || "");
     setVisibleCount(16);
   }, [location.search]);
 
-  
+
   const filteredPosts = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return posts;
@@ -63,7 +62,7 @@ const Home = () => {
     );
   }, [posts, query]);
 
-  
+
   const sortedPosts = useMemo(() => {
     return [...filteredPosts].sort(
       (a, b) => new Date(b.createdDate || 0) - new Date(a.createdDate || 0)
@@ -78,7 +77,7 @@ const Home = () => {
 
 
 
-  
+
 
   const PostCard = ({ post }) => {
     const postId = post.id || post._id;
@@ -136,7 +135,7 @@ const Home = () => {
   return (
     <div className="min-h-screen bg-[#F9F6F0] text-black flex flex-col font-body selection:bg-red-600 selection:text-white">
       <main className="flex-grow">
-        
+
         <section className="bg-white border-b-2 border-black py-3">
           <div className="max-w-7xl mx-auto px-4 sm:px-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-dashed border-slate-300 pb-2">
@@ -147,7 +146,7 @@ const Home = () => {
                 </span>
               </div>
               <div className="font-mono text-xs text-slate-500">
-                {new Date().toLocaleDateString("en-GB", {
+                {new Date().toLocaleDateString("rw-RW", {
                   weekday: "long",
                   year: "numeric",
                   month: "long",
@@ -158,7 +157,7 @@ const Home = () => {
           </div>
         </section>
 
-        
+
         <section className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
           {loading ? (
             /* Loading Skeleton */
@@ -191,10 +190,10 @@ const Home = () => {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b-2 border-black pb-4">
                 <div>
                   <h2 className="font-masthead text-2xl font-black text-slate-900">
-                    Search Results
+                    Ibyavuye mu gushakisha
                   </h2>
-                  <p className="text-sm text-slate-600 mt-1">
-                    <span className="font-semibold">"{query}"</span> — {sortedPosts.length} result{sortedPosts.length !== 1 ? "s" : ""} found
+                  <p className="mt-1 break-words text-sm text-slate-600">
+                    <span className="font-semibold">"{query}"</span> — habonetse {sortedPosts.length} {sortedPosts.length === 1 ? "igisubizo" : "ibisubizo"}
                   </p>
                 </div>
 
@@ -208,65 +207,51 @@ const Home = () => {
                 </div>
               ) : (
                 <div className="bg-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] p-8 max-w-md mx-auto text-center my-12">
-                  <div className="flex justify-center mb-3">
-                    <img
-                      src={rubavuLogo}
-                      alt="Rubavu Logo"
-                      className="w-16 h-16 rounded-full object-cover border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
-                    />
-                  </div>
                   <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">
-                    Nta makuru abonetse
+                    Nta makuru ahari
                   </h3>
                   <p className="text-slate-600 font-medium mt-2 text-sm">
-                    Nta makuru ahuye n'ayo washakishije. Gerageza andi magambo.
+                    Ongera ugerageze ukoresheje andi magambo.
                   </p>
                 </div>
               )}
             </div>
           ) : sortedPosts.length > 0 ? (
-            
+
             <div className="space-y-14">
-              
+
               <SectionHeader
-                title={query.trim() ? "Search Results" : "Inkuru Zose"}
+                title={query.trim() ? "Ibyavuye mu gushakisha" : "Inkuru Zose"}
                 count={sortedPosts.length}
               />
 
-              
+
               <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {visiblePosts.map((post) => (
                   <PostCard key={post.id || post._id} post={post} />
                 ))}
               </div>
 
-              
+
               {hasMore && (
                 <div className="pt-8 pb-4 flex justify-center">
                   <button
                     onClick={handleLoadMore}
                     className="bg-black text-white hover:bg-red-600 font-mono text-xs uppercase font-bold tracking-widest px-8 py-4 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all cursor-pointer"
                   >
-                    Soma Andi Makuru (Load More)
+                    Soma Andi Makuru
                   </button>
                 </div>
               )}
             </div>
           ) : (
-            
+
             <div className="bg-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] p-8 max-w-md mx-auto text-center my-12">
-              <div className="flex justify-center mb-3">
-                <img
-                  src={rubavuLogo}
-                  alt="Rubavu Logo"
-                  className="w-16 h-16 rounded-full object-cover border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
-                />
-              </div>
               <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">
-                Nta makuru abonetse
+                Nta makuru ahari
               </h3>
               <p className="text-slate-600 font-medium mt-2 text-sm">
-                Nta makuru ahuye n'ayo washakishije muri Rubavu Today. Gerageza andi magambo cyangwa wongere ugerageze nyuma.
+                Nta nkuru zihari ubu. Ongera ugerageze nyuma.
               </p>
             </div>
           )}

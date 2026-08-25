@@ -52,109 +52,111 @@ function AuthPage() {
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-slate-100 px-4 py-12">
-      <div className="w-full max-w-md bg-white rounded-3xl shadow-xl border border-slate-200/80 p-6 sm:p-10 transition-all">
+    <main className="min-h-screen bg-slate-950 px-4 py-10">
+      <div className="flex min-h-[90vh] items-center justify-center">
+        <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-2xl sm:p-8">
 
-        
-        <div className="flex flex-col items-center mb-6 text-center">
-          <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-red-600 shadow-md mb-4 bg-slate-50 flex items-center justify-center">
-            <img
-              src={logo}
-              alt="Rubavu Today"
-              className="w-full h-full object-cover"
-            />
-          </div>
 
-          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
-            Rubavu Today
-          </h1>
-          <p className="text-sm text-slate-500 mt-1 font-medium">
-            {isLogin ? "Employee Portal - Sign In" : "Create Employee Account"}
-          </p>
-        </div>
-
-        
-        {error && (
-          <div className="mb-6 rounded-2xl bg-red-50 border border-red-200 p-4 text-red-700 text-sm text-center font-medium animate-fadeIn">
-            {error}
-          </div>
-        )}
-
-        
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block mb-1.5 text-xs font-semibold text-slate-700 uppercase tracking-wider">
-              Email Address
-            </label>
-            <div className="relative">
-              <Mail className="absolute left-4 top-3.5 h-5 w-5 text-slate-400" />
-              <input
-                type="email"
-                className="w-full border border-slate-300 rounded-xl pl-11 pr-4 py-3 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent transition"
-                placeholder="employee@rubavu.today"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
+          <div className="mb-8 text-center">
+            <div className="mx-auto h-24 w-24 overflow-hidden rounded-full border-4 border-slate-700 bg-slate-800 shadow-xl">
+              <img
+                src={logo}
+                alt="Rubavu Today"
+                className="h-full w-full object-cover"
               />
             </div>
+
+            <h1 className="mt-6 text-3xl font-bold text-white">
+              Umukozi
+            </h1>
+            <p className="mt-2 text-sm text-slate-400">
+              {isLogin ? "Injira ucunge Rubavu Today" : "Fungura konti y'umukozi"}
+            </p>
           </div>
 
-          <div>
-            <div className="flex justify-between items-center mb-1.5">
-              <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                Password
+
+          {error && (
+            <div className="mb-5 rounded-xl border border-red-800 bg-red-950/50 px-4 py-3 text-red-300 text-sm">
+              {error}
+            </div>
+          )}
+
+
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-300">
+                Imeyili
               </label>
-              {isLogin && (
-                <Link
-                  to="/forgot-password"
-                  className="text-xs font-semibold text-red-600 hover:text-red-700 hover:underline transition"
-                >
-                  Forgot Password?
-                </Link>
-              )}
+              <div className="relative">
+                <Mail className="absolute left-4 top-4 h-5 w-5 text-slate-500" />
+                <input
+                  type="email"
+                  className="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3.5 pl-11 text-white placeholder:text-slate-500 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                  placeholder="employee@rubavu.today"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
             </div>
-            <div className="relative">
-              <Lock className="absolute left-4 top-3.5 h-5 w-5 text-slate-400" />
-              <input
-                type={showPassword ? "text" : "password"}
-                className="w-full border border-slate-300 rounded-xl pl-11 pr-12 py-3 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent transition"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3.5 top-3.5 text-slate-400 hover:text-slate-600 focus:outline-none transition cursor-pointer"
-                aria-label={showPassword ? "Hide password" : "Show password"}
-              >
-                {showPassword ? (
-                  <EyeOff className="h-5 w-5" />
-                ) : (
-                  <Eye className="h-5 w-5" />
+
+            <div>
+              <div className="mb-2 flex items-center justify-between">
+                <label className="text-sm font-medium text-slate-300">
+                  Ijambo ry'ibanga
+                </label>
+                {isLogin && (
+                  <Link
+                    to="/forgot-password"
+                    className="text-xs font-medium text-blue-400 transition hover:text-blue-300 hover:underline"
+                  >
+                    Wibagiwe ijambo ry'ibanga?
+                  </Link>
                 )}
-              </button>
+              </div>
+              <div className="relative">
+                <Lock className="absolute left-4 top-4 h-5 w-5 text-slate-500" />
+                <input
+                  type={showPassword ? "text" : "password"}
+                  className="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3.5 pl-11 pr-12 text-white placeholder:text-slate-500 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1 text-slate-400 transition hover:bg-slate-700 hover:text-white focus:outline-none"
+                  aria-label={showPassword ? "Hisha ijambo ry'ibanga" : "Erekana ijambo ry'ibanga"}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-5 w-5" />
+                  ) : (
+                    <Eye className="h-5 w-5" />
+                  )}
+                </button>
+              </div>
             </div>
-          </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full mt-2 bg-slate-900 text-white py-3.5 rounded-xl font-semibold text-sm hover:bg-slate-800 active:scale-[0.99] transition duration-150 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-md cursor-pointer"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="h-5 w-5 animate-spin" />
-                <span>{isLogin ? "Signing In..." : "Creating Account..."}</span>
-              </>
-            ) : (
-              <span>{isLogin ? "Sign In" : "Sign Up"}</span>
-            )}
-          </button>
-        </form>
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3.5 text-sm font-semibold text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  <span>{isLogin ? "Birimo kwinjira..." : "Konti irimo gufungurwa..."}</span>
+                </>
+              ) : (
+                <span>{isLogin ? "Injira" : "Fungura konti"}</span>
+              )}
+            </button>
+          </form>
 
-        
+
+        </div>
       </div>
     </main>
   );

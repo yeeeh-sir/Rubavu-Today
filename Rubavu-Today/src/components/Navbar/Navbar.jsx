@@ -132,6 +132,25 @@ const preloadAdImages = (ads = []) => {
   });
 };
 
+const isAdCurrentlyActive = (ad) => {
+  if (!ad) {
+    return false;
+  }
+
+  const statusActive =
+    !ad.status || String(ad.status).toLowerCase() === "active";
+
+  if (!statusActive) {
+    return false;
+  }
+
+  const today = new Date().toISOString().slice(0, 10);
+  const startsInFuture = ad.start_date && String(ad.start_date).slice(0, 10) > today;
+  const hasEnded = ad.end_date && String(ad.end_date).slice(0, 10) < today;
+
+  return !startsInFuture && !hasEnded;
+};
+
 
 
 
@@ -145,15 +164,8 @@ const AdCarousel = ({ ads = [] }) => {
 
   const validAds = useMemo(() => {
     return ads.filter((ad) => {
-      if (!ad) return false;
-
-      const active =
-        !ad.status ||
-        String(ad.status).toLowerCase() ===
-        "active";
-
       return (
-        active &&
+        isAdCurrentlyActive(ad) &&
         typeof ad.image === "string" &&
         ad.image.trim() !== ""
       );
@@ -1479,19 +1491,8 @@ const Navbar = ({ showHomeContent = true }) => {
           const activeAds =
             Array.isArray(data)
               ? data.filter((ad) => {
-                if (!ad) {
-                  return false;
-                }
-
-                const active =
-                  !ad.status ||
-                  String(
-                    ad.status
-                  ).toLowerCase() ===
-                  "active";
-
                 return (
-                  active &&
+                  isAdCurrentlyActive(ad) &&
                   typeof ad.image ===
                   "string" &&
                   ad.image.trim() !==

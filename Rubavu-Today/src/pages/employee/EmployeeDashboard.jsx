@@ -23,7 +23,7 @@ function Dashboard() {
   const [posts, setPosts] = useState([]);
   const [selectedDepartment, setSelectedDepartment] = useState("All");
 
-  
+
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   useEffect(() => {
@@ -33,8 +33,8 @@ function Dashboard() {
   const fetchPosts = async () => {
     try {
       const response = await api.get("/posts");
-      const data = Array.isArray(response.data) 
-        ? response.data 
+      const data = Array.isArray(response.data)
+        ? response.data
         : response.data?.posts || response.data?.data || [];
       setPosts(data);
     } catch (err) {
@@ -59,7 +59,7 @@ function Dashboard() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row relative overflow-x-hidden">
-      
+
       {isMobileSidebarOpen && (
         <div
           onClick={() => setIsMobileSidebarOpen(false)}
@@ -67,11 +67,10 @@ function Dashboard() {
         />
       )}
 
-      
+
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-slate-300 flex flex-col transform transition-transform duration-300 ease-in-out md:translate-x-0 md:static shrink-0 ${
-          isMobileSidebarOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-slate-300 flex flex-col transform transition-transform duration-300 ease-in-out md:translate-x-0 md:static shrink-0 ${isMobileSidebarOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
       >
         <div className="p-6 text-xl font-bold text-white tracking-wider flex items-center justify-between">
           <div className="flex items-center space-x-3 truncate">
@@ -92,7 +91,7 @@ function Dashboard() {
             onClick={() => setIsMobileSidebarOpen(false)}
             className="w-full flex items-center px-4 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer bg-slate-800 text-white"
           >
-            Posts Dashboard
+            Imbonerahamwe y'inkuru
           </button>
           <button
             type="button"
@@ -111,9 +110,9 @@ function Dashboard() {
         </nav>
       </aside>
 
-      
+
       <main className="flex-1 flex flex-col min-w-0 overflow-x-hidden">
-        
+
         <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 sm:px-8 shrink-0">
           <div className="flex items-center space-x-3 min-w-0 mr-2">
             <button
@@ -132,12 +131,12 @@ function Dashboard() {
           </div>
         </header>
 
-        
+
         <div className="p-4 sm:p-8 flex-1 w-full max-w-7xl mx-auto box-border">
-          
+
           <div className="mb-8 grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             <div className="rounded-2xl bg-white p-6 shadow-sm border border-slate-200 min-w-0">
-              <p className="text-sm uppercase text-slate-500 font-medium">Total Posts</p>
+              <p className="text-sm uppercase text-slate-500 font-medium">Inkuru zose</p>
               <h2 className="mt-2 text-4xl font-bold text-slate-800 truncate">{totalPosts}</h2>
             </div>
             <div className="rounded-2xl bg-white p-6 shadow-sm border border-slate-200 min-w-0">
@@ -145,12 +144,12 @@ function Dashboard() {
               <h2 className="mt-2 text-4xl font-bold text-slate-800 truncate">{departments.length}</h2>
             </div>
             <div className="rounded-2xl bg-white p-6 shadow-sm border border-slate-200 sm:col-span-2 lg:col-span-1 min-w-0">
-              <p className="text-sm uppercase text-slate-500 font-medium">Latest Post</p>
-              <h2 className="mt-2 text-xl font-bold text-slate-800 truncate">{posts[0]?.title || "No posts"}</h2>
+              <p className="text-sm uppercase text-slate-500 font-medium">Inkuru iheruka</p>
+              <h2 className="mt-2 text-xl font-bold text-slate-800 truncate">{posts[0]?.title || "Nta nkuru"}</h2>
             </div>
           </div>
 
-          
+
           <div className="mb-8 rounded-3xl bg-white p-4 sm:p-6 shadow-sm border border-slate-200">
             <h2 className="mb-5 text-lg sm:text-2xl font-bold text-slate-800">Departments Overview</h2>
             <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
@@ -160,20 +159,19 @@ function Dashboard() {
                     {department}
                   </span>
                   <p className="mt-3 sm:mt-4 text-xl sm:text-3xl font-bold text-slate-800 truncate">{departmentStats[department]}</p>
-                  <p className="text-xs text-slate-500 mt-1 uppercase font-medium">Posts</p>
+                  <p className="text-xs text-slate-500 mt-1 uppercase font-medium">Inkuru</p>
                 </div>
               ))}
             </div>
           </div>
 
-          
+
           <div className="mb-6 flex flex-wrap gap-2 sm:gap-3">
             <button
               type="button"
               onClick={() => setSelectedDepartment("All")}
-              className={`rounded-full px-4 sm:px-5 py-2 text-sm font-medium transition cursor-pointer ${
-                selectedDepartment === "All" ? "bg-slate-900 text-white shadow" : "bg-white text-slate-700 shadow-sm border border-slate-200 hover:bg-slate-50"
-              }`}
+              className={`rounded-full px-4 sm:px-5 py-2 text-sm font-medium transition cursor-pointer ${selectedDepartment === "All" ? "bg-slate-900 text-white shadow" : "bg-white text-slate-700 shadow-sm border border-slate-200 hover:bg-slate-50"
+                }`}
             >
               All
             </button>
@@ -182,25 +180,24 @@ function Dashboard() {
                 key={department}
                 type="button"
                 onClick={() => setSelectedDepartment(department)}
-                className={`rounded-full px-4 sm:px-5 py-2 text-sm font-medium transition cursor-pointer ${
-                  selectedDepartment === department ? "bg-blue-600 text-white shadow" : "bg-white text-slate-700 shadow-sm border border-slate-200 hover:bg-slate-50"
-                }`}
+                className={`rounded-full px-4 sm:px-5 py-2 text-sm font-medium transition cursor-pointer ${selectedDepartment === department ? "bg-blue-600 text-white shadow" : "bg-white text-slate-700 shadow-sm border border-slate-200 hover:bg-slate-50"
+                  }`}
               >
                 {department}
               </button>
             ))}
           </div>
 
-          
+
           <section className="overflow-hidden rounded-3xl bg-white shadow-sm border border-slate-200">
             <div className="border-b border-slate-200 p-4 sm:p-6">
               <h2 className="text-lg sm:text-xl font-bold text-slate-800 truncate">
-                {selectedDepartment === "All" ? "All Posts" : `${selectedDepartment} Posts`}
+                {selectedDepartment === "All" ? "Inkuru zose" : `Inkuru za ${selectedDepartment}`}
               </h2>
             </div>
 
             {filteredPosts.length === 0 ? (
-              <div className="p-10 text-center text-slate-500">No posts found.</div>
+              <div className="p-10 text-center text-slate-500">Nta nkuru zabonetse.</div>
             ) : (
               <div className="overflow-x-auto w-full">
                 <table className="w-full text-left min-w-[500px] border-collapse">
@@ -208,7 +205,7 @@ function Dashboard() {
                     <tr>
                       <th className="px-4 sm:px-6 py-4">Title</th>
                       <th className="px-4 sm:px-6 py-4">Department</th>
-                      <th className="px-4 sm:px-6 py-4">Created</th>
+                      <th className="px-4 sm:px-6 py-4">Byakozwe</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200 text-sm text-slate-700">
@@ -221,7 +218,7 @@ function Dashboard() {
                           </span>
                         </td>
                         <td className="px-4 sm:px-6 py-4 text-slate-500 whitespace-nowrap">
-                          {post.createdDate ? new Date(post.createdDate).toLocaleString() : "N/A"}
+                          {post.createdDate ? new Date(post.createdDate).toLocaleString("rw-RW") : "Nta makuru"}
                         </td>
                       </tr>
                     ))}

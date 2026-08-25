@@ -22,9 +22,9 @@ import api, { API_ROOT } from "../../services/api";
 import rubavuLogo from "../../Rubavu.jpeg";
 
 function Employee() {
-  
-  
-  
+
+
+
 
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -34,10 +34,10 @@ function Employee() {
 
   const [showAllPosts, setShowAllPosts] = useState(true);
 
-  
+
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
 
-  
+
   const [selectedPost, setSelectedPost] = useState(null);
 
   const [actionLoading, setActionLoading] = useState(false);
@@ -52,9 +52,9 @@ function Employee() {
 
   const fileInputRef = useRef(null);
 
-  
-  
-  
+
+
+
 
   const departments = [
     {
@@ -79,9 +79,9 @@ function Employee() {
     },
   ];
 
-  
-  
-  
+
+
+
 
   const loadCurrentUser = useCallback(async () => {
     try {
@@ -127,9 +127,9 @@ function Employee() {
     loadCurrentUser();
   }, [loadCurrentUser]);
 
-  
-  
-  
+
+
+
 
   const getCurrentUserName = () => {
     if (!currentUser) {
@@ -146,9 +146,9 @@ function Employee() {
     );
   };
 
-  
-  
-  
+
+
+
 
   const getCurrentUserRole = () => {
     if (!currentUser) {
@@ -164,9 +164,9 @@ function Employee() {
     );
   };
 
-  
-  
-  
+
+
+
 
   const fetchPosts = useCallback(async () => {
     try {
@@ -188,8 +188,8 @@ function Employee() {
       const data = Array.isArray(response)
         ? response
         : Array.isArray(response?.data)
-        ? response.data
-        : response?.posts ||
+          ? response.data
+          : response?.posts ||
           response?.data?.posts ||
           response?.data?.data ||
           [];
@@ -203,9 +203,9 @@ function Employee() {
 
       setError(
         err?.response?.data?.error ||
-          err?.response?.data?.message ||
-          err?.message ||
-          "Failed to load posts."
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to load posts."
       );
     } finally {
       setLoading(false);
@@ -216,17 +216,17 @@ function Employee() {
     fetchPosts();
   }, [fetchPosts]);
 
-  
-  
-  
+
+
+
 
   const toggleAllPosts = () => {
     setShowAllPosts((previous) => !previous);
   };
 
-  
-  
-  
+
+
+
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -237,9 +237,9 @@ function Employee() {
     }));
   };
 
-  
-  
-  
+
+
+
 
   const handleOpenUploadModal = () => {
     setFormData({
@@ -259,9 +259,9 @@ function Employee() {
     setIsUploadModalOpen(true);
   };
 
-  
-  
-  
+
+
+
 
   const handleCloseUploadModal = () => {
     if (actionLoading) {
@@ -284,9 +284,9 @@ function Employee() {
     }
   };
 
-  
-  
-  
+
+
+
 
   const getAuthorName = (post) => {
     if (!post) {
@@ -330,9 +330,9 @@ function Employee() {
     );
   };
 
-  
-  
-  
+
+
+
 
   const getImageUrl = (post) => {
     if (!post) {
@@ -369,9 +369,9 @@ function Employee() {
     return `${API_ROOT}/uploads/${image}`;
   };
 
-  
-  
-  
+
+
+
 
   const getPostDate = (post) => {
     const date =
@@ -397,26 +397,26 @@ function Employee() {
     }
   };
 
-  
-  
-  
+
+
+
 
   const handleViewPost = (post) => {
     setSelectedPost(post);
     setError("");
   };
 
-  
-  
-  
+
+
+
 
   const handleCloseViewPost = () => {
     setSelectedPost(null);
   };
 
-  
-  
-  
+
+
+
 
   const getYoutubeUrl = (post) => {
     return (
@@ -427,9 +427,9 @@ function Employee() {
     );
   };
 
-  
-  
-  
+
+
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -451,9 +451,9 @@ function Employee() {
         return;
       }
 
-      
-      
-      
+
+
+
 
       if (!formData.title.trim()) {
         setError(
@@ -471,9 +471,9 @@ function Employee() {
         return;
       }
 
-      
-      
-      
+
+
+
 
       const data = new FormData();
 
@@ -497,7 +497,7 @@ function Employee() {
         formData.category
       );
 
-      
+
       data.append(
         "author",
         authorName
@@ -511,7 +511,7 @@ function Employee() {
           "author_id",
           String(
             currentUser.id ||
-              currentUser.user_id
+            currentUser.user_id
           )
         );
       }
@@ -537,12 +537,12 @@ function Employee() {
         );
       }
 
-      
-      
-      
-      
-      
-      
+
+
+
+
+
+
 
       if (api.addPost) {
         await api.addPost(data);
@@ -557,9 +557,9 @@ function Employee() {
         );
       }
 
-      
-      
-      
+
+
+
 
       handleCloseUploadModal();
 
@@ -572,23 +572,23 @@ function Employee() {
 
       setError(
         err?.response?.data?.error ||
-          err?.response?.data?.message ||
-          err?.message ||
-          "Failed to publish post."
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to publish post."
       );
     } finally {
       setActionLoading(false);
     }
   };
 
-  
-  
-  
+
+
+
 
   return (
     <div className="space-y-6">
 
-      
+
 
       <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6 lg:flex-row lg:items-center lg:justify-between">
 
@@ -603,11 +603,11 @@ function Employee() {
           <div className="min-w-0">
 
             <h1 className="truncate text-lg font-bold tracking-tight text-slate-900 sm:text-2xl">
-              Employee Workspace
+              Ahakorerwa umukozi
             </h1>
 
             <p className="mt-1 text-xs text-slate-500 sm:text-sm">
-              Create posts and read newsroom
+              Kora inkuru usome iziri mu biro by'amakuru
               stories.
             </p>
 
@@ -615,7 +615,7 @@ function Employee() {
 
         </div>
 
-        
+
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
 
@@ -630,7 +630,7 @@ function Employee() {
             <div className="min-w-0">
 
               <p className="text-[10px] font-semibold uppercase tracking-wider text-blue-500">
-                Logged in as
+                Winjiye nka
               </p>
 
               <p className="max-w-[180px] truncate text-sm font-bold text-blue-900">
@@ -654,14 +654,14 @@ function Employee() {
           >
             <Upload className="h-4 w-4" />
 
-            Upload Post
+            Shyiraho inkuru
           </button>
 
         </div>
 
       </div>
 
-      
+
 
       <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
 
@@ -672,14 +672,14 @@ function Employee() {
           <div>
 
             <p className="text-sm font-semibold text-amber-900">
-              Employee permissions
+              Uburenganzira bw'umukozi
             </p>
 
             <p className="mt-1 text-xs leading-5 text-amber-700 sm:text-sm">
-              You can upload new posts and
-              read all newsroom posts. Existing
-              posts cannot be edited from the
-              employee account.
+              Ushobora gushyiraho inkuru nshya no
+              gusoma iziri mu biro by'amakuru. Inkuru
+              zisanzwe ntizihindurirwa kuri konti
+              y'umukozi.
             </p>
 
           </div>
@@ -688,7 +688,7 @@ function Employee() {
 
       </div>
 
-      
+
 
       <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 sm:p-4">
 
@@ -699,19 +699,19 @@ function Employee() {
           <div>
 
             <p className="text-sm font-semibold text-emerald-900">
-              Your name is automatic
+              Izina ryawe ryishyirwaho ubwaryo
             </p>
 
             <p className="mt-1 text-xs leading-5 text-emerald-700 sm:text-sm">
-              Posts you publish will automatically
-              show your account name:
+              Inkuru ushyizeho zihita zigaragaza
+              izina rya konti yawe:
 
               <strong className="ml-1">
                 {getCurrentUserName()}
               </strong>
 
-              . You cannot change the author
-              name from this page.
+              . Ntushobora guhindura izina ry'umwanditsi
+              kuri uru rupapuro.
             </p>
 
           </div>
@@ -720,7 +720,7 @@ function Employee() {
 
       </div>
 
-      
+
 
       {error && !isUploadModalOpen && (
         <div className="rounded-xl border border-red-200 bg-red-50 p-4">
@@ -732,23 +732,23 @@ function Employee() {
         </div>
       )}
 
-      
+
 
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
 
-        
+
 
         <div className="flex flex-col gap-3 border-b border-slate-200 bg-slate-50 px-4 py-4 sm:px-6 md:flex-row md:items-center md:justify-between">
 
           <div>
 
             <h2 className="text-base font-bold text-slate-900 sm:text-lg">
-              News Posts
+              Inkuru
             </h2>
 
             <p className="mt-0.5 text-xs text-slate-500">
-              All newsroom posts — view and
-              read only
+              Inkuru zose zo mu biro by'amakuru —
+              kuzireba no kuzisoma gusa
             </p>
 
           </div>
@@ -756,30 +756,29 @@ function Employee() {
           <div className="flex items-center gap-2">
 
             <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-bold text-blue-800">
-              {posts.length} Posts
+              {posts.length} Inkuru
             </span>
 
             <button
               type="button"
               onClick={toggleAllPosts}
-              className={`inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition ${
-                showAllPosts
-                  ? "bg-slate-200 text-slate-700 hover:bg-slate-300"
-                  : "bg-blue-600 text-white hover:bg-blue-700"
-              }`}
+              className={`inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition ${showAllPosts
+                ? "bg-slate-200 text-slate-700 hover:bg-slate-300"
+                : "bg-blue-600 text-white hover:bg-blue-700"
+                }`}
             >
 
               {showAllPosts ? (
                 <>
                   <EyeOff className="h-4 w-4" />
 
-                  Hide All
+                  Hisha zose
                 </>
               ) : (
                 <>
                   <Eye className="h-4 w-4" />
 
-                  Show All
+                  Erekana zose
                 </>
               )}
 
@@ -789,7 +788,7 @@ function Employee() {
 
         </div>
 
-        
+
 
         {!showAllPosts ? (
 
@@ -802,11 +801,11 @@ function Employee() {
             </div>
 
             <p className="text-sm font-semibold text-slate-700">
-              All posts are hidden
+              Inkuru zose zihishe
             </p>
 
             <p className="mt-1 text-xs text-slate-500">
-              Click Show All to display posts.
+              Kanda “Erekana zose” kugira ngo uzibone.
             </p>
 
             <button
@@ -816,26 +815,26 @@ function Employee() {
             >
               <Eye className="h-4 w-4" />
 
-              Show All Posts
+              Erekana inkuru zose
             </button>
 
           </div>
 
         ) : loading ? (
 
-          
+
 
           <div className="flex items-center justify-center gap-2 p-12 text-sm text-slate-500">
 
             <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
 
-            Loading posts...
+            Inkuru zirimo gutegurwa...
 
           </div>
 
         ) : posts.length === 0 ? (
 
-          
+
 
           <div className="p-12 text-center">
 
@@ -844,19 +843,19 @@ function Employee() {
             </div>
 
             <p className="text-sm font-medium text-slate-700">
-              No posts available.
+              Nta nkuru zihari.
             </p>
 
             <p className="mt-1 text-xs text-slate-500">
-              Click Upload Post to create your
-              first news story.
+              Kanda “Shyiraho inkuru” ukore
+              inkuru yawe ya mbere.
             </p>
 
           </div>
 
         ) : (
 
-          
+
 
 
 
@@ -877,7 +876,7 @@ function Employee() {
                   className="group flex min-w-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
                 >
 
-                  
+
 
                   <div className="relative h-44 w-full overflow-hidden bg-slate-200">
 
@@ -908,7 +907,7 @@ function Employee() {
 
                     )}
 
-                    
+
 
                     <span className="absolute left-3 top-3 rounded-full bg-red-600 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow">
 
@@ -919,7 +918,7 @@ function Employee() {
 
                   </div>
 
-                  
+
 
                   <div className="flex flex-1 flex-col p-4">
 
@@ -930,7 +929,7 @@ function Employee() {
 
                     </h3>
 
-                    
+
 
                     <p className="mt-2 line-clamp-3 text-xs leading-5 text-slate-600">
 
@@ -940,7 +939,7 @@ function Employee() {
 
                     </p>
 
-                    
+
 
                     <div className="mt-4 flex items-center gap-2 rounded-lg bg-slate-50 px-2.5 py-2">
 
@@ -966,7 +965,7 @@ function Employee() {
 
                     </div>
 
-                    
+
 
                     <div className="mt-3 flex items-center gap-1.5 text-[10px] text-slate-400">
 
@@ -977,7 +976,7 @@ function Employee() {
 
                     </div>
 
-                    
+
 
                     <div className="mt-4 border-t border-slate-100 pt-3">
 
@@ -1010,7 +1009,7 @@ function Employee() {
 
       </div>
 
-      
+
 
       {selectedPost && (
 
@@ -1018,7 +1017,7 @@ function Employee() {
 
           <div className="my-auto max-h-[94vh] w-full max-w-4xl overflow-y-auto rounded-3xl bg-white shadow-2xl">
 
-            
+
 
             <div className="sticky top-0 z-20 flex items-center justify-between border-b border-slate-200 bg-white px-5 py-4 sm:px-7">
 
@@ -1049,34 +1048,34 @@ function Employee() {
 
             </div>
 
-            
+
 
             <div className="p-5 sm:p-7">
 
-              
+
 
               {getImageUrl(
                 selectedPost
               ) && (
 
-                <div className="mb-6 overflow-hidden rounded-2xl bg-slate-100">
+                  <div className="mb-6 overflow-hidden rounded-2xl bg-slate-100">
 
-                  <img
-                    src={getImageUrl(
-                      selectedPost
-                    )}
-                    alt={
-                      selectedPost.title ||
-                      "News"
-                    }
-                    className="max-h-[500px] w-full object-cover"
-                  />
+                    <img
+                      src={getImageUrl(
+                        selectedPost
+                      )}
+                      alt={
+                        selectedPost.title ||
+                        "News"
+                      }
+                      className="max-h-[500px] w-full object-cover"
+                    />
 
-                </div>
+                  </div>
 
-              )}
+                )}
 
-              
+
 
               <div className="mb-4 flex flex-wrap items-center gap-2">
 
@@ -1101,7 +1100,7 @@ function Employee() {
 
               </div>
 
-              
+
 
               <h1 className="text-2xl font-extrabold leading-tight text-slate-900 sm:text-4xl">
 
@@ -1110,7 +1109,7 @@ function Employee() {
 
               </h1>
 
-              
+
 
               <div className="mt-5 flex items-center gap-3 border-b border-slate-200 pb-5">
 
@@ -1142,7 +1141,7 @@ function Employee() {
 
               </div>
 
-              
+
 
               <article className="mt-7">
 
@@ -1156,36 +1155,36 @@ function Employee() {
 
               </article>
 
-              
+
 
               {getYoutubeUrl(
                 selectedPost
               ) && (
 
-                <div className="mt-8 rounded-2xl border border-red-200 bg-red-50 p-4">
+                  <div className="mt-8 rounded-2xl border border-red-200 bg-red-50 p-4">
 
-                  <p className="text-xs font-bold uppercase tracking-wide text-red-700">
-                    YouTube Video
-                  </p>
+                    <p className="text-xs font-bold uppercase tracking-wide text-red-700">
+                      YouTube Video
+                    </p>
 
-                  <a
-                    href={getYoutubeUrl(
-                      selectedPost
-                    )}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-2 block break-all text-sm font-semibold text-red-600 underline hover:text-red-800"
-                  >
-                    {getYoutubeUrl(
-                      selectedPost
-                    )}
-                  </a>
+                    <a
+                      href={getYoutubeUrl(
+                        selectedPost
+                      )}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-2 block break-all text-sm font-semibold text-red-600 underline hover:text-red-800"
+                    >
+                      {getYoutubeUrl(
+                        selectedPost
+                      )}
+                    </a>
 
-                </div>
+                  </div>
 
-              )}
+                )}
 
-              
+
 
               <div className="mt-8 flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
 
@@ -1201,7 +1200,7 @@ function Employee() {
 
               </div>
 
-              
+
 
               <div className="mt-6 flex justify-end">
 
@@ -1229,7 +1228,7 @@ function Employee() {
 
       )}
 
-      
+
 
       {isUploadModalOpen && (
 
@@ -1237,7 +1236,7 @@ function Employee() {
 
           <div className="my-auto max-h-[94vh] w-full max-w-2xl overflow-y-auto rounded-3xl bg-white shadow-2xl">
 
-            
+
 
             <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white px-5 py-4 sm:px-7">
 
@@ -1276,7 +1275,7 @@ function Employee() {
 
             </div>
 
-            
+
 
             <div className="p-5 sm:p-7">
 
@@ -1297,7 +1296,7 @@ function Employee() {
                 className="space-y-5"
               >
 
-                
+
 
                 <div>
 
@@ -1319,7 +1318,7 @@ function Employee() {
 
                 </div>
 
-                
+
 
                 <div>
 
@@ -1360,7 +1359,7 @@ function Employee() {
 
                 </div>
 
-                
+
 
                 <div>
 
@@ -1399,7 +1398,7 @@ function Employee() {
 
                 </div>
 
-                
+
 
                 <div>
 
@@ -1423,7 +1422,7 @@ function Employee() {
 
                 </div>
 
-                
+
 
                 <div>
 
@@ -1452,7 +1451,7 @@ function Employee() {
 
                 </div>
 
-                
+
 
                 <div>
 
@@ -1485,7 +1484,7 @@ function Employee() {
 
                 </div>
 
-                
+
 
                 <div className="flex flex-col-reverse gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:justify-end">
 

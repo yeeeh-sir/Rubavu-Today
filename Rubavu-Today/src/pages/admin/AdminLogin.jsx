@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { login } from "../../services/api";
+import logo from "../../Rubavu.jpeg";
 
 const AdminLogin = ({ onLogin }) => {
   const [email, setEmail] = useState(
@@ -15,9 +16,9 @@ const AdminLogin = ({ onLogin }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
 
-  
-  
-  
+
+
+
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -26,12 +27,12 @@ const AdminLogin = ({ onLogin }) => {
     setStatus("");
 
     try {
-      
-      
-      
-      
-      
-      
+
+
+
+
+
+
 
       const response = await login(
         email.trim(),
@@ -46,9 +47,9 @@ const AdminLogin = ({ onLogin }) => {
         );
       }
 
-      
-      
-      
+
+
+
 
       const role =
         user.role_type ||
@@ -61,9 +62,9 @@ const AdminLogin = ({ onLogin }) => {
         );
       }
 
-      
-      
-      
+
+
+
 
       if (typeof onLogin === "function") {
         onLogin(user);
@@ -88,9 +89,9 @@ const AdminLogin = ({ onLogin }) => {
     }
   };
 
-  
-  
-  
+
+
+
 
   const handleForgot = async (e) => {
     e.preventDefault();
@@ -109,9 +110,9 @@ const AdminLogin = ({ onLogin }) => {
     }
   };
 
-  
-  
-  
+
+
+
 
   const handleReset = async (e) => {
     e.preventDefault();
@@ -130,9 +131,9 @@ const AdminLogin = ({ onLogin }) => {
     }
   };
 
-  
-  
-  
+
+
+
 
   const changeMode = (newMode) => {
     setStatus("");
@@ -142,9 +143,9 @@ const AdminLogin = ({ onLogin }) => {
     setShowNewPassword(false);
   };
 
-  
-  
-  
+
+
+
 
   const EyeIcon = ({ visible }) => {
     if (visible) {
@@ -202,318 +203,326 @@ const AdminLogin = ({ onLogin }) => {
     );
   };
 
-  
-  
-  
+
+
+
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-slate-100 px-4 py-8">
-      <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-xl">
+    <main className="min-h-screen bg-slate-950 px-4 py-10">
+      <div className="flex min-h-[90vh] items-center justify-center">
+        <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-2xl sm:p-8">
 
-        
 
-        <div className="mb-6">
-          <h1 className="mb-2 text-3xl font-bold text-slate-900">
-            Admin Login
-          </h1>
 
-          <p className="text-sm text-slate-500">
-            Sign in to the Rubavu Today administration panel.
-          </p>
-        </div>
+          <div className="mb-8 text-center">
+            <img
+              src={logo}
+              alt="Rubavu Today Logo"
+              className="mx-auto h-24 w-24 rounded-full border-4 border-slate-700 object-cover shadow-xl"
+            />
 
-        
+            <h1 className="mt-6 text-3xl font-bold text-white">
+              Kwinjira k'Umuyobozi
+            </h1>
 
-        {mode === "login" && (
-          <form
-            onSubmit={handleLogin}
-            className="space-y-5"
-          >
-
-            
-
-            <label className="block">
-              <span className="text-sm font-medium text-slate-700">
-                Email
-              </span>
-
-              <input
-                type="email"
-                value={email}
-                onChange={(e) =>
-                  setEmail(e.target.value)
-                }
-                placeholder="Enter your email"
-                autoComplete="username"
-                className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-200"
-                required
-              />
-            </label>
-
-            
-
-            <label className="block">
-              <span className="text-sm font-medium text-slate-700">
-                Password
-              </span>
-
-              <div className="relative mt-2">
-
-                <input
-                  type={
-                    showPassword
-                      ? "text"
-                      : "password"
-                  }
-                  value={password}
-                  onChange={(e) =>
-                    setPassword(e.target.value)
-                  }
-                  placeholder="Enter your password"
-                  autoComplete="current-password"
-                  className="w-full rounded-xl border border-slate-300 px-4 py-3 pr-12 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-200"
-                  required
-                />
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    setShowPassword(
-                      (previous) =>
-                        !previous
-                    )
-                  }
-                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1 text-slate-500 hover:bg-slate-100 hover:text-slate-900"
-                  aria-label={
-                    showPassword
-                      ? "Hide password"
-                      : "Show password"
-                  }
-                >
-                  <EyeIcon
-                    visible={showPassword}
-                  />
-                </button>
-
-              </div>
-            </label>
-
-            
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full rounded-xl bg-slate-900 px-4 py-3 font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {loading
-                ? "Signing in..."
-                : "Sign In"}
-            </button>
-
-            
-
-            <button
-              type="button"
-              onClick={() =>
-                changeMode("forgot")
-              }
-              className="w-full rounded-xl border border-slate-300 px-4 py-3 font-medium text-slate-700 transition hover:bg-slate-50"
-            >
-              Forgot password?
-            </button>
-
-          </form>
-        )}
-
-        
-
-        {mode === "forgot" && (
-          <form
-            onSubmit={handleForgot}
-            className="space-y-5"
-          >
-
-            <div>
-              <h2 className="text-xl font-semibold text-slate-900">
-                Forgot Password
-              </h2>
-
-              <p className="mt-1 text-sm text-slate-500">
-                Enter your admin email to create a reset token.
-              </p>
-            </div>
-
-            
-
-            <label className="block">
-              <span className="text-sm font-medium text-slate-700">
-                Admin Email
-              </span>
-
-              <input
-                type="email"
-                value={email}
-                onChange={(e) =>
-                  setEmail(e.target.value)
-                }
-                placeholder="Enter your admin email"
-                autoComplete="email"
-                className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-200"
-                required
-              />
-            </label>
-
-            
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full rounded-xl bg-slate-900 px-4 py-3 font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {loading
-                ? "Creating token..."
-                : "Request Reset Token"}
-            </button>
-
-            
-
-            <button
-              type="button"
-              onClick={() =>
-                changeMode("login")
-              }
-              className="w-full rounded-xl border border-slate-300 px-4 py-3 font-medium text-slate-700 transition hover:bg-slate-50"
-            >
-              Back to login
-            </button>
-
-          </form>
-        )}
-
-        
-
-        {mode === "reset" && (
-          <form
-            onSubmit={handleReset}
-            className="space-y-5"
-          >
-
-            <div>
-              <h2 className="text-xl font-semibold text-slate-900">
-                Reset Password
-              </h2>
-
-              <p className="mt-1 text-sm text-slate-500">
-                Enter your reset token and new password.
-              </p>
-            </div>
-
-            
-
-            <label className="block">
-              <span className="text-sm font-medium text-slate-700">
-                Reset Token
-              </span>
-
-              <input
-                value={resetToken}
-                onChange={(e) =>
-                  setResetToken(e.target.value)
-                }
-                placeholder="Enter reset token"
-                autoComplete="off"
-                className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-200"
-                required
-              />
-            </label>
-
-            
-
-            <label className="block">
-              <span className="text-sm font-medium text-slate-700">
-                New Password
-              </span>
-
-              <div className="relative mt-2">
-
-                <input
-                  type={
-                    showNewPassword
-                      ? "text"
-                      : "password"
-                  }
-                  value={password}
-                  onChange={(e) =>
-                    setPassword(e.target.value)
-                  }
-                  placeholder="Enter new password"
-                  autoComplete="new-password"
-                  className="w-full rounded-xl border border-slate-300 px-4 py-3 pr-12 outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-200"
-                  required
-                />
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    setShowNewPassword(
-                      (previous) =>
-                        !previous
-                    )
-                  }
-                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1 text-slate-500 hover:bg-slate-100 hover:text-slate-900"
-                  aria-label={
-                    showNewPassword
-                      ? "Hide password"
-                      : "Show password"
-                  }
-                >
-                  <EyeIcon
-                    visible={
-                      showNewPassword
-                    }
-                  />
-                </button>
-
-              </div>
-            </label>
-
-            
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full rounded-xl bg-slate-900 px-4 py-3 font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {loading
-                ? "Resetting..."
-                : "Reset Password"}
-            </button>
-
-            
-
-            <button
-              type="button"
-              onClick={() =>
-                changeMode("login")
-              }
-              className="w-full rounded-xl border border-slate-300 px-4 py-3 font-medium text-slate-700 transition hover:bg-slate-50"
-            >
-              Back to login
-            </button>
-
-          </form>
-        )}
-
-        
-
-        {status && (
-          <div className="mt-5 rounded-xl bg-red-50 p-4">
-            <p className="text-sm text-red-600">
-              {status}
+            <p className="mt-2 text-sm text-slate-400">
+              Injira muri sisitemu y'ubuyobozi ya Rubavu Today.
             </p>
           </div>
-        )}
 
+
+
+          {mode === "login" && (
+            <form
+              onSubmit={handleLogin}
+              className="space-y-5"
+            >
+
+
+
+              <label className="block">
+                <span className="text-sm font-medium text-slate-300">
+                  Imeyili
+                </span>
+
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) =>
+                    setEmail(e.target.value)
+                  }
+                  placeholder="Andika imeyili yawe"
+                  autoComplete="username"
+                  className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3.5 text-white outline-none placeholder:text-slate-500 transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                  required
+                />
+              </label>
+
+
+
+              <label className="block">
+                <span className="text-sm font-medium text-slate-300">
+                  Ijambo ry'ibanga
+                </span>
+
+                <div className="relative mt-2">
+
+                  <input
+                    type={
+                      showPassword
+                        ? "text"
+                        : "password"
+                    }
+                    value={password}
+                    onChange={(e) =>
+                      setPassword(e.target.value)
+                    }
+                    placeholder="Andika ijambo ry'ibanga"
+                    autoComplete="current-password"
+                    className="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3.5 text-white outline-none placeholder:text-slate-500 transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                    required
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setShowPassword(
+                        (previous) =>
+                          !previous
+                      )
+                    }
+                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1 text-slate-400 hover:bg-slate-700 hover:text-white"
+                    aria-label={
+                      showPassword
+                        ? "Hisha ijambo ry'ibanga"
+                        : "Erekana ijambo ry'ibanga"
+                    }
+                  >
+                    <EyeIcon
+                      visible={showPassword}
+                    />
+                  </button>
+
+                </div>
+              </label>
+
+
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full rounded-xl bg-blue-600 px-4 py-3.5 font-semibold text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-900 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {loading
+                  ? "Birimo kwinjira..."
+                  : "Injira"}
+              </button>
+
+
+
+              <button
+                type="button"
+                onClick={() =>
+                  changeMode("forgot")
+                }
+                className="w-full rounded-xl border border-slate-700 px-4 py-3 font-medium text-slate-300 transition hover:bg-slate-800 hover:text-white"
+              >
+                Wibagiwe ijambo ry'ibanga?
+              </button>
+
+            </form>
+          )}
+
+
+
+          {mode === "forgot" && (
+            <form
+              onSubmit={handleForgot}
+              className="space-y-5"
+            >
+
+              <div>
+                <h2 className="text-xl font-semibold text-white">
+                  Wibagiwe ijambo ry'ibanga
+                </h2>
+
+                <p className="mt-1 text-sm text-slate-400">
+                  Andika imeyili y'umuyobozi kugira ngo ubone kode yo gusubizamo.
+                </p>
+              </div>
+
+
+
+              <label className="block">
+                <span className="text-sm font-medium text-slate-300">
+                  Imeyili y'umuyobozi
+                </span>
+
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) =>
+                    setEmail(e.target.value)
+                  }
+                  placeholder="Andika imeyili y'umuyobozi"
+                  autoComplete="email"
+                  className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3.5 text-white outline-none placeholder:text-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                  required
+                />
+              </label>
+
+
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full rounded-xl bg-blue-600 px-4 py-3.5 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {loading
+                  ? "Kode irimo gutegurwa..."
+                  : "Saba kode yo gusubizamo"}
+              </button>
+
+
+
+              <button
+                type="button"
+                onClick={() =>
+                  changeMode("login")
+                }
+                className="w-full rounded-xl border border-slate-700 px-4 py-3 font-medium text-slate-300 transition hover:bg-slate-800 hover:text-white"
+              >
+                Subira ku kwinjira
+              </button>
+
+            </form>
+          )}
+
+
+
+          {mode === "reset" && (
+            <form
+              onSubmit={handleReset}
+              className="space-y-5"
+            >
+
+              <div>
+                <h2 className="text-xl font-semibold text-slate-900">
+                  Hindura ijambo ry'ibanga
+                </h2>
+
+                <p className="mt-1 text-sm text-slate-500">
+                  Andika kode n'ijambo ry'ibanga rishya.
+                </p>
+              </div>
+
+
+
+              <label className="block">
+                <span className="text-sm font-medium text-slate-300">
+                  Kode yo gusubizamo
+                </span>
+
+                <input
+                  value={resetToken}
+                  onChange={(e) =>
+                    setResetToken(e.target.value)
+                  }
+                  placeholder="Andika kode yo gusubizamo"
+                  autoComplete="off"
+                  className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3.5 text-white outline-none placeholder:text-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                  required
+                />
+              </label>
+
+
+
+              <label className="block">
+                <span className="text-sm font-medium text-slate-300">
+                  Ijambo ry'ibanga rishya
+                </span>
+
+                <div className="relative mt-2">
+
+                  <input
+                    type={
+                      showNewPassword
+                        ? "text"
+                        : "password"
+                    }
+                    value={password}
+                    onChange={(e) =>
+                      setPassword(e.target.value)
+                    }
+                    placeholder="Andika ijambo ry'ibanga rishya"
+                    autoComplete="new-password"
+                    className="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3.5 text-white outline-none placeholder:text-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                    required
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setShowNewPassword(
+                        (previous) =>
+                          !previous
+                      )
+                    }
+                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1 text-slate-400 hover:bg-slate-700 hover:text-white"
+                    aria-label={
+                      showNewPassword
+                        ? "Hisha ijambo ry'ibanga"
+                        : "Erekana ijambo ry'ibanga"
+                    }
+                  >
+                    <EyeIcon
+                      visible={
+                        showNewPassword
+                      }
+                    />
+                  </button>
+
+                </div>
+              </label>
+
+
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full rounded-xl bg-blue-600 px-4 py-3.5 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {loading
+                  ? "Birimo guhindura..."
+                  : "Hindura ijambo ry'ibanga"}
+              </button>
+
+
+
+              <button
+                type="button"
+                onClick={() =>
+                  changeMode("login")
+                }
+                className="w-full rounded-xl border border-slate-700 px-4 py-3 font-medium text-slate-300 transition hover:bg-slate-800 hover:text-white"
+              >
+                Subira ku kwinjira
+              </button>
+
+            </form>
+          )}
+
+
+
+          {status && (
+            <div className="mt-5 rounded-xl border border-red-800 bg-red-950/50 p-4">
+              <p className="text-sm text-red-300">
+                {status}
+              </p>
+            </div>
+          )}
+
+        </div>
       </div>
     </main>
   );

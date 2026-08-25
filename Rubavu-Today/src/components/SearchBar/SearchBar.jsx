@@ -46,7 +46,7 @@ const SearchBar = ({ value, onChange, searchHistory, onSelectHistory, isLoading,
       `}</style>
 
       <label htmlFor="news-search" className="sr-only">
-        Search stories
+        Shakisha inkuru
       </label>
       <div className="relative w-full">
         <svg
@@ -62,7 +62,7 @@ const SearchBar = ({ value, onChange, searchHistory, onSelectHistory, isLoading,
         <input
           id="news-search"
           type="text"
-          placeholder="Search stories, topics..."
+          placeholder="Shakisha inkuru..."
           value={value}
           onChange={(event) => onChange(event.target.value)}
           onFocus={() => setIsFocused(true)}
@@ -71,14 +71,14 @@ const SearchBar = ({ value, onChange, searchHistory, onSelectHistory, isLoading,
 
         <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
           {isLoading && (
-            <div className="search-loading-spinner h-4 w-4 rounded-full border-2 border-red-600 border-t-transparent" title="Loading..." />
+            <div className="search-loading-spinner h-4 w-4 rounded-full border-2 border-red-600 border-t-transparent" title="Birashakishwa..." />
           )}
 
           {value && !isLoading && (
             <button
               onClick={() => onChange('')}
               className="text-gray-400 hover:text-gray-600 focus:outline-none p-1"
-              title="Clear search"
+              title="Siba ibyo washakishije"
             >
               ✕
             </button>
@@ -90,7 +90,7 @@ const SearchBar = ({ value, onChange, searchHistory, onSelectHistory, isLoading,
         <div className="absolute left-0 right-0 mt-2 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden max-h-80 overflow-y-auto">
           {showHistory && (
             <div className="p-3">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Recent Searches</p>
+              <p className="mb-2 break-words text-xs font-semibold uppercase tracking-wider text-gray-400">Ibyashakishijwe vuba</p>
               <div className="flex flex-wrap gap-2">
                 {searchHistory.map((item, index) => (
                   <button
@@ -110,7 +110,7 @@ const SearchBar = ({ value, onChange, searchHistory, onSelectHistory, isLoading,
 
           {showMatches && (
             <div className="p-1">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3 py-2">Matching Stories</p>
+              <p className="break-words px-3 py-2 text-xs font-semibold uppercase tracking-wider text-gray-400">Inkuru zihuye n'ibyo washakishije</p>
               {matches.map((post) => (
                 <button
                   key={post.id}
@@ -141,7 +141,7 @@ const SearchBar = ({ value, onChange, searchHistory, onSelectHistory, isLoading,
                   onClick={() => setIsFocused(false)}
                   className="text-xs font-semibold text-red-600 hover:text-red-700 transition"
                 >
-                  See all results →
+                  Reba ibisubizo byose →
                 </Link>
               </div>
             </div>

@@ -20,9 +20,9 @@ import logo from "../../Rubavu.jpeg";
 import LoadingScreen from "../../components/common/LoadingScreen";
 
 export default function ChiefDashboard({ onLogout }) {
-  
-  
-  
+
+
+
 
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -31,7 +31,7 @@ export default function ChiefDashboard({ onLogout }) {
   const [editingPostId, setEditingPostId] = useState(null);
   const [selectedPost, setSelectedPost] = useState(null);
 
-  
+
   const [selectedIds, setSelectedIds] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(12);
@@ -43,9 +43,9 @@ export default function ChiefDashboard({ onLogout }) {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  
-  
-  
+
+
+
 
   const loggedInUser = getStoredUser();
 
@@ -55,12 +55,12 @@ export default function ChiefDashboard({ onLogout }) {
     loggedInUser?.email ||
     "Chief Editor";
 
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
 
   const categories = [
     "Amakuru",
@@ -70,9 +70,9 @@ export default function ChiefDashboard({ onLogout }) {
     "Uburezi",
   ];
 
-  
-  
-  
+
+
+
 
   const [form, setForm] = useState({
     title: "",
@@ -82,10 +82,10 @@ export default function ChiefDashboard({ onLogout }) {
     category: "Amakuru",
   });
 
-  
-  
-  
-  
+
+
+
+
 
   const getImageUrl = (post) => {
     if (!post) {
@@ -122,25 +122,25 @@ export default function ChiefDashboard({ onLogout }) {
     return `${SERVER_URL}/uploads/${image}`;
   };
 
-  
-  
-  
+
+
+
 
   const getPostId = (post) => {
     return post?.id || post?._id;
   };
 
-  
-  
-  
+
+
+
 
   const getStatus = (post) => {
     return String(post?.status || "pending").toLowerCase();
   };
 
-  
-  
-  
+
+
+
 
   const loadPosts = useCallback(async () => {
     try {
@@ -177,9 +177,9 @@ export default function ChiefDashboard({ onLogout }) {
     loadPosts();
   }, [loadPosts]);
 
-  
-  
-  
+
+
+
 
   const resetForm = () => {
     setForm({
@@ -193,9 +193,9 @@ export default function ChiefDashboard({ onLogout }) {
     setEditingPostId(null);
   };
 
-  
-  
-  
+
+
+
 
   const handleChange = (e) => {
     const {
@@ -209,9 +209,9 @@ export default function ChiefDashboard({ onLogout }) {
     }));
   };
 
-  
-  
-  
+
+
+
 
   const handleImageChange = (e) => {
     const file =
@@ -223,9 +223,9 @@ export default function ChiefDashboard({ onLogout }) {
     }));
   };
 
-  
-  
-  
+
+
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -319,9 +319,9 @@ export default function ChiefDashboard({ onLogout }) {
     }
   };
 
-  
-  
-  
+
+
+
 
   const handleEdit = (post) => {
     const postId = getPostId(post);
@@ -365,9 +365,9 @@ export default function ChiefDashboard({ onLogout }) {
     });
   };
 
-  
-  
-  
+
+
+
 
   const handleDelete = async (id) => {
     if (!id) {
@@ -423,9 +423,9 @@ export default function ChiefDashboard({ onLogout }) {
     }
   };
 
-  
-  
-  
+
+
+
 
   const handleStatusChange = async (
     postId,
@@ -529,9 +529,9 @@ export default function ChiefDashboard({ onLogout }) {
     }
   };
 
-  
-  
-  
+
+
+
 
   const handleDeleteComment =
     async (commentId) => {
@@ -597,9 +597,9 @@ export default function ChiefDashboard({ onLogout }) {
       }
     };
 
-  
-  
-  
+
+
+
 
   const handleLogout = async () => {
     try {
@@ -634,9 +634,9 @@ export default function ChiefDashboard({ onLogout }) {
     }
   };
 
-  
-  
-  
+
+
+
 
   const filteredPosts =
     posts.filter((post) => {
@@ -683,9 +683,9 @@ export default function ChiefDashboard({ onLogout }) {
       );
     });
 
-  
-  
-  
+
+
+
 
   const totalFiltered = filteredPosts.length;
   const totalPages = Math.max(1, Math.ceil(totalFiltered / pageSize));
@@ -701,9 +701,9 @@ export default function ChiefDashboard({ onLogout }) {
     currentPage * pageSize
   );
 
-  
-  
-  
+
+
+
 
   const toggleSelectPost = (id) => {
     if (!id) return;
@@ -785,9 +785,9 @@ export default function ChiefDashboard({ onLogout }) {
     }
   };
 
-  
-  
-  
+
+
+
 
   const totalPosts = posts.length;
 
@@ -812,9 +812,9 @@ export default function ChiefDashboard({ onLogout }) {
         "rejected"
     ).length;
 
-  
-  
-  
+
+
+
 
   const formatDate = (post) => {
     const date =
@@ -823,7 +823,7 @@ export default function ChiefDashboard({ onLogout }) {
       post.createdAt;
 
     if (!date) {
-      return "Date unavailable";
+      return "Itariki ntiboneka";
     }
 
     try {
@@ -835,9 +835,9 @@ export default function ChiefDashboard({ onLogout }) {
     }
   };
 
-  
-  
-  
+
+
+
 
   const StatusBadge = ({ status }) => {
     const normalized = String(
@@ -847,7 +847,7 @@ export default function ChiefDashboard({ onLogout }) {
     if (normalized === "approved") {
       return (
         <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-1 text-[9px] font-black text-emerald-700">
-          ✓ APPROVED
+          ✓ YEMEJWE
         </span>
       );
     }
@@ -855,34 +855,34 @@ export default function ChiefDashboard({ onLogout }) {
     if (normalized === "rejected") {
       return (
         <span className="inline-flex items-center rounded-full bg-red-100 px-2 py-1 text-[9px] font-black text-red-700">
-          ✕ REJECTED
+          ✕ YANZWE
         </span>
       );
     }
 
     return (
       <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-1 text-[9px] font-black text-amber-700">
-        ⏳ PENDING
+        ⏳ IRATEGEREJE
       </span>
     );
   };
 
-  
-  
-  
+
+
+
 
   if (loading) {
-    return <LoadingScreen message="Loading Chief Editor Dashboard..." />;
+    return <LoadingScreen message="Imbonerahamwe y'Umwanditsi Mukuru irimo gutegurwa..." />;
   }
 
-  
-  
-  
+
+
+
 
   return (
     <div className="min-h-screen bg-slate-50">
 
-      
+
 
       <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur-md">
 
@@ -903,7 +903,7 @@ export default function ChiefDashboard({ onLogout }) {
               </h1>
 
               <p className="text-xs font-semibold text-blue-600">
-                Chief Editor Dashboard
+                Imbonerahamwe y'Umwanditsi Mukuru
               </p>
 
             </div>
@@ -919,7 +919,7 @@ export default function ChiefDashboard({ onLogout }) {
               </p>
 
               <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
-                Chief Editor
+                Umwanditsi Mukuru
               </p>
 
             </div>
@@ -928,7 +928,7 @@ export default function ChiefDashboard({ onLogout }) {
               onClick={handleLogout}
               className="rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-black text-white transition hover:bg-red-600"
             >
-              Logout
+              Sohoka
             </button>
 
           </div>
@@ -937,11 +937,11 @@ export default function ChiefDashboard({ onLogout }) {
 
       </header>
 
-      
+
 
       <main className="mx-auto max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8">
 
-        
+
 
         <section className="mb-6">
 
@@ -952,17 +952,16 @@ export default function ChiefDashboard({ onLogout }) {
               <div>
 
                 <p className="mb-2 text-xs font-black uppercase tracking-[0.2em] text-blue-200">
-                  Editorial Control
+                  Imicungire y'inkuru
                 </p>
 
                 <h2 className="text-2xl font-black sm:text-3xl">
-                  Review & Approve Posts
+                  Suzuma kandi wemeze inkuru
                 </h2>
 
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-blue-100">
-                  Review posts submitted by employees.
-                  Approved posts are automatically
-                  published on the user website.
+                  Suzuma inkuru zatanzwe n'abakozi.
+                  Izemejwe zihita zisohoka ku rubuga.
                 </p>
 
               </div>
@@ -970,7 +969,7 @@ export default function ChiefDashboard({ onLogout }) {
               <div className="rounded-2xl bg-white/10 p-4 backdrop-blur-sm">
 
                 <p className="text-xs font-bold text-blue-100">
-                  Logged in as
+                  Winjiye nka
                 </p>
 
                 <p className="mt-1 font-black">
@@ -985,7 +984,7 @@ export default function ChiefDashboard({ onLogout }) {
 
         </section>
 
-        
+
 
         {message && (
           <div className="mb-5 flex items-start justify-between gap-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700">
@@ -1025,14 +1024,14 @@ export default function ChiefDashboard({ onLogout }) {
           </div>
         )}
 
-        
+
 
         <section className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
 
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
 
             <p className="text-xs font-black uppercase tracking-wide text-slate-400">
-              Total Posts
+              Inkuru zose
             </p>
 
             <p className="mt-2 text-3xl font-black text-slate-900">
@@ -1044,7 +1043,7 @@ export default function ChiefDashboard({ onLogout }) {
           <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 shadow-sm">
 
             <p className="text-xs font-black uppercase tracking-wide text-amber-600">
-              Pending Review
+              Zitegereje gusuzumwa
             </p>
 
             <p className="mt-2 text-3xl font-black text-amber-700">
@@ -1056,7 +1055,7 @@ export default function ChiefDashboard({ onLogout }) {
           <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 shadow-sm">
 
             <p className="text-xs font-black uppercase tracking-wide text-emerald-600">
-              Approved
+              Zemejwe
             </p>
 
             <p className="mt-2 text-3xl font-black text-emerald-700">
@@ -1068,7 +1067,7 @@ export default function ChiefDashboard({ onLogout }) {
           <div className="rounded-2xl border border-red-200 bg-red-50 p-5 shadow-sm">
 
             <p className="text-xs font-black uppercase tracking-wide text-red-600">
-              Rejected
+              Zanzwe
             </p>
 
             <p className="mt-2 text-3xl font-black text-red-700">
@@ -1079,7 +1078,7 @@ export default function ChiefDashboard({ onLogout }) {
 
         </section>
 
-        
+
 
         <section className="mb-8 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
 
@@ -1089,14 +1088,14 @@ export default function ChiefDashboard({ onLogout }) {
 
               <p className="text-xs font-black uppercase tracking-wide text-blue-600">
                 {editingPostId
-                  ? "Edit Article"
-                  : "Create Article"}
+                  ? "Hindura inkuru"
+                  : "Kora inkuru"}
               </p>
 
               <h2 className="mt-1 text-xl font-black text-slate-900">
                 {editingPostId
-                  ? "Update post"
-                  : "Create new article"}
+                  ? "Vugurura inkuru"
+                  : "Kora inkuru nshya"}
               </h2>
 
             </div>
@@ -1106,7 +1105,7 @@ export default function ChiefDashboard({ onLogout }) {
                 onClick={resetForm}
                 className="rounded-xl border border-slate-300 px-4 py-2.5 text-xs font-black text-slate-700 hover:bg-slate-100"
               >
-                Cancel Editing
+                Reka guhindura
               </button>
             )}
 
@@ -1122,7 +1121,7 @@ export default function ChiefDashboard({ onLogout }) {
               <div>
 
                 <label className="mb-2 block text-xs font-black uppercase tracking-wide text-slate-500">
-                  Article Title
+                  Umutwe w'inkuru
                 </label>
 
                 <input
@@ -1130,7 +1129,7 @@ export default function ChiefDashboard({ onLogout }) {
                   name="title"
                   value={form.title}
                   onChange={handleChange}
-                  placeholder="Enter article title..."
+                  placeholder="Andika umutwe w'inkuru..."
                   className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
                 />
 
@@ -1167,7 +1166,7 @@ export default function ChiefDashboard({ onLogout }) {
             <div>
 
               <label className="mb-2 block text-xs font-black uppercase tracking-wide text-slate-500">
-                Description
+                Ibisobanuro
               </label>
 
               <textarea
@@ -1175,7 +1174,7 @@ export default function ChiefDashboard({ onLogout }) {
                 value={form.description}
                 onChange={handleChange}
                 rows={6}
-                placeholder="Write the article..."
+                placeholder="Andika inkuru..."
                 className="w-full resize-y rounded-xl border border-slate-300 px-4 py-3 text-sm leading-6 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
               />
 
@@ -1203,7 +1202,7 @@ export default function ChiefDashboard({ onLogout }) {
               <div>
 
                 <label className="mb-2 block text-xs font-black uppercase tracking-wide text-slate-500">
-                  Article Image
+                  Ifoto y'inkuru
                 </label>
 
                 <input
@@ -1225,10 +1224,10 @@ export default function ChiefDashboard({ onLogout }) {
                 className="rounded-xl bg-blue-700 px-6 py-3 text-sm font-black text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {saving
-                  ? "Saving..."
+                  ? "Birimo kubikwa..."
                   : editingPostId
-                    ? "Update Article"
-                    : "Create Article"}
+                    ? "Vugurura inkuru"
+                    : "Kora inkuru"}
               </button>
 
               <button
@@ -1236,7 +1235,7 @@ export default function ChiefDashboard({ onLogout }) {
                 onClick={resetForm}
                 className="rounded-xl border border-slate-300 px-6 py-3 text-sm font-black text-slate-700 hover:bg-slate-100"
               >
-                Clear
+                Siba
               </button>
 
             </div>
@@ -1245,18 +1244,18 @@ export default function ChiefDashboard({ onLogout }) {
 
         </section>
 
-        
+
 
         <section className="mb-6 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
 
           <div className="mb-4">
 
             <p className="text-xs font-black uppercase tracking-wide text-blue-600">
-              Post Management
+              Imicungire y'inkuru
             </p>
 
             <h2 className="mt-1 text-xl font-black text-slate-900">
-              Review Articles
+              Suzuma inkuru
             </h2>
 
           </div>
@@ -1271,7 +1270,7 @@ export default function ChiefDashboard({ onLogout }) {
                   e.target.value
                 )
               }
-              placeholder="Search articles..."
+              placeholder="Shakisha inkuru..."
               className="rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
             />
 
@@ -1286,7 +1285,7 @@ export default function ChiefDashboard({ onLogout }) {
             >
 
               <option value="All">
-                All Categories
+                Ibyiciro byose
               </option>
 
               {categories.map(
@@ -1313,19 +1312,19 @@ export default function ChiefDashboard({ onLogout }) {
             >
 
               <option value="All">
-                All Statuses
+                Imimerere yose
               </option>
 
               <option value="pending">
-                Pending
+                Zitegereje
               </option>
 
               <option value="approved">
-                Approved
+                Zemejwe
               </option>
 
               <option value="rejected">
-                Rejected
+                Zanzwe
               </option>
 
             </select>
@@ -1334,7 +1333,7 @@ export default function ChiefDashboard({ onLogout }) {
 
         </section>
 
-        
+
 
         {totalFiltered === 0 ? (
 
@@ -1345,11 +1344,11 @@ export default function ChiefDashboard({ onLogout }) {
             </div>
 
             <h3 className="mt-5 text-lg font-black text-slate-900">
-              No articles found
+              Nta nkuru zabonetse
             </h3>
 
             <p className="mt-2 text-sm text-slate-500">
-              No posts match your current filters.
+              Nta nkuru zihuye n'ibyo wahisemo.
             </p>
 
           </div>
@@ -1358,7 +1357,7 @@ export default function ChiefDashboard({ onLogout }) {
 
           <div className="space-y-4">
 
-            
+
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
 
               <div className="flex items-center gap-2">
@@ -1366,7 +1365,7 @@ export default function ChiefDashboard({ onLogout }) {
                   onClick={() => toggleSelectAll(paginatedPosts.map((p) => getPostId(p)).filter(Boolean))}
                   className="rounded-xl border border-slate-300 px-3 py-2 text-sm font-black text-slate-700 hover:bg-slate-100"
                 >
-                  {selectedIds.length ? `Selected: ${selectedIds.length}` : "Select"}
+                  {selectedIds.length ? `Zatoranyijwe: ${selectedIds.length}` : "Toranya"}
                 </button>
 
                 <button
@@ -1374,7 +1373,7 @@ export default function ChiefDashboard({ onLogout }) {
                   disabled={saving}
                   className="rounded-xl bg-emerald-600 px-3 py-2 text-sm font-black text-white hover:bg-emerald-700 disabled:opacity-50"
                 >
-                  ✓ Approve
+                  ✓ Emeza
                 </button>
 
                 <button
@@ -1382,7 +1381,7 @@ export default function ChiefDashboard({ onLogout }) {
                   disabled={saving}
                   className="rounded-xl bg-red-600 px-3 py-2 text-sm font-black text-white hover:bg-red-700 disabled:opacity-50"
                 >
-                  ✕ Reject
+                  ✕ Anga
                 </button>
 
                 <button
@@ -1390,20 +1389,20 @@ export default function ChiefDashboard({ onLogout }) {
                   disabled={saving}
                   className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-black text-red-600 hover:bg-red-600 hover:text-white disabled:opacity-50"
                 >
-                  Delete
+                  Siba
                 </button>
 
                 <button
                   onClick={exportCSV}
                   className="rounded-xl border border-slate-300 px-3 py-2 text-sm font-black text-slate-700 hover:bg-slate-100"
                 >
-                  Export CSV
+                  Kuramo CSV
                 </button>
 
               </div>
 
               <div className="flex items-center gap-2">
-                <label className="text-xs font-semibold text-slate-500">Per page</label>
+                <label className="text-xs font-semibold text-slate-500">Ku rupapuro</label>
                 <select
                   value={pageSize}
                   onChange={(e) => { setPageSize(Number(e.target.value)); setCurrentPage(1); }}
@@ -1449,7 +1448,7 @@ export default function ChiefDashboard({ onLogout }) {
                     className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-md"
                   >
 
-                    
+
                     <div className="absolute left-3 top-3 z-20">
                       <input
                         type="checkbox"
@@ -1459,7 +1458,7 @@ export default function ChiefDashboard({ onLogout }) {
                       />
                     </div>
 
-                    
+
 
                     <div className="relative h-36 bg-slate-100">
 
@@ -1489,11 +1488,11 @@ export default function ChiefDashboard({ onLogout }) {
 
                     </div>
 
-                    
+
 
                     <div className="p-3">
 
-                      
+
 
                       <div className="mb-2 flex items-center justify-between gap-2">
 
@@ -1510,25 +1509,25 @@ export default function ChiefDashboard({ onLogout }) {
 
                       </div>
 
-                      
+
 
                       <h3 className="line-clamp-2 text-sm font-black leading-5 text-slate-900">
                         {post.title ||
-                          "Untitled Article"}
+                          "Inkuru itagira umutwe"}
                       </h3>
 
-                      
+
 
                       <p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-500">
                         {description}
                       </p>
 
-                      
+
 
                       <div className="mt-3 rounded-lg bg-slate-50 p-2">
 
                         <p className="text-[9px] font-black uppercase tracking-wide text-slate-400">
-                          Submitted by
+                          Yatanzwe na
                         </p>
 
                         <p className="mt-0.5 truncate text-xs font-black text-slate-800">
@@ -1537,11 +1536,11 @@ export default function ChiefDashboard({ onLogout }) {
 
                       </div>
 
-                      
+
 
                       <div className="mt-3 grid grid-cols-2 gap-1.5">
 
-                        
+
 
                         <button
                           onClick={() =>
@@ -1551,10 +1550,10 @@ export default function ChiefDashboard({ onLogout }) {
                           }
                           className="rounded-lg bg-slate-900 px-2 py-2 text-[10px] font-black text-white hover:bg-blue-700"
                         >
-                          View
+                          Reba
                         </button>
 
-                        
+
 
                         <button
                           onClick={() =>
@@ -1564,10 +1563,10 @@ export default function ChiefDashboard({ onLogout }) {
                           }
                           className="rounded-lg bg-amber-100 px-2 py-2 text-[10px] font-black text-amber-700 hover:bg-amber-500 hover:text-white"
                         >
-                          Edit
+                          Hindura
                         </button>
 
-                        
+
 
                         {status ===
                           "pending" && (
@@ -1587,7 +1586,7 @@ export default function ChiefDashboard({ onLogout }) {
                             </button>
                           )}
 
-                        
+
 
                         {status ===
                           "pending" && (
@@ -1607,7 +1606,7 @@ export default function ChiefDashboard({ onLogout }) {
                             </button>
                           )}
 
-                        
+
 
                         {status ===
                           "rejected" && (
@@ -1627,7 +1626,7 @@ export default function ChiefDashboard({ onLogout }) {
                             </button>
                           )}
 
-                        
+
 
                         <button
                           onClick={() =>
@@ -1653,7 +1652,7 @@ export default function ChiefDashboard({ onLogout }) {
 
             </div>
 
-            
+
             <div className="mt-4 flex items-center justify-between">
               <div className="text-sm text-slate-500">Showing page {currentPage} of {totalPages}</div>
 
@@ -1681,7 +1680,7 @@ export default function ChiefDashboard({ onLogout }) {
 
       </main>
 
-      
+
 
       {selectedPost && (
 
@@ -1699,7 +1698,7 @@ export default function ChiefDashboard({ onLogout }) {
             }
           >
 
-            
+
 
             <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white px-5 py-4">
 
@@ -1736,7 +1735,7 @@ export default function ChiefDashboard({ onLogout }) {
 
             </div>
 
-            
+
 
             <div className="p-5 sm:p-7">
 
@@ -1780,7 +1779,7 @@ export default function ChiefDashboard({ onLogout }) {
 
               </div>
 
-              
+
 
               {getImageUrl(
                 selectedPost
@@ -1798,7 +1797,7 @@ export default function ChiefDashboard({ onLogout }) {
 
                 )}
 
-              
+
 
               <div className="mt-6 whitespace-pre-wrap text-base leading-8 text-slate-700">
                 {selectedPost.description ||
@@ -1806,7 +1805,7 @@ export default function ChiefDashboard({ onLogout }) {
                   "No description available."}
               </div>
 
-              
+
 
               {(
                 selectedPost.youtube_url ||
@@ -1835,7 +1834,7 @@ export default function ChiefDashboard({ onLogout }) {
                   </div>
                 )}
 
-              
+
 
               <div className="mt-8 rounded-2xl border border-slate-200 bg-slate-50 p-5">
 
@@ -1940,7 +1939,7 @@ export default function ChiefDashboard({ onLogout }) {
 
               </div>
 
-              
+
 
               <div className="mt-8">
 

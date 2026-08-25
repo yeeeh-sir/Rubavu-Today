@@ -11,7 +11,7 @@ function Profile() {
         <div className="flex items-center space-x-3 mb-6">
           <img src={rubavuLogo} alt="Rubavu Logo" className="w-10 h-10 rounded-xl object-cover shrink-0 shadow-sm border border-slate-200" />
           <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight font-sans">
-            User Profile
+            Umwirondoro w'umukoresha
           </h1>
         </div>
 
@@ -27,7 +27,7 @@ function Profile() {
 
           <div className="border-b border-slate-100 pb-4">
             <span className="block text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Email Address
+              Imeyili
             </span>
             <p className="font-semibold text-slate-800 mt-1 font-serif text-base">
               {user?.email || "N/A"}

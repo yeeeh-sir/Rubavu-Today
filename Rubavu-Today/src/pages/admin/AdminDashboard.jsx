@@ -93,7 +93,7 @@ const AdminDashboard = ({
 
     const previousRef = useRef([]);
 
-    
+
 
 
 
@@ -105,7 +105,7 @@ const AdminDashboard = ({
     const [newPostDescription, setNewPostDescription] = useState("");
     const [newPostImage, setNewPostImage] = useState(null);
 
-    
+
 
 
 
@@ -115,7 +115,7 @@ const AdminDashboard = ({
     const [empPhone, setEmpPhone] = useState("");
     const [empPassword, setEmpPassword] = useState("");
 
-    
+
 
 
 
@@ -125,7 +125,7 @@ const AdminDashboard = ({
     const [chiefPhone, setChiefPhone] = useState("");
     const [chiefPassword, setChiefPassword] = useState("");
 
-    
+
 
 
 
@@ -150,21 +150,21 @@ const AdminDashboard = ({
     const [employees, setEmployees] = useState([]);
     const [chiefEditors, setChiefEditors] = useState([]);
     const [advertisements, setAdvertisements] = useState([]);
-    
+
     const [showEditEmployee, setShowEditEmployee] = useState(false);
     const [editEmpId, setEditEmpId] = useState(null);
     const [editEmpName, setEditEmpName] = useState("");
     const [editEmpEmail, setEditEmpEmail] = useState("");
     const [editEmpPhone, setEditEmpPhone] = useState("");
     const [editEmpStatus, setEditEmpStatus] = useState("active");
-    
+
     const [showEditChief, setShowEditChief] = useState(false);
     const [editChiefId, setEditChiefId] = useState(null);
     const [editChiefName, setEditChiefName] = useState("");
     const [editChiefEmail, setEditChiefEmail] = useState("");
     const [editChiefPhone, setEditChiefPhone] = useState("");
     const [editChiefStatus, setEditChiefStatus] = useState("active");
-    
+
     const [showEditAd, setShowEditAd] = useState(false);
     const [editAdId, setEditAdId] = useState(null);
     const [editAdTitle, setEditAdTitle] = useState("");
@@ -178,7 +178,7 @@ const AdminDashboard = ({
     const [editAdStatus, setEditAdStatus] = useState("active");
     const [editAdImage, setEditAdImage] = useState(null);
 
-    
+
 
 
 
@@ -205,7 +205,7 @@ const AdminDashboard = ({
         return `${API_URL}${image}`;
     };
 
-    
+
 
 
 
@@ -245,7 +245,7 @@ const AdminDashboard = ({
         }
     }, []);
 
-    
+
 
 
 
@@ -270,7 +270,7 @@ const AdminDashboard = ({
         return () => clearInterval(interval);
     }, [loadPosts]);
 
-    
+
 
 
 
@@ -305,7 +305,7 @@ const AdminDashboard = ({
         loadAll();
     }, []);
 
-    
+
 
 
 
@@ -332,7 +332,7 @@ const AdminDashboard = ({
         };
     }, [modalOpen]);
 
-    
+
 
 
 
@@ -363,7 +363,7 @@ const AdminDashboard = ({
         };
     }, [posts]);
 
-    
+
 
 
 
@@ -435,7 +435,7 @@ const AdminDashboard = ({
         setCurrentPage(1);
     }, [search, selectedDepartment, selectedStatus, sortBy]);
 
-    
+
 
 
 
@@ -507,7 +507,7 @@ const AdminDashboard = ({
         }
     };
 
-    
+
 
 
 
@@ -551,7 +551,7 @@ const AdminDashboard = ({
         }
     };
 
-    
+
 
 
 
@@ -639,7 +639,7 @@ const AdminDashboard = ({
         }
     };
 
-    
+
 
 
 
@@ -694,7 +694,7 @@ const AdminDashboard = ({
         setStatusMessage("Posts exported successfully.");
     };
 
-    
+
 
 
 
@@ -706,7 +706,7 @@ const AdminDashboard = ({
         }
     };
 
-    
+
 
 
 
@@ -749,7 +749,7 @@ const AdminDashboard = ({
         }
     };
 
-    
+
 
 
 
@@ -795,7 +795,7 @@ const AdminDashboard = ({
         }
     };
 
-    
+
 
 
 
@@ -879,7 +879,7 @@ const AdminDashboard = ({
         }
     };
 
-    
+
 
 
 
@@ -929,7 +929,7 @@ const AdminDashboard = ({
         }
     };
 
-    
+
     const openEditEmployee = (emp) => {
         setEditEmpId(emp.id);
         setEditEmpName(emp.full_name || emp.name || "");
@@ -954,7 +954,7 @@ const AdminDashboard = ({
                 status: editEmpStatus || "active",
             });
 
-            
+
             try {
                 const emps = await getEmployees();
                 setEmployees(Array.isArray(emps) ? emps : []);
@@ -986,7 +986,7 @@ const AdminDashboard = ({
         }
     };
 
-    
+
     const openEditChief = (c) => {
         setEditChiefId(c.id);
         setEditChiefName(c.full_name || c.name || "");
@@ -1011,7 +1011,7 @@ const AdminDashboard = ({
                 status: editChiefStatus || "active",
             });
 
-            
+
             try {
                 const chiefs = await getChiefEditors();
                 setChiefEditors(Array.isArray(chiefs) ? chiefs : []);
@@ -1043,7 +1043,7 @@ const AdminDashboard = ({
         }
     };
 
-    
+
     const openEditAd = (a) => {
         setEditAdId(a.id);
         setEditAdTitle(a.title || "");
@@ -1128,7 +1128,7 @@ const AdminDashboard = ({
         }
     };
 
-    
+
 
 
 
@@ -1179,7 +1179,7 @@ const AdminDashboard = ({
 
     return (
         <div className="min-h-screen w-full overflow-x-hidden bg-slate-100 text-slate-900">
-            
+
 
             {mobileMenuOpen && (
                 <div
@@ -1188,7 +1188,7 @@ const AdminDashboard = ({
                 />
             )}
 
-            
+
 
             {showEditEmployee && (
                 <ModalShell onClose={() => setShowEditEmployee(false)} maxWidth="max-w-md">
@@ -1212,7 +1212,7 @@ const AdminDashboard = ({
                 </ModalShell>
             )}
 
-            
+
 
             {showEditChief && (
                 <ModalShell onClose={() => setShowEditChief(false)} maxWidth="max-w-md">
@@ -1236,7 +1236,7 @@ const AdminDashboard = ({
                 </ModalShell>
             )}
 
-            
+
 
             {showEditAd && (
                 <ModalShell onClose={() => setShowEditAd(false)} maxWidth="max-w-2xl">
@@ -1295,7 +1295,7 @@ const AdminDashboard = ({
                 </ModalShell>
             )}
 
-            
+
 
             <aside
                 className={`
@@ -1311,7 +1311,7 @@ const AdminDashboard = ({
                 `}
             >
                 <div className="flex min-h-0 flex-1 flex-col">
-                    
+
                     <div className="flex shrink-0 items-center gap-3 border-b border-white/10 px-4 py-4 sm:px-5 sm:py-5">
                         <img
                             src={logo}
@@ -1325,30 +1325,30 @@ const AdminDashboard = ({
                             </h1>
 
                             <p className="truncate text-[10px] text-slate-400 sm:text-xs">
-                                Editorial Management
+                                Imicungire y'ubwanditsi
                             </p>
                         </div>
 
                         <button
                             onClick={closeMobileMenu}
                             className="rounded-lg p-2 text-slate-400 transition hover:bg-white/10 hover:text-white lg:hidden"
-                            aria-label="Close menu"
+                            aria-label="Funga menu"
                         >
                             ✕
                         </button>
                     </div>
 
-                    
+
                     <nav className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2.5 py-4 sm:px-3 sm:py-5">
                         <p className="px-3 pb-2 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                            Workspace
+                            Aho gukorera
                         </p>
 
                         <button
                             className="mb-1 flex w-full items-center gap-3 rounded-xl bg-blue-600 px-3.5 py-3 text-left text-sm font-semibold text-white shadow-lg shadow-blue-900/20"
                         >
                             <span>▦</span>
-                            <span>Dashboard</span>
+                            <span>Imbonerahamwe</span>
                         </button>
 
                         <button
@@ -1361,7 +1361,7 @@ const AdminDashboard = ({
                             <span className="flex min-w-0 items-center gap-3">
                                 <span>⏳</span>
                                 <span className="truncate">
-                                    Pending Review
+                                    Zitegereje gusuzumwa
                                 </span>
                             </span>
 
@@ -1378,7 +1378,7 @@ const AdminDashboard = ({
                             className="mb-1 flex w-full items-center gap-3 rounded-xl px-3.5 py-3 text-left text-sm text-slate-300 transition hover:bg-white/5 hover:text-white"
                         >
                             <span>✓</span>
-                            <span>Published Stories</span>
+                            <span>Inkuru zasohotse</span>
                         </button>
 
                         <button
@@ -1389,11 +1389,11 @@ const AdminDashboard = ({
                             className="mb-1 flex w-full items-center gap-3 rounded-xl px-3.5 py-3 text-left text-sm text-slate-300 transition hover:bg-white/5 hover:text-white"
                         >
                             <span>✕</span>
-                            <span>Rejected</span>
+                            <span>Zanzwe</span>
                         </button>
 
                         <p className="px-3 pb-2 pt-6 text-[10px] font-bold uppercase tracking-wider text-slate-500 sm:pt-7">
-                            Management
+                            Imicungire
                         </p>
 
                         <button
@@ -1401,7 +1401,7 @@ const AdminDashboard = ({
                             className="mb-1 flex w-full items-center gap-3 rounded-xl px-3.5 py-3 text-left text-sm text-slate-300 transition hover:bg-white/5 hover:text-white"
                         >
                             <span>👤</span>
-                            <span>Employees</span>
+                            <span>Abakozi</span>
                         </button>
 
                         <button
@@ -1409,7 +1409,7 @@ const AdminDashboard = ({
                             className="mb-1 flex w-full items-center gap-3 rounded-xl px-3.5 py-3 text-left text-sm text-slate-300 transition hover:bg-white/5 hover:text-white"
                         >
                             <span>🛡️</span>
-                            <span>Chief Editors</span>
+                            <span>Abanditsi Bakuru</span>
                         </button>
 
                         <button
@@ -1417,7 +1417,7 @@ const AdminDashboard = ({
                             className="mb-1 flex w-full items-center gap-3 rounded-xl px-3.5 py-3 text-left text-sm text-slate-300 transition hover:bg-white/5 hover:text-white"
                         >
                             <span>📢</span>
-                            <span>Advertisements</span>
+                            <span>Kwamamaza</span>
                         </button>
 
                         <button
@@ -1425,11 +1425,11 @@ const AdminDashboard = ({
                             className="mb-1 flex w-full items-center gap-3 rounded-xl px-3.5 py-3 text-left text-sm text-slate-300 transition hover:bg-white/5 hover:text-white"
                         >
                             <span>📥</span>
-                            <span>Export Reports</span>
+                            <span>Kuramo raporo</span>
                         </button>
 
                         <p className="px-3 pb-2 pt-6 text-[10px] font-bold uppercase tracking-wider text-slate-500 sm:pt-7">
-                            Departments
+                            Ibyiciro
                         </p>
 
                         {DEPARTMENTS.map((department) => (
@@ -1458,56 +1458,56 @@ const AdminDashboard = ({
                         ))}
                     </nav>
 
-                    
+
                     <div className="shrink-0 border-t border-white/10 p-3 sm:p-4">
                         <button
                             onClick={onLogout}
                             className="flex w-full items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-semibold text-red-300 transition hover:bg-red-500/10"
                         >
                             <span>↪</span>
-                            Sign out
+                            Sohoka
                         </button>
                     </div>
                 </div>
             </aside>
 
-            
+
 
             <div className="min-w-0 lg:pl-72">
-                
+
 
                 <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur">
                     <div className="mx-auto flex min-h-16 max-w-[1700px] flex-wrap items-center gap-2 px-3 py-2 sm:flex-nowrap sm:gap-3 sm:px-6 lg:px-8">
-                        
+
                         <button
                             onClick={() => setMobileMenuOpen(true)}
                             className="shrink-0 rounded-lg p-2 text-slate-600 transition hover:bg-slate-100 lg:hidden"
-                            aria-label="Open menu"
+                            aria-label="Fungura menu"
                         >
                             ☰
                         </button>
 
-                        
+
                         <div className="min-w-0 flex-1">
                             <p className="hidden text-[11px] font-medium text-slate-400 sm:block">
-                                Editorial / Dashboard
+                                Ubwanditsi / Imbonerahamwe
                             </p>
 
                             <h2 className="truncate text-sm font-bold text-slate-900 sm:text-lg">
-                                Editorial Dashboard
+                                Imbonerahamwe y'ubwanditsi
                             </h2>
                         </div>
 
-                        
+
                         <div className="flex w-full min-w-0 flex-wrap items-center justify-end gap-1.5 sm:w-auto sm:shrink-0 sm:flex-nowrap sm:gap-3">
                             <button
                                 onClick={() => loadPosts()}
                                 className="rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-sm font-medium text-slate-600 shadow-sm transition hover:bg-slate-50 sm:px-3"
-                                title="Refresh"
+                                title="Ongera ushyireho"
                             >
                                 ↻
                                 <span className="ml-1 hidden sm:inline">
-                                    Refresh
+                                    Ongera ushyireho
                                 </span>
                             </button>
 
@@ -1556,7 +1556,7 @@ const AdminDashboard = ({
                                 </div>
                             </div>
 
-                            
+
                             <div className="items-center gap-2 flex">
                                 <button
                                     onClick={() => setShowCreatePost(true)}
@@ -1576,10 +1576,10 @@ const AdminDashboard = ({
                     </div>
                 </header>
 
-                
+
 
                 <main className="mx-auto w-full max-w-[1700px] px-3 py-4 sm:px-6 sm:py-5 lg:px-8 lg:py-7">
-                    
+
 
                     <section className="mb-5 sm:mb-6">
                         <div className="overflow-hidden rounded-2xl bg-gradient-to-r from-slate-950 via-slate-900 to-blue-950 p-5 text-white shadow-xl sm:p-7">
@@ -1612,7 +1612,7 @@ const AdminDashboard = ({
                         </div>
                     </section>
 
-                    
+
 
                     <section className="mb-5 grid grid-cols-2 gap-3 sm:mb-6 sm:grid-cols-3 lg:grid-cols-5">
                         <StatCard
@@ -1651,16 +1651,16 @@ const AdminDashboard = ({
                         />
                     </section>
 
-                    
+
 
                     <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1fr)_320px] xl:gap-6">
-                        
+
 
                         <section className="min-w-0">
-                            
+
                             <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
                                 <div className="flex flex-col gap-4">
-                                    
+
                                     <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                                         <div className="min-w-0">
                                             <div className="flex flex-wrap items-center gap-2">
@@ -1734,7 +1734,7 @@ const AdminDashboard = ({
                                         </div>
                                     </div>
 
-                                    
+
                                     <div className="flex min-w-0 flex-col gap-3 md:flex-row">
                                         <div className="relative min-w-0 flex-1">
                                             <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
@@ -1772,7 +1772,7 @@ const AdminDashboard = ({
                                         </select>
                                     </div>
 
-                                    
+
                                     {showFilters && (
                                         <div className="grid gap-4 rounded-xl bg-slate-50 p-4 sm:grid-cols-2">
                                             <div className="min-w-0">
@@ -1851,7 +1851,7 @@ const AdminDashboard = ({
                                         </div>
                                     )}
 
-                                    
+
                                     <div className="flex max-w-full gap-2 overflow-x-auto pb-1">
                                         <StatusTab
                                             active={
@@ -1914,7 +1914,7 @@ const AdminDashboard = ({
                                         />
                                     </div>
 
-                                    
+
                                     <div className="flex flex-col gap-3 border-t border-slate-100 pt-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
                                         <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-600">
                                             <input
@@ -1972,7 +1972,7 @@ const AdminDashboard = ({
                                 </div>
                             </div>
 
-                            
+
                             {errorMessage && (
                                 <div className="mt-4 flex flex-col gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 sm:flex-row sm:items-center sm:justify-between">
                                     <span>⚠ {errorMessage}</span>
@@ -1986,7 +1986,7 @@ const AdminDashboard = ({
                                 </div>
                             )}
 
-                            
+
                             <div
                                 className={`
                                     mt-5 min-w-0
@@ -2069,7 +2069,7 @@ const AdminDashboard = ({
                                 )}
                             </div>
 
-                            
+
                             {filteredPosts.length > 0 && (
                                 <div className="mt-5 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
                                     <p className="text-xs text-slate-500">
@@ -2130,10 +2130,10 @@ const AdminDashboard = ({
                             )}
                         </section>
 
-                        
+
 
                         <aside className="min-w-0 space-y-5">
-                            
+
                             <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
                                 <div className="mb-4">
                                     <h3 className="font-black text-slate-900">
@@ -2197,7 +2197,7 @@ const AdminDashboard = ({
                                 </div>
                             </div>
 
-                            
+
                             <AccountsPanel
                                 employees={employees}
                                 chiefEditors={chiefEditors}
@@ -2211,7 +2211,7 @@ const AdminDashboard = ({
                                 onSendAd={handleSendAd}
                             />
 
-                            
+
                             <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
                                 <div className="mb-4 flex items-center justify-between gap-3">
                                     <div className="min-w-0">
@@ -2239,7 +2239,7 @@ const AdminDashboard = ({
                                 </div>
                             </div>
 
-                            
+
                             <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
                                 <div className="mb-4">
                                     <h3 className="font-black text-slate-900">
@@ -2303,7 +2303,7 @@ const AdminDashboard = ({
                                 </div>
                             </div>
 
-                            
+
                             <div className="rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 p-5 text-white shadow-lg">
                                 <div className="text-xl">💡</div>
 
@@ -2322,7 +2322,7 @@ const AdminDashboard = ({
                 </main>
             </div>
 
-            
+
 
             {showCreatePost && (
                 <ModalShell
@@ -2405,7 +2405,7 @@ const AdminDashboard = ({
                 </ModalShell>
             )}
 
-            
+
 
             {showCreateAd && (
                 <ModalShell
@@ -2563,7 +2563,7 @@ const AdminDashboard = ({
                 </ModalShell>
             )}
 
-            
+
 
             {showCreateEmployee && (
                 <ModalShell
@@ -2633,7 +2633,7 @@ const AdminDashboard = ({
                 </ModalShell>
             )}
 
-            
+
 
             {showCreateChief && (
                 <ModalShell
@@ -2700,7 +2700,7 @@ const AdminDashboard = ({
                 </ModalShell>
             )}
 
-            
+
 
             {editingPost && (
                 <ModalShell
@@ -2902,7 +2902,7 @@ const AccountsPanel = ({
             </div>
 
             <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-1">
-                
+
                 <AccountSection
                     title="Employees"
                     count={employees.length}
@@ -2918,7 +2918,7 @@ const AccountsPanel = ({
                     )}
                 />
 
-                
+
                 <AccountSection
                     title="Chief Editors"
                     count={chiefEditors.length}
@@ -2934,7 +2934,7 @@ const AccountsPanel = ({
                     )}
                 />
 
-                
+
                 <AccountSection
                     title="Advertisements"
                     count={advertisements.length}
@@ -3187,7 +3187,7 @@ const PostCard = ({
                 ${isList ? "sm:flex" : ""}
             `}
         >
-            
+
             <div
                 className={`
                     relative shrink-0 overflow-hidden bg-slate-100
@@ -3210,7 +3210,7 @@ const PostCard = ({
                     </div>
                 )}
 
-                
+
                 <div className="absolute left-3 top-3">
                     <label
                         className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg bg-white/95 shadow-lg backdrop-blur"
@@ -3225,13 +3225,13 @@ const PostCard = ({
                     </label>
                 </div>
 
-                
+
                 <div className="absolute right-3 top-3 max-w-[45%]">
                     {statusBadge}
                 </div>
             </div>
 
-            
+
             <div className="flex min-w-0 flex-1 flex-col p-4">
                 <div className="flex min-w-0 flex-wrap items-center gap-2">
                     <span className="max-w-full truncate rounded-md bg-blue-50 px-2 py-1 text-[9px] font-bold uppercase tracking-wide text-blue-700 sm:text-[10px]">
@@ -3276,7 +3276,7 @@ const PostCard = ({
                     )}
                 </div>
 
-                
+
                 <div className="mt-4 flex flex-wrap gap-2 border-t border-slate-100 pt-4">
                     {status !== "approved" && (
                         <ActionButton
