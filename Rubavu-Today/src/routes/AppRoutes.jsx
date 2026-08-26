@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { Suspense, lazy, useEffect } from "react";
 import {
     Navigate,
     Route,
@@ -9,23 +9,25 @@ import Navbar from "../components/Navbar/Navbar";
 import Footer from "../components/Footer/Footer";
 import EmployeeNavbar from "../components/employee/Navbar";
 import EmployeeSidebar from "../components/employee/Sidebar";
-import Home from "../pages/Home";
-import PostDetails from "../pages/PostDetails";
-import NotFound from "../pages/NotFound";
-import AdminLogin from "../pages/admin/AdminLogin";
-import AdminDashboard from "../pages/admin/AdminDashboard";
-import CreateEmployee from "../pages/admin/CreateEmployee";
-import CreateChiefEditor from "../pages/admin/CreateChiefEditor";
-import ChiefLogin from "../pages/chief-editor/ChiefLogin";
-import ChiefDashboard from "../pages/chief-editor/ChiefDashboard";
-import EmployeeLogin from "../pages/employee/EmployeeLogin";
-import EmployeeDashboard from "../pages/employee/EmployeeDashboard";
-import EmployeeWorkspace from "../pages/employee/EmployeeWorkspace";
-import Profile from "../pages/employee/Profile";
-import { logout } from "../services/api";
+import { DashboardLayout } from "../components/dashboard";
+import { logout, getStoredUser } from "../services/api";
 import { getUserRole, isAuthenticated } from "../utils/auth";
 import { useAuth } from "../context/AuthContext";
 import LoadingScreen from "../components/common/LoadingScreen";
+
+const Home = lazy(() => import("../pages/Home"));
+const PostDetails = lazy(() => import("../pages/PostDetails"));
+const NotFound = lazy(() => import("../pages/NotFound"));
+const AdminLogin = lazy(() => import("../pages/admin/AdminLogin"));
+const AdminDashboard = lazy(() => import("../pages/admin/AdminDashboard"));
+const CreateEmployee = lazy(() => import("../pages/admin/CreateEmployee"));
+const CreateChiefEditor = lazy(() => import("../pages/admin/CreateChiefEditor"));
+const ChiefLogin = lazy(() => import("../pages/chief-editor/ChiefLogin"));
+const ChiefDashboard = lazy(() => import("../pages/chief-editor/ChiefDashboard"));
+const EmployeeLogin = lazy(() => import("../pages/employee/EmployeeLogin"));
+const EmployeeDashboard = lazy(() => import("../pages/employee/EmployeeDashboard"));
+const EmployeeWorkspace = lazy(() => import("../pages/employee/EmployeeWorkspace"));
+const Profile = lazy(() => import("../pages/employee/Profile"));
 
 const PublicLayout = ({ children, showHomeContent = true }) => (
     <><Navbar showHomeContent={showHomeContent} />{children}<Footer /></>
@@ -42,20 +44,25 @@ const EmployeeLayout = ({ children }) => (
 );
 
 function ProtectedRoute({ roles, loginPath, children }) {
-    const { user, loading, refreshUser } = useAuth();
-    const needsVerification = isAuthenticated() && !user;
+    const { user, refreshUser } = useAuth();
+    const storedUser = getStoredUser();
+    const effectiveUser = user || storedUser;
 
     useEffect(() => {
-        if (needsVerification) {
+        if (isAuthenticated() && !user) {
             refreshUser();
         }
-    }, [needsVerification, refreshUser]);
+    }, [user, refreshUser]);
 
-    if (loading || needsVerification) {
+    if (!isAuthenticated()) {
+        return <Navigate to={loginPath} replace />;
+    }
+
+    if (!effectiveUser) {
         return <LoadingScreen message="Checking authentication..." />;
     }
 
-    if (!user || !roles.includes(getUserRole(user))) {
+    if (!roles.includes(getUserRole(effectiveUser))) {
         return <Navigate to={loginPath} replace />;
     }
     return children;
@@ -80,35 +87,102 @@ function AdminPortal() {
     );
 }
 
+function ChiefPortal() {
+    const navigate = useNavigate();
+    return (
+        <ChiefDashboard
+            onLogout={() => { logout(); navigate("/chief/login", { replace: true }); }}
+        />
+    );
+}
+
+function EmployeePortal() {
+    const navigate = useNavigate();
+    return (
+        <EmployeeDashboard
+            onLogout={() => { logout(); navigate("/employee/login", { replace: true }); }}
+        />
+    );
+}
+
+function AdminCreateEmployeePortal() {
+    const navigate = useNavigate();
+    return (
+        <CreateEmployee
+            onLogout={() => { logout(); navigate("/admin/login", { replace: true }); }}
+        />
+    );
+}
+
+function AdminCreateChiefPortal() {
+    const navigate = useNavigate();
+    return (
+        <CreateChiefEditor
+            onLogout={() => { logout(); navigate("/admin/login", { replace: true }); }}
+        />
+    );
+}
+
+function AdminProfileRoute() {
+    const navigate = useNavigate();
+    return (
+        <DashboardLayout navigationSections={[]} roleLabel="Imicungire y'ubwanditsi" onLogout={() => { logout(); navigate("/admin/login", { replace: true }); }}>
+            <Profile />
+        </DashboardLayout>
+    );
+}
+
+function ChiefProfileRoute() {
+    const navigate = useNavigate();
+    return (
+        <DashboardLayout navigationSections={[]} roleLabel="Umwanditsi Mukuru" onLogout={() => { logout(); navigate("/chief/login", { replace: true }); }}>
+            <Profile />
+        </DashboardLayout>
+    );
+}
+
+function EmployeeProfileRoute() {
+    const navigate = useNavigate();
+    return (
+        <DashboardLayout navigationSections={[]} roleLabel="Employee" onLogout={() => { logout(); navigate("/employee/login", { replace: true }); }}>
+            <Profile />
+        </DashboardLayout>
+    );
+}
+
 function AppRoutes() {
     const navigate = useNavigate();
 
     return (
-        <Routes>
-            <Route path="/" element={<PublicLayout><Home /></PublicLayout>} />
-            <Route path="/post/:id" element={<PublicLayout showHomeContent={false}><PostDetails /></PublicLayout>} />
+        <Suspense fallback={<LoadingScreen message="Loading..." />}>
+            <Routes>
+                <Route path="/" element={<PublicLayout><Home /></PublicLayout>} />
+                <Route path="/post/:id" element={<PublicLayout showHomeContent={false}><PostDetails /></PublicLayout>} />
 
-            <Route path="/admin/login" element={<PublicOnlyRoute role="admin" redirectTo="/admin/dashboard"><AdminLogin onLogin={() => navigate("/admin/dashboard", { replace: true })} /></PublicOnlyRoute>} />
-            <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
-            <Route path="/admin/dashboard" element={<ProtectedRoute roles={["admin"]} loginPath="/admin/login"><AdminPortal /></ProtectedRoute>} />
-            <Route path="/admin/create-employee" element={<ProtectedRoute roles={["admin"]} loginPath="/admin/login"><CreateEmployee /></ProtectedRoute>} />
-            <Route path="/admin/create-chief-editor" element={<ProtectedRoute roles={["admin"]} loginPath="/admin/login"><CreateChiefEditor /></ProtectedRoute>} />
+                <Route path="/admin/login" element={<PublicOnlyRoute role="admin" redirectTo="/admin/dashboard"><AdminLogin onLogin={() => navigate("/admin/dashboard", { replace: true })} /></PublicOnlyRoute>} />
+                <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+                <Route path="/admin/dashboard" element={<ProtectedRoute roles={["admin"]} loginPath="/admin/login"><AdminPortal /></ProtectedRoute>} />
+                <Route path="/admin/create-employee" element={<ProtectedRoute roles={["admin"]} loginPath="/admin/login"><AdminCreateEmployeePortal /></ProtectedRoute>} />
+                <Route path="/admin/create-chief-editor" element={<ProtectedRoute roles={["admin"]} loginPath="/admin/login"><AdminCreateChiefPortal /></ProtectedRoute>} />
 
-            <Route path="/chief/login" element={<PublicOnlyRoute role="chief_editor" redirectTo="/chief-editor/dashboard"><ChiefLogin /></PublicOnlyRoute>} />
-            <Route path="/chief" element={<Navigate to="/chief-editor/dashboard" replace />} />
-            <Route path="/chief-editor/dashboard" element={<ProtectedRoute roles={["chief_editor"]} loginPath="/chief/login"><ChiefDashboard /></ProtectedRoute>} />
-            <Route path="/chief-editor/posts" element={<ProtectedRoute roles={["chief_editor"]} loginPath="/chief/login"><ChiefDashboard /></ProtectedRoute>} />
+                <Route path="/chief/login" element={<PublicOnlyRoute role="chief_editor" redirectTo="/chief-editor/dashboard"><ChiefLogin /></PublicOnlyRoute>} />
+                <Route path="/chief" element={<Navigate to="/chief-editor/dashboard" replace />} />
+                <Route path="/chief-editor/dashboard" element={<ProtectedRoute roles={["chief_editor"]} loginPath="/chief/login"><ChiefPortal /></ProtectedRoute>} />
+                <Route path="/chief-editor/posts" element={<ProtectedRoute roles={["chief_editor"]} loginPath="/chief/login"><ChiefPortal /></ProtectedRoute>} />
 
-            <Route path="/employee/login" element={<PublicOnlyRoute role="employee" redirectTo="/employee/dashboard"><EmployeeLogin /></PublicOnlyRoute>} />
-            <Route path="/dashboard" element={<Navigate to="/employee/dashboard" replace />} />
-            <Route path="/employee/dashboard" element={<ProtectedRoute roles={["employee", "reporter"]} loginPath="/employee/login"><EmployeeLayout><EmployeeDashboard /></EmployeeLayout></ProtectedRoute>} />
-            <Route path="/employee/workspace" element={<ProtectedRoute roles={["employee", "reporter"]} loginPath="/employee/login"><EmployeeLayout><EmployeeWorkspace /></EmployeeLayout></ProtectedRoute>} />
-            <Route path="/employee/posts" element={<Navigate to="/employee/workspace" replace />} />
-            <Route path="/employee/profile" element={<ProtectedRoute roles={["admin", "chief_editor", "employee", "reporter"]} loginPath="/employee/login"><EmployeeLayout><Profile /></EmployeeLayout></ProtectedRoute>} />
-            <Route path="/profile" element={<Navigate to="/employee/profile" replace />} />
+                <Route path="/employee/login" element={<PublicOnlyRoute role="employee" redirectTo="/employee/dashboard"><EmployeeLogin /></PublicOnlyRoute>} />
+                <Route path="/dashboard" element={<Navigate to="/employee/dashboard" replace />} />
+                <Route path="/employee/dashboard" element={<ProtectedRoute roles={["employee", "reporter"]} loginPath="/employee/login"><EmployeePortal /></ProtectedRoute>} />
+                <Route path="/employee/workspace" element={<ProtectedRoute roles={["employee", "reporter"]} loginPath="/employee/login"><EmployeeLayout><EmployeeWorkspace /></EmployeeLayout></ProtectedRoute>} />
+                <Route path="/employee/posts" element={<Navigate to="/employee/workspace" replace />} />
+                <Route path="/employee/profile" element={<ProtectedRoute roles={["employee", "reporter"]} loginPath="/employee/login"><EmployeeProfileRoute /></ProtectedRoute>} />
+                <Route path="/admin/profile" element={<ProtectedRoute roles={["admin"]} loginPath="/admin/login"><AdminProfileRoute /></ProtectedRoute>} />
+                <Route path="/chief-editor/profile" element={<ProtectedRoute roles={["chief_editor"]} loginPath="/chief/login"><ChiefProfileRoute /></ProtectedRoute>} />
+                <Route path="/profile" element={<Navigate to="/employee/profile" replace />} />
 
-            <Route path="*" element={<NotFound />} />
-        </Routes>
+                <Route path="*" element={<NotFound />} />
+            </Routes>
+        </Suspense>
     );
 }
 

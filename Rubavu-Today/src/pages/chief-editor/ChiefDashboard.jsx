@@ -9,15 +9,14 @@ import {
   deletePost,
   updatePost,
   deleteComment,
-  logout as apiLogout,
   getStoredUser,
   getChiefEditorPosts,
   updatePostStatus,
 } from "../../services/api";
 
 import { API_ROOT as SERVER_URL } from "../../services/api";
-import logo from "../../Rubavu.jpeg";
 import LoadingScreen from "../../components/common/LoadingScreen";
+import { DashboardLayout, StatusBadge as SharedStatusBadge } from "../../components/dashboard";
 
 export default function ChiefDashboard({ onLogout }) {
 
@@ -601,42 +600,6 @@ export default function ChiefDashboard({ onLogout }) {
 
 
 
-  const handleLogout = async () => {
-    try {
-      await apiLogout();
-    } catch (err) {
-      console.error(
-        "Logout error:",
-        err
-      );
-    } finally {
-      localStorage.removeItem(
-        "admin_token"
-      );
-
-      localStorage.removeItem(
-        "token"
-      );
-
-      localStorage.removeItem(
-        "user"
-      );
-
-      if (
-        typeof onLogout ===
-        "function"
-      ) {
-        onLogout();
-      } else {
-        window.location.href =
-          "/login";
-      }
-    }
-  };
-
-
-
-
 
   const filteredPosts =
     posts.filter((post) => {
@@ -839,33 +802,26 @@ export default function ChiefDashboard({ onLogout }) {
 
 
 
-  const StatusBadge = ({ status }) => {
-    const normalized = String(
-      status || "pending"
-    ).toLowerCase();
+  const StatusBadge = ({ status }) => <SharedStatusBadge status={status} size="xs" />;
 
-    if (normalized === "approved") {
-      return (
-        <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-1 text-[9px] font-black text-emerald-700">
-          ✓ YEMEJWE
-        </span>
-      );
-    }
-
-    if (normalized === "rejected") {
-      return (
-        <span className="inline-flex items-center rounded-full bg-red-100 px-2 py-1 text-[9px] font-black text-red-700">
-          ✕ YANZWE
-        </span>
-      );
-    }
-
-    return (
-      <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-1 text-[9px] font-black text-amber-700">
-        ⏳ IRATEGEREJE
-      </span>
-    );
-  };
+  const navSections = [
+    {
+      label: "Dashboard",
+      items: [
+        { icon: <span className="text-sm">📊</span>, label: "Imbonerahamwe", path: "/chief-editor/dashboard" },
+        { icon: <span className="text-sm">📝</span>, label: "Kora inkuru", path: "/chief-editor/posts" },
+      ],
+    },
+    {
+      label: "Inkuru",
+      items: [
+        { icon: <span className="text-sm">📋</span>, label: "Zose", badge: totalPosts, onClick: () => setStatusFilter("All") },
+        { icon: <span className="text-sm">⏳</span>, label: "Zitegereje", badge: pendingPosts, onClick: () => setStatusFilter("pending") },
+        { icon: <span className="text-sm">✅</span>, label: "Zemejwe", badge: approvedPosts, onClick: () => setStatusFilter("approved") },
+        { icon: <span className="text-sm">❌</span>, label: "Zanzwe", badge: rejectedPosts, onClick: () => setStatusFilter("rejected") },
+      ],
+    },
+  ];
 
 
 
@@ -880,66 +836,8 @@ export default function ChiefDashboard({ onLogout }) {
 
 
   return (
-    <div className="min-h-screen bg-slate-50">
-
-
-
-      <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur-md">
-
-        <div className="mx-auto flex max-w-[1500px] items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
-
-          <div className="flex items-center gap-3">
-
-            <img
-              src={logo}
-              alt="Rubavu Today"
-              className="h-11 w-11 rounded-xl object-cover shadow-sm"
-            />
-
-            <div>
-
-              <h1 className="text-lg font-black text-slate-900">
-                Rubavu Today
-              </h1>
-
-              <p className="text-xs font-semibold text-blue-600">
-                Imbonerahamwe y'Umwanditsi Mukuru
-              </p>
-
-            </div>
-
-          </div>
-
-          <div className="flex items-center gap-3">
-
-            <div className="hidden text-right sm:block">
-
-              <p className="text-xs font-black text-slate-900">
-                {editorName}
-              </p>
-
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
-                Umwanditsi Mukuru
-              </p>
-
-            </div>
-
-            <button
-              onClick={handleLogout}
-              className="rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-black text-white transition hover:bg-red-600"
-            >
-              Sohoka
-            </button>
-
-          </div>
-
-        </div>
-
-      </header>
-
-
-
-      <main className="mx-auto max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8">
+    <DashboardLayout navigationSections={navSections} roleLabel="Umwanditsi Mukuru" onLogout={onLogout}>
+      <div className="p-4 sm:p-6 lg:p-8 space-y-6">
 
 
 
@@ -1678,9 +1576,7 @@ export default function ChiefDashboard({ onLogout }) {
           </div>
         )}
 
-      </main>
-
-
+      </div>
 
       {selectedPost && (
 
@@ -1704,11 +1600,9 @@ export default function ChiefDashboard({ onLogout }) {
 
               <div className="flex items-center gap-3">
 
-                <img
-                  src={logo}
-                  alt="Rubavu Today"
-                  className="h-10 w-10 rounded-xl object-cover"
-                />
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-cyan-500 text-sm font-bold text-white shadow-sm">
+                  RT
+                </div>
 
                 <div>
 
@@ -2061,6 +1955,6 @@ export default function ChiefDashboard({ onLogout }) {
         </div>
       )}
 
-    </div>
+    </DashboardLayout>
   );
 }

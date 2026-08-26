@@ -31,7 +31,7 @@ import {
     changeMyEmail,
 } from "../../services/api";
 
-import logo from "../../Rubavu.jpeg";
+import { DashboardLayout } from "../../components/dashboard";
 
 const API_URL = API_ROOT;
 
@@ -82,7 +82,6 @@ const AdminDashboard = ({
     const [currentPage, setCurrentPage] = useState(1);
 
     const [selectedPosts, setSelectedPosts] = useState([]);
-    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [showFilters, setShowFilters] = useState(false);
     const [viewMode, setViewMode] = useState("grid");
 
@@ -362,6 +361,7 @@ const AdminDashboard = ({
             comments,
         };
     }, [posts]);
+
 
 
 
@@ -1132,10 +1132,6 @@ const AdminDashboard = ({
 
 
 
-    const closeMobileMenu = () => {
-        setMobileMenuOpen(false);
-    };
-
     const openEmployeeManager = () => {
         if (onCreateEmployee) {
             quickAction(
@@ -1145,8 +1141,6 @@ const AdminDashboard = ({
         } else {
             setShowCreateEmployee(true);
         }
-
-        closeMobileMenu();
     };
 
     const openChiefManager = () => {
@@ -1160,8 +1154,6 @@ const AdminDashboard = ({
         } else {
             setShowCreateChief(true);
         }
-
-        closeMobileMenu();
     };
 
     const openAdvertisementManager = () => {
@@ -1173,22 +1165,31 @@ const AdminDashboard = ({
         } else {
             setShowCreateAd(true);
         }
-
-        closeMobileMenu();
     };
 
+    const navSections = [
+        {
+            label: "Dashboard",
+            items: [
+                { icon: <span>▦</span>, label: "Imbonerahamwe", path: "/admin/dashboard" },
+                { icon: <span>⏳</span>, label: "Zitegereje gusuzumwa", badge: statistics.pending, onClick: () => { setSelectedStatus(POST_STATUSES.PENDING); } },
+                { icon: <span>✓</span>, label: "Inkuru zasohotse", onClick: () => { setSelectedStatus(POST_STATUSES.APPROVED); } },
+                { icon: <span>✕</span>, label: "Zanzwe", onClick: () => { setSelectedStatus(POST_STATUSES.REJECTED); } },
+            ],
+        },
+        {
+            label: "Imicungire",
+            items: [
+                { icon: <span>👤</span>, label: "Abakozi", onClick: openEmployeeManager },
+                { icon: <span>🛡️</span>, label: "Abanditsi Bakuru", onClick: openChiefManager },
+                { icon: <span>📢</span>, label: "Kwamamaza", onClick: openAdvertisementManager },
+                { icon: <span>📥</span>, label: "Kuramo raporo", onClick: () => { exportPosts(); } },
+            ],
+        },
+    ];
+
     return (
-        <div className="min-h-screen w-full overflow-x-hidden bg-slate-100 text-slate-900">
-
-
-            {mobileMenuOpen && (
-                <div
-                    className="fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-sm lg:hidden"
-                    onClick={closeMobileMenu}
-                />
-            )}
-
-
+        <DashboardLayout navigationSections={navSections} roleLabel="Imicungire y'ubwanditsi" onLogout={onLogout}>
 
             {showEditEmployee && (
                 <ModalShell onClose={() => setShowEditEmployee(false)} maxWidth="max-w-md">
@@ -1297,195 +1298,17 @@ const AdminDashboard = ({
 
 
 
-            <aside
-                className={`
-                    fixed inset-y-0 left-0 z-50
-                    flex w-[min(18rem,85vw)] flex-col
-                    bg-slate-950 text-white shadow-2xl
-                    transition-transform duration-300
-                    lg:w-72 lg:translate-x-0
-                    ${mobileMenuOpen
-                        ? "translate-x-0"
-                        : "-translate-x-full"
-                    }
-                `}
-            >
-                <div className="flex min-h-0 flex-1 flex-col">
-
-                    <div className="flex shrink-0 items-center gap-3 border-b border-white/10 px-4 py-4 sm:px-5 sm:py-5">
-                        <img
-                            src={logo}
-                            alt="Rubavu Today"
-                            className="h-10 w-10 shrink-0 rounded-xl object-cover ring-2 ring-white/10 sm:h-11 sm:w-11"
-                        />
-
-                        <div className="min-w-0 flex-1">
-                            <h1 className="truncate text-sm font-bold sm:text-base">
-                                Rubavu Today
-                            </h1>
-
-                            <p className="truncate text-[10px] text-slate-400 sm:text-xs">
-                                Imicungire y'ubwanditsi
-                            </p>
-                        </div>
-
-                        <button
-                            onClick={closeMobileMenu}
-                            className="rounded-lg p-2 text-slate-400 transition hover:bg-white/10 hover:text-white lg:hidden"
-                            aria-label="Funga menu"
-                        >
-                            ✕
-                        </button>
-                    </div>
-
-
-                    <nav className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2.5 py-4 sm:px-3 sm:py-5">
-                        <p className="px-3 pb-2 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                            Aho gukorera
-                        </p>
-
-                        <button
-                            className="mb-1 flex w-full items-center gap-3 rounded-xl bg-blue-600 px-3.5 py-3 text-left text-sm font-semibold text-white shadow-lg shadow-blue-900/20"
-                        >
-                            <span>▦</span>
-                            <span>Imbonerahamwe</span>
-                        </button>
-
-                        <button
-                            onClick={() => {
-                                setSelectedStatus(POST_STATUSES.PENDING);
-                                closeMobileMenu();
-                            }}
-                            className="mb-1 flex w-full items-center justify-between rounded-xl px-3.5 py-3 text-left text-sm text-slate-300 transition hover:bg-white/5 hover:text-white"
-                        >
-                            <span className="flex min-w-0 items-center gap-3">
-                                <span>⏳</span>
-                                <span className="truncate">
-                                    Zitegereje gusuzumwa
-                                </span>
-                            </span>
-
-                            <span className="shrink-0 rounded-full bg-amber-500/20 px-2 py-0.5 text-xs text-amber-300">
-                                {statistics.pending}
-                            </span>
-                        </button>
-
-                        <button
-                            onClick={() => {
-                                setSelectedStatus(POST_STATUSES.APPROVED);
-                                closeMobileMenu();
-                            }}
-                            className="mb-1 flex w-full items-center gap-3 rounded-xl px-3.5 py-3 text-left text-sm text-slate-300 transition hover:bg-white/5 hover:text-white"
-                        >
-                            <span>✓</span>
-                            <span>Inkuru zasohotse</span>
-                        </button>
-
-                        <button
-                            onClick={() => {
-                                setSelectedStatus(POST_STATUSES.REJECTED);
-                                closeMobileMenu();
-                            }}
-                            className="mb-1 flex w-full items-center gap-3 rounded-xl px-3.5 py-3 text-left text-sm text-slate-300 transition hover:bg-white/5 hover:text-white"
-                        >
-                            <span>✕</span>
-                            <span>Zanzwe</span>
-                        </button>
-
-                        <p className="px-3 pb-2 pt-6 text-[10px] font-bold uppercase tracking-wider text-slate-500 sm:pt-7">
-                            Imicungire
-                        </p>
-
-                        <button
-                            onClick={openEmployeeManager}
-                            className="mb-1 flex w-full items-center gap-3 rounded-xl px-3.5 py-3 text-left text-sm text-slate-300 transition hover:bg-white/5 hover:text-white"
-                        >
-                            <span>👤</span>
-                            <span>Abakozi</span>
-                        </button>
-
-                        <button
-                            onClick={openChiefManager}
-                            className="mb-1 flex w-full items-center gap-3 rounded-xl px-3.5 py-3 text-left text-sm text-slate-300 transition hover:bg-white/5 hover:text-white"
-                        >
-                            <span>🛡️</span>
-                            <span>Abanditsi Bakuru</span>
-                        </button>
-
-                        <button
-                            onClick={openAdvertisementManager}
-                            className="mb-1 flex w-full items-center gap-3 rounded-xl px-3.5 py-3 text-left text-sm text-slate-300 transition hover:bg-white/5 hover:text-white"
-                        >
-                            <span>📢</span>
-                            <span>Kwamamaza</span>
-                        </button>
-
-                        <button
-                            onClick={exportPosts}
-                            className="mb-1 flex w-full items-center gap-3 rounded-xl px-3.5 py-3 text-left text-sm text-slate-300 transition hover:bg-white/5 hover:text-white"
-                        >
-                            <span>📥</span>
-                            <span>Kuramo raporo</span>
-                        </button>
-
-                        <p className="px-3 pb-2 pt-6 text-[10px] font-bold uppercase tracking-wider text-slate-500 sm:pt-7">
-                            Ibyiciro
-                        </p>
-
-                        {DEPARTMENTS.map((department) => (
-                            <button
-                                key={department.name}
-                                onClick={() => {
-                                    setSelectedDepartment(department.name);
-                                    closeMobileMenu();
-                                }}
-                                className={`
-                                    mb-1 flex w-full items-center gap-3
-                                    rounded-xl px-3.5 py-2.5
-                                    text-left text-sm transition
-                                    ${selectedDepartment ===
-                                        department.name
-                                        ? "bg-white/10 text-white"
-                                        : "text-slate-400 hover:bg-white/5 hover:text-white"
-                                    }
-                                `}
-                            >
-                                <span>{department.icon}</span>
-                                <span className="truncate">
-                                    {department.name}
-                                </span>
-                            </button>
-                        ))}
-                    </nav>
-
-
-                    <div className="shrink-0 border-t border-white/10 p-3 sm:p-4">
-                        <button
-                            onClick={onLogout}
-                            className="flex w-full items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-semibold text-red-300 transition hover:bg-red-500/10"
-                        >
-                            <span>↪</span>
-                            Sohoka
-                        </button>
-                    </div>
-                </div>
-            </aside>
 
 
 
-            <div className="min-w-0 lg:pl-72">
+
+            <div className="min-w-0">
 
 
                 <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur">
                     <div className="mx-auto flex min-h-16 max-w-[1700px] flex-wrap items-center gap-2 px-3 py-2 sm:flex-nowrap sm:gap-3 sm:px-6 lg:px-8">
 
-                        <button
-                            onClick={() => setMobileMenuOpen(true)}
-                            className="shrink-0 rounded-lg p-2 text-slate-600 transition hover:bg-slate-100 lg:hidden"
-                            aria-label="Fungura menu"
-                        >
-                            ☰
-                        </button>
+
 
 
                         <div className="min-w-0 flex-1">
@@ -2869,7 +2692,7 @@ const AdminDashboard = ({
                     </form>
                 </ModalShell>
             )}
-        </div>
+        </DashboardLayout>
     );
 };
 
