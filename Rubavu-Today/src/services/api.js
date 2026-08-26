@@ -18,7 +18,7 @@ export const normalizeImageUrl = (image) => {
     (image.startsWith("http://") ||
       image.startsWith("https://"))
   ) {
-    return image;
+    return image.replace(/^http:\/\//, "https://");
   }
 
   if (image.startsWith("/")) {

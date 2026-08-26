@@ -1,15 +1,19 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import rubavuLogo from "../Rubavu.jpeg";
+import { NotFoundSEO } from "../components/SEO/SEO";
 
 function NotFound() {
   return (
     <div className="min-h-[80vh] bg-slate-50 flex flex-col justify-center items-center px-4 sm:px-6 py-12 text-center font-serif">
+      <NotFoundSEO />
       <div className="mb-6">
         <img 
           src={rubavuLogo} 
           alt="Rubavu Logo" 
           className="w-16 h-16 rounded-2xl object-cover mx-auto shadow-sm border border-slate-200" 
+          width="64"
+          height="64"
         />
       </div>
       <h1 className="text-7xl sm:text-8xl font-black text-slate-800 tracking-tight font-sans">
@@ -25,7 +29,7 @@ function NotFound() {
         to="/"
         className="mt-6 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-xl transition text-sm shadow-sm cursor-pointer font-sans"
       >
-        Return to Dashboard
+        Return to Homepage
       </Link>
     </div>
   );

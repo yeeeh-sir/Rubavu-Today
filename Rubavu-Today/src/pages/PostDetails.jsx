@@ -2,6 +2,8 @@ import React, { useEffect, useState, useRef } from "react";
 import { Link, useParams, useLocation } from "react-router-dom";
 import rubavuLogo from "../Rubavu.jpeg";
 import { API_ROOT as API_URL } from "../services/api";
+import { ArticleSEO } from "../components/SEO/SEO";
+import SocialShare from "../components/SocialShare/SocialShare";
 
 
 
@@ -22,7 +24,6 @@ export default function PostDetails() {
 
 
   const [sliderIndex, setSliderIndex] = useState(0);
-  const [copied, setCopied] = useState(false);
 
   const imageContainerRef = useRef(null);
 
@@ -152,42 +153,6 @@ export default function PostDetails() {
 
   const handlePrint = () => {
     window.print();
-  };
-
-  const handleShare = async () => {
-    const postUrl = window.location.href;
-    const shareData = {
-      title: post?.title || "Rubavu Today",
-      text: post?.title || "Rubavu Today",
-      url: postUrl,
-    };
-
-    if (post?.image) {
-      try {
-        const imgUrl = getImageUrl(post.image);
-        const response = await fetch(imgUrl);
-        const blob = await response.blob();
-        const file = new File([blob], "rubavu-today.jpg", { type: "image/jpeg" });
-
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-          shareData.files = [file];
-        }
-      } catch (err) {
-        // fallback: share without image
-      }
-    }
-
-    if (navigator.share) {
-      try {
-        await navigator.share(shareData);
-      } catch (err) {
-        // user cancelled or error
-      }
-    } else {
-      navigator.clipboard.writeText(postUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
   };
 
 
@@ -526,7 +491,7 @@ export default function PostDetails() {
   return (
     <div className="min-h-screen bg-gray-50">
 
-
+      <ArticleSEO post={post} />
 
       {otherPosts.length > 0 && (
         <section className="w-full bg-white border-b border-gray-200 print:hidden">
@@ -857,12 +822,7 @@ export default function PostDetails() {
 
             <div className="print:hidden flex justify-end mb-4 gap-2">
 
-              <button
-                onClick={handleShare}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 py-1.5 rounded"
-              >
-                {copied ? "Byakoporowe!" : "🔗 Sangiza Inkuru"}
-              </button>
+              <SocialShare post={post} />
 
               <button
                 onClick={handlePrint}
@@ -896,9 +856,11 @@ export default function PostDetails() {
                     src={getImageUrl(
                       post.image
                     )}
-                    alt={post.title}
+                    alt={post.title || "Rubavu Today article image"}
                     className="w-full h-auto max-h-[80vh] object-contain select-none"
                     draggable="false"
+                    width="1200"
+                    height="675"
                   />
 
                   <div className="absolute bottom-3 left-3 bg-black/75 text-white text-xs px-2 py-1 rounded">

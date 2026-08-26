@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, Link } from "react-router-dom";
 import { getPosts } from "../services/api";
+import { SiteSEO } from "../components/SEO/SEO";
 
 
 const summarize = (text, maxWords = 10) => {
@@ -135,6 +136,7 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-[#F9F6F0] text-black flex flex-col font-body selection:bg-red-600 selection:text-white">
+      <SiteSEO />
       <main className="flex-grow">
 
         <section className="bg-white border-b-2 border-black py-3">
