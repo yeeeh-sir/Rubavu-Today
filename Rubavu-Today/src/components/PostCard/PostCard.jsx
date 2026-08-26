@@ -9,13 +9,13 @@ const PostCard = ({ post }) => {
 
   const published = post?.createdDate
     ? new Date(post.createdDate).toLocaleDateString("rw-RW", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-      })
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    })
     : "Uyu munsi";
 
-  
+
   const calculateReadTime = (text) => {
     if (!text) return "iminota 1 yo gusoma";
     const words = text.trim().split(/\s+/).length;
@@ -27,19 +27,53 @@ const PostCard = ({ post }) => {
   const readTime = calculateReadTime(contentText);
   const authorName = post?.Author || post?.author || "Rubavu Today";
 
-  const handleShare = (e) => {
+  const getPostSlugPath = (entry) => {
+    if (!entry) return "/";
+    const slug = entry.slug || entry.title || "";
+    return slug ? `/${slug}.html` : `/post/${entry.id}`;
+  };
+
+  const handleShare = async (e) => {
     e.preventDefault();
-    const postUrl = `${window.location.origin}/post/${post.id}`;
-    navigator.clipboard.writeText(postUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    const postUrl = `${window.location.origin}${getPostSlugPath(post)}`;
+    const shareData = {
+      title: post?.title || "Rubavu Today",
+      text: post?.title || "Rubavu Today",
+      url: postUrl,
+    };
+
+    if (post?.image) {
+      try {
+        const response = await fetch(post.image);
+        const blob = await response.blob();
+        const file = new File([blob], "rubavu-today.jpg", { type: "image/jpeg" });
+
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          shareData.files = [file];
+        }
+      } catch (err) {
+        // fallback: share without image
+      }
+    }
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch (err) {
+        // user cancelled
+      }
+    } else {
+      navigator.clipboard.writeText(postUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   return (
     <article className="group flex flex-col justify-between overflow-hidden border border-[#E5E3DC] bg-white transition hover:border-[#D8D5CC] shadow-sm hover:shadow-md">
       <div>
-        
-        <Link to={`/post/${post.id}`} className="relative block aspect-[16/10] bg-[#F1EFE8] overflow-hidden">
+
+        <Link to={getPostSlugPath(post)} className="relative block aspect-[16/10] bg-[#F1EFE8] overflow-hidden">
           <img
             src={post.image || FALLBACK_IMAGE}
             alt={post.title}
@@ -57,9 +91,9 @@ const PostCard = ({ post }) => {
           )}
         </Link>
 
-        
+
         <div className="p-4 sm:p-5">
-          
+
           <div className="flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-wider text-[#888780] mb-2 font-medium">
             <time>{published}</time>
             <span>•</span>
@@ -68,28 +102,28 @@ const PostCard = ({ post }) => {
             <span className="truncate max-w-[100px]" title={authorName}>{authorName}</span>
           </div>
 
-          <Link to={`/post/${post.id}`}>
+          <Link to={getPostSlugPath(post)}>
             <h2 className="font-masthead mt-1 text-lg sm:text-xl font-extrabold leading-snug text-[#161616] transition group-hover:text-[#B3261E]">
               {post.title}
             </h2>
           </Link>
 
-          
+
           <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-[#5F5E5A]">
             {contentText}
           </p>
         </div>
       </div>
 
-      
+
       <div className="flex items-center justify-between border-t border-[#E5E3DC] bg-[#FAFAF7] px-4 sm:px-5 py-3 text-xs">
         <Link
-          to={`/post/${post.id}`}
+          to={getPostSlugPath(post)}
           className="font-bold uppercase tracking-wider text-[#161616] transition hover:text-[#B3261E]"
         >
           Soma byinshi →
         </Link>
-        
+
         <div className="flex items-center gap-3">
           <span className="text-[#888780]" title="Abayirebye">👁 {post.views || 0}</span>
           <button

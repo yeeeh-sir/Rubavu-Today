@@ -64,6 +64,8 @@ export const normalizePost = (post) => ({
     post.author_name ||
     "",
 
+  slug: post.slug || "",
+
   status: post.status || "",
 
   createdDate:

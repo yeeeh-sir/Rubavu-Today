@@ -81,8 +81,9 @@ const Home = () => {
 
   const PostCard = ({ post }) => {
     const postId = post.id || post._id;
+    const articleHref = post.slug ? `/${post.slug}.html` : `/post/${postId}`;
     return (
-      <Link to={`/post/${postId}`} className="group block">
+      <Link to={articleHref} className="group block">
         <article className="flex flex-col h-full bg-white border border-slate-200 rounded-sm overflow-hidden shadow-sm hover:shadow-md transition-shadow">
           <div className="relative overflow-hidden bg-slate-100 h-40 sm:h-44">
             {post.image ? (

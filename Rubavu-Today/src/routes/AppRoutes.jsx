@@ -157,6 +157,7 @@ function AppRoutes() {
         <Suspense fallback={<LoadingScreen message="Loading..." />}>
             <Routes>
                 <Route path="/" element={<PublicLayout><Home /></PublicLayout>} />
+                <Route path="/:slug.html" element={<PublicLayout showHomeContent={false}><PostDetails /></PublicLayout>} />
                 <Route path="/post/:id" element={<PublicLayout showHomeContent={false}><PostDetails /></PublicLayout>} />
 
                 <Route path="/admin/login" element={<PublicOnlyRoute role="admin" redirectTo="/admin/dashboard"><AdminLogin onLogin={() => navigate("/admin/dashboard", { replace: true })} /></PublicOnlyRoute>} />

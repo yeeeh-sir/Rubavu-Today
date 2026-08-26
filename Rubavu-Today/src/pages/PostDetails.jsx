@@ -1,12 +1,13 @@
 import React, { useEffect, useState, useRef } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useLocation } from "react-router-dom";
 import rubavuLogo from "../Rubavu.jpeg";
 import { API_ROOT as API_URL } from "../services/api";
 
 
 
 export default function PostDetails() {
-  const { id } = useParams();
+  const { id, slug } = useParams();
+  const location = useLocation();
 
   const [post, setPost] = useState(null);
   const [allPosts, setAllPosts] = useState([]);
@@ -19,15 +20,16 @@ export default function PostDetails() {
   const [replyText, setReplyText] = useState("");
   const [replyName, setReplyName] = useState("");
 
-  
+
   const [sliderIndex, setSliderIndex] = useState(0);
+  const [copied, setCopied] = useState(false);
 
   const imageContainerRef = useRef(null);
 
-  
-  
-  
-  
+
+
+
+
 
   useEffect(() => {
     let mounted = true;
@@ -36,9 +38,14 @@ export default function PostDetails() {
       setLoading(true);
 
       try {
+        const targetSlug = slug || id;
+        const endpoint = targetSlug && !/^\d+$/.test(String(targetSlug))
+          ? `${API_URL}/api/posts/slug/${encodeURIComponent(String(targetSlug).replace(/\.html$/i, ''))}`
+          : `${API_URL}/api/posts/${id}`;
+
         const [postRes, commentsRes, postsRes] = await Promise.all([
-          fetch(`${API_URL}/api/posts/${id}`),
-          fetch(`${API_URL}/api/comments/${id}`),
+          fetch(endpoint),
+          fetch(`${API_URL}/api/comments/${id || slug}`),
           fetch(`${API_URL}/api/posts`),
         ]);
 
@@ -49,6 +56,17 @@ export default function PostDetails() {
         if (!mounted) return;
 
         setPost(postData);
+
+        if (
+          !slug &&
+          id &&
+          postData &&
+          postData.slug &&
+          location.pathname !== `/${postData.slug}.html`
+        ) {
+          window.location.replace(`/${postData.slug}.html`);
+          return;
+        }
 
         setComments(
           Array.isArray(commentsData) ? commentsData : []
@@ -78,20 +96,20 @@ export default function PostDetails() {
     return () => {
       mounted = false;
     };
-  }, [id]);
+  }, [id, slug]);
 
-  
-  
-  
+
+
+
 
   useEffect(() => {
     setSliderIndex(0);
   }, [id]);
 
-  
-  
-  
-  
+
+
+
+
 
   useEffect(() => {
     const otherPosts = allPosts.filter(
@@ -115,9 +133,9 @@ export default function PostDetails() {
     return () => clearInterval(timer);
   }, [allPosts, id]);
 
-  
-  
-  
+
+
+
 
   const getImageUrl = (image) => {
     if (!image) return null;
@@ -127,17 +145,51 @@ export default function PostDetails() {
       : `${API_URL}${image}`;
   };
 
-  
-  
-  
+
+
+
 
   const handlePrint = () => {
     window.print();
   };
 
-  
-  
-  
+  const handleShare = async () => {
+    const postUrl = window.location.href;
+    const shareData = {
+      title: post?.title || "Rubavu Today",
+      text: post?.title || "Rubavu Today",
+      url: postUrl,
+    };
+
+    if (post?.image) {
+      try {
+        const imgUrl = getImageUrl(post.image);
+        const response = await fetch(imgUrl);
+        const blob = await response.blob();
+        const file = new File([blob], "rubavu-today.jpg", { type: "image/jpeg" });
+
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          shareData.files = [file];
+        }
+      } catch (err) {
+        // fallback: share without image
+      }
+    }
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch (err) {
+        // user cancelled or error
+      }
+    } else {
+      navigator.clipboard.writeText(postUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+
 
   const triggerWatermarkedDownload = () => {
     if (!post?.image) return;
@@ -166,13 +218,14 @@ export default function PostDetails() {
       ctx.fillStyle = "rgba(255,255,255,0.75)";
       ctx.shadowColor = "rgba(0,0,0,0.8)";
       ctx.shadowBlur = 8;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
+      ctx.textAlign = "left";
+      ctx.textBaseline = "bottom";
 
+      const padding = canvas.width * 0.02;
       ctx.fillText(
         "© Rubavu Today",
-        canvas.width / 2,
-        canvas.height / 2
+        padding,
+        canvas.height - padding
       );
 
       const link = document.createElement("a");
@@ -193,9 +246,9 @@ export default function PostDetails() {
     triggerWatermarkedDownload();
   };
 
-  
-  
-  
+
+
+
 
   const getEmbedUrl = (url) => {
     if (!url) return null;
@@ -217,9 +270,9 @@ export default function PostDetails() {
       : null;
   };
 
-  
-  
-  
+
+
+
 
   const getAuthorName = (p) => {
     if (!p) return "Unknown Author";
@@ -288,9 +341,9 @@ export default function PostDetails() {
     );
   };
 
-  
-  
-  
+
+
+
 
   const handleCommentSubmit = async (
     e,
@@ -352,9 +405,9 @@ export default function PostDetails() {
     }
   };
 
-  
-  
-  
+
+
+
 
   const otherPosts = allPosts.filter(
     (p) =>
@@ -387,9 +440,9 @@ export default function PostDetails() {
     });
   };
 
-  
-  
-  
+
+
+
 
   if (loading) {
     return (
@@ -403,9 +456,9 @@ export default function PostDetails() {
     );
   }
 
-  
-  
-  
+
+
+
 
   if (!post || post.error) {
     return (
@@ -424,9 +477,9 @@ export default function PostDetails() {
     );
   }
 
-  
-  
-  
+
+
+
 
   const adminPost = isPostByAdmin(post);
 
@@ -465,14 +518,14 @@ export default function PostDetails() {
       (c) => !c.parent_id
     );
 
-  
-  
-  
+
+
+
 
   return (
     <div className="min-h-screen bg-gray-50">
 
-      
+
 
       {otherPosts.length > 0 && (
         <section className="w-full bg-white border-b border-gray-200 print:hidden">
@@ -517,7 +570,7 @@ export default function PostDetails() {
 
             </div>
 
-            
+
 
             <div className="overflow-hidden">
 
@@ -590,7 +643,7 @@ export default function PostDetails() {
 
             </div>
 
-            
+
 
             {otherPosts.length > 3 && (
               <div className="flex justify-center gap-1.5 mt-4">
@@ -622,13 +675,13 @@ export default function PostDetails() {
         </section>
       )}
 
-      
+
 
       <div className="max-w-7xl mx-auto px-3 sm:px-4 py-6">
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
 
-          
+
 
           <aside className="print:hidden lg:col-span-1 order-2 lg:order-1">
 
@@ -685,14 +738,14 @@ export default function PostDetails() {
 
           </aside>
 
-          
+
 
           <main
             id="printable-article"
             className="order-1 lg:order-2 lg:col-span-2 bg-white border border-gray-200 rounded-lg shadow-sm p-4 sm:p-8"
           >
 
-            
+
 
             <Link
               to="/"
@@ -701,7 +754,7 @@ export default function PostDetails() {
               ← Subira ku Ahabanza
             </Link>
 
-            
+
 
             <div className="mb-5">
               <span className="bg-red-600 text-white text-xs uppercase font-bold px-3 py-1 rounded">
@@ -710,7 +763,7 @@ export default function PostDetails() {
               </span>
             </div>
 
-            
+
 
             <div className="mb-5 bg-gray-50 border rounded-lg p-4">
 
@@ -725,7 +778,7 @@ export default function PostDetails() {
                       className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-md"
                     />
 
-                    
+
 
                     <span
                       className="absolute -right-1 -bottom-1 w-5 h-5 bg-blue-600 rounded-full border-2 border-white shadow-md flex items-center justify-center"
@@ -763,7 +816,7 @@ export default function PostDetails() {
                       {authorName}
                     </span>
 
-                    
+
 
                     {adminPost && (
                       <span
@@ -799,9 +852,16 @@ export default function PostDetails() {
 
             </div>
 
-            
 
-            <div className="print:hidden flex justify-end mb-4">
+
+            <div className="print:hidden flex justify-end mb-4 gap-2">
+
+              <button
+                onClick={handleShare}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 py-1.5 rounded"
+              >
+                {copied ? "Byakoporowe!" : "🔗 Sangiza Inkuru"}
+              </button>
 
               <button
                 onClick={handlePrint}
@@ -812,13 +872,13 @@ export default function PostDetails() {
 
             </div>
 
-            
+
 
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-black leading-tight mb-6">
               {post.title}
             </h1>
 
-            
+
 
             {post.image && (
               <div className="mb-8">
@@ -840,7 +900,7 @@ export default function PostDetails() {
                     draggable="false"
                   />
 
-                  <div className="absolute bottom-3 right-3 bg-black/75 text-white text-xs px-2 py-1 rounded">
+                  <div className="absolute bottom-3 left-3 bg-black/75 text-white text-xs px-2 py-1 rounded">
                     © Rubavu Today
                   </div>
 
@@ -862,13 +922,13 @@ export default function PostDetails() {
               </div>
             )}
 
-            
+
 
             <div className="text-gray-900 text-base sm:text-lg leading-relaxed whitespace-pre-line mb-10 border-b pb-8">
               {post.description}
             </div>
 
-            
+
 
             {embedUrl && (
               <div className="mb-10 print:hidden">
@@ -892,7 +952,7 @@ export default function PostDetails() {
               </div>
             )}
 
-            
+
 
             <section className="mt-8 print:hidden">
 
@@ -900,7 +960,7 @@ export default function PostDetails() {
                 Ibitekerezo ({comments.length})
               </h3>
 
-              
+
 
               <form
                 onSubmit={handleCommentSubmit}
@@ -944,7 +1004,7 @@ export default function PostDetails() {
 
               </form>
 
-              
+
 
               <div className="space-y-4">
 
@@ -1110,7 +1170,7 @@ export default function PostDetails() {
 
           </main>
 
-          
+
 
           <aside className="print:hidden lg:col-span-1 order-3">
 
@@ -1167,7 +1227,7 @@ export default function PostDetails() {
 
         </div>
 
-        
+
 
         {otherPosts.length > 0 && (
           <section className="print:hidden mt-10 bg-white border rounded-lg p-4 sm:p-6">
