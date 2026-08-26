@@ -96,6 +96,7 @@ export default function PostDetails() {
     return () => {
       mounted = false;
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, slug]);
 
 
