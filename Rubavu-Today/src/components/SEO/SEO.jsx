@@ -4,8 +4,31 @@ import { Helmet } from "react-helmet-async";
 const SITE_URL = "https://rubavutoday.com";
 const SITE_NAME = "Rubavu Today";
 const DEFAULT_IMAGE = `${SITE_URL}/Rubavu.jpeg`;
+const BACKEND_URL = "https://rubavu-today-backend.onrender.com";
 const DEFAULT_DESCRIPTION =
   "Rubavu Today - Amakuru mashya mu karere ka Rubavu n'ibindi byose. Latest news from Rubavu and beyond.";
+
+function getAbsoluteImageUrl(image) {
+  if (!image) return DEFAULT_IMAGE;
+  if (image.startsWith("https://")) return image;
+  if (image.startsWith("http://")) return image.replace(/^http:\/\//, "https://");
+  if (image.startsWith("/")) return `${BACKEND_URL}${image}`;
+  return `${BACKEND_URL}/${image}`;
+}
+
+function cleanDescription(text) {
+  if (!text) return "";
+  return text
+    .replace(/<[^>]*>/g, "")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#039;/g, "'")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 200);
+}
 
 export function SiteSEO() {
   const jsonLd = {
@@ -70,9 +93,9 @@ export function ArticleSEO({ post }) {
 
   const title = post.title || SITE_NAME;
   const description =
-    (post.description || post.summary || "").substring(0, 300) ||
+    cleanDescription(post.description || post.summary || "") ||
     `${title} - ${SITE_NAME}`;
-  const image = post.image || DEFAULT_IMAGE;
+  const image = getAbsoluteImageUrl(post.image);
   const authorName =
     post.Author || post.author || post.author_name || "Rubavu Today";
 
