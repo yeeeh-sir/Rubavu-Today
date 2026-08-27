@@ -224,7 +224,7 @@ const Home = () => {
             <div className="space-y-14">
 
               <SectionHeader
-                title={query.trim() ? "Ibyavuye mu gushakisha" : "Inkuru Zose"}
+                title={query.trim() ? "Ibyavuye mu gushakisha" : "Amakuru agezweho"}
                 count={sortedPosts.length}
               />
 
@@ -240,9 +240,9 @@ const Home = () => {
                 <div className="pt-8 pb-4 flex justify-center">
                   <button
                     onClick={handleLoadMore}
-                    className="bg-black text-white hover:bg-red-600 font-mono text-xs uppercase font-bold tracking-widest px-8 py-4 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all cursor-pointer"
+                    className="inline-flex items-center gap-2 rounded border border-slate-900 bg-slate-950 px-4 py-2 font-body text-[10px] font-bold uppercase tracking-[0.14em] text-white shadow-sm transition hover:border-red-600 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-200"
                   >
-                    Soma Andi Makuru
+                    Soma Andi Makuru <span aria-hidden="true">→</span>
                   </button>
                 </div>
               )}

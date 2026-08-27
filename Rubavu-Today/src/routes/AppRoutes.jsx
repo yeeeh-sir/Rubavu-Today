@@ -14,6 +14,7 @@ import { logout, getStoredUser } from "../services/api";
 import { getUserRole, isAuthenticated } from "../utils/auth";
 import { useAuth } from "../context/AuthContext";
 import LoadingScreen from "../components/common/LoadingScreen";
+import WebsiteChat from "../components/WebsiteChat/WebsiteChat";
 
 const Home = lazy(() => import("../pages/Home"));
 const PostDetails = lazy(() => import("../pages/PostDetails"));
@@ -30,7 +31,7 @@ const EmployeeWorkspace = lazy(() => import("../pages/employee/EmployeeWorkspace
 const Profile = lazy(() => import("../pages/employee/Profile"));
 
 const PublicLayout = ({ children, showHomeContent = true }) => (
-    <><Navbar showHomeContent={showHomeContent} />{children}<Footer /></>
+    <><Navbar showHomeContent={showHomeContent} />{children}<Footer /><WebsiteChat /></>
 );
 
 const EmployeeLayout = ({ children }) => (

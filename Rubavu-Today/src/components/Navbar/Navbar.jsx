@@ -312,16 +312,16 @@ const AdCarousel = ({ ads = [] }) => {
                     m-0
                     block
                     h-auto
-                    max-h-[120px]
+                    max-h-[80px]
                     w-full
                     max-w-full
                     select-none
                     object-contain
                     object-center
                     p-0
-                    sm:max-h-[150px]
-                    md:max-h-[180px]
-                    lg:max-h-[210px]
+                    sm:max-h-[100px]
+                    md:max-h-[120px]
+                    lg:max-h-[140px]
                   "
                   loading="eager"
                   fetchPriority={
