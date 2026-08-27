@@ -157,6 +157,7 @@ export function ArticleSEO({ post }) {
       <meta property="og:title" content={title} />
       <meta property="og:description" content={description} />
       <meta property="og:image" content={image} />
+      <meta property="og:image:alt" content={title} />
       <meta property="og:url" content={articleUrl} />
       <meta property="og:site_name" content={SITE_NAME} />
       <meta property="og:locale" content="rw_RW" />
