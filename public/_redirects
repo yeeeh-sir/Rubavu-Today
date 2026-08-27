@@ -1,0 +1,11 @@
+# Dynamic sitemap generated from approved database posts
+/sitemap.xml  https://rubavu-today-backend.onrender.com/sitemap.xml  200
+
+# Proxy /post/* to backend for server-rendered OG meta tags (crawlers)
+/post/*  https://rubavu-today-backend.onrender.com/post/:splat  200
+
+# Proxy /*.html to backend for server-rendered OG meta tags (crawlers)
+/*.html  https://rubavu-today-backend.onrender.com/:splat  200
+
+# SPA fallback for all other routes
+/*  /index.html  200

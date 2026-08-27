@@ -1,0 +1,17 @@
+{
+  "short_name": "Rubavu Today",
+  "name": "Rubavu Today - Amakuru Mashya",
+  "icons": [
+    {
+      "src": "/Rubavu.jpeg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#B3261E",
+  "background_color": "#ffffff",
+  "description": "Amakuru mashya mu karere ka Rubavu n'ibindi byose."
+}
