@@ -83,16 +83,30 @@ export const normalizePost = (post) => ({
     post.approved_at || null,
 });
 
-export const getToken = () =>
-  window.localStorage.getItem("admin_token") ||
-  window.localStorage.getItem("token");
+const getStorage = () => {
+  try {
+    return window.localStorage;
+  } catch (error) {
+    console.warn("Browser storage is unavailable; continuing as signed out.");
+    return null;
+  }
+};
+
+export const getToken = () => {
+  const storage = getStorage();
+
+  return storage?.getItem("admin_token") ||
+    storage?.getItem("token") ||
+    null;
+};
 
 export const getTokenValue = () => getToken();
 
 export const getStoredUser = () => {
+  const storage = getStorage();
   const storedUser =
-    window.localStorage.getItem("admin_user") ||
-    window.localStorage.getItem("user");
+    storage?.getItem("admin_user") ||
+    storage?.getItem("user");
 
   if (!storedUser) {
     return null;
@@ -117,18 +131,24 @@ export function isLoggedIn() {
 export const isAuthenticated = () => isLoggedIn();
 
 const setAuthStorage = (token, user) => {
+  const storage = getStorage();
+
+  if (!storage) {
+    return;
+  }
+
   if (token) {
-    window.localStorage.setItem("admin_token", token);
-    window.localStorage.setItem("token", token);
+    storage.setItem("admin_token", token);
+    storage.setItem("token", token);
   }
 
   if (user) {
-    window.localStorage.setItem(
+    storage.setItem(
       "admin_user",
       JSON.stringify(user)
     );
 
-    window.localStorage.setItem(
+    storage.setItem(
       "user",
       JSON.stringify(user)
     );
@@ -136,10 +156,16 @@ const setAuthStorage = (token, user) => {
 };
 
 export const clearAuthStorage = () => {
-  window.localStorage.removeItem("admin_token");
-  window.localStorage.removeItem("admin_user");
-  window.localStorage.removeItem("token");
-  window.localStorage.removeItem("user");
+  const storage = getStorage();
+
+  if (!storage) {
+    return;
+  }
+
+  storage.removeItem("admin_token");
+  storage.removeItem("admin_user");
+  storage.removeItem("token");
+  storage.removeItem("user");
 };
 
 export const getAuthHeaders = () => {

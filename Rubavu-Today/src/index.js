@@ -1,3 +1,5 @@
+import "react-app-polyfill/stable";
+import "whatwg-fetch";
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
