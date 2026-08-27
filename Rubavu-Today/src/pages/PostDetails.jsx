@@ -645,19 +645,19 @@ export default function PostDetails() {
 
       <div className="max-w-7xl mx-auto px-3 sm:px-4 py-6">
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-5 lg:gap-6">
 
 
 
-          <aside className="print:hidden lg:col-span-1 order-2 lg:order-1">
+          <aside className="print:hidden order-2 lg:order-1 lg:col-span-1">
 
-            <div className="lg:sticky lg:top-6">
+            <div className="lg:sticky lg:top-6 lg:max-w-[240px] lg:mx-auto">
 
-              <h3 className="text-sm font-black uppercase border-l-4 border-red-600 pl-2 mb-4">
+              <h3 className="mb-3 border-l-4 border-red-600 pl-2 text-sm font-black uppercase">
                 Andi Makuru
               </h3>
 
-              <div className="space-y-4">
+              <div className="space-y-3">
 
                 {otherPosts
                   .slice(0, 6)
@@ -670,7 +670,7 @@ export default function PostDetails() {
                       <Link
                         key={pId}
                         to={`/post/${pId}`}
-                        className="flex gap-3 bg-white border border-gray-200 rounded p-2 hover:shadow-md transition"
+                        className="flex gap-3 rounded-md border border-gray-200 bg-white p-2 transition hover:shadow-sm"
                       >
 
                         {p.image && (
@@ -679,7 +679,7 @@ export default function PostDetails() {
                               p.image
                             )}
                             alt={p.title}
-                            className="w-20 h-16 object-cover rounded flex-shrink-0"
+                            className="h-16 w-20 flex-shrink-0 rounded object-cover"
                           />
                         )}
 
@@ -708,7 +708,7 @@ export default function PostDetails() {
 
           <main
             id="printable-article"
-            className="order-1 lg:order-2 lg:col-span-2 bg-white border border-gray-200 rounded-lg shadow-sm p-4 sm:p-8"
+            className="order-1 rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6 lg:order-2 lg:col-span-3 lg:p-8"
           >
 
 
@@ -849,14 +849,13 @@ export default function PostDetails() {
                   onContextMenu={
                     handleImageContextMenu
                   }
-                  className="relative overflow-hidden border bg-gray-50"
+                  className="relative overflow-hidden rounded-lg border border-gray-200 bg-gray-50 shadow-sm"
                 >
 
                   <img
                     src={getImageUrl(post.image)}
                     alt={post.title || "Rubavu Today article image"}
-                    className="w-full h-auto max-h-[80vh] object-contain select-none"
-                    style={{ aspectRatio: "16 / 9" }}
+                    className="block h-auto w-full select-none object-contain"
                     draggable="false"
                     loading="eager"
                     fetchPriority="high"
@@ -1137,15 +1136,15 @@ export default function PostDetails() {
 
 
 
-          <aside className="print:hidden lg:col-span-1 order-3">
+          <aside className="print:hidden order-3 lg:col-span-1">
 
-            <div className="lg:sticky lg:top-6">
+            <div className="lg:sticky lg:top-6 lg:max-w-[240px] lg:mx-auto">
 
-              <h3 className="text-sm font-black uppercase border-l-4 border-red-600 pl-2 mb-4">
+              <h3 className="mb-3 border-l-4 border-red-600 pl-2 text-sm font-black uppercase">
                 Izindi Nkuru
               </h3>
 
-              <div className="space-y-4">
+              <div className="space-y-3">
 
                 {otherPosts
                   .slice(6, 12)
@@ -1158,7 +1157,7 @@ export default function PostDetails() {
                       <Link
                         key={pId}
                         to={`/post/${pId}`}
-                        className="block bg-white border border-gray-200 rounded p-2 hover:shadow-md transition"
+                        className="block rounded-md border border-gray-200 bg-white p-2 transition hover:shadow-sm"
                       >
 
                         {p.image && (
@@ -1167,7 +1166,7 @@ export default function PostDetails() {
                               p.image
                             )}
                             alt={p.title}
-                            className="w-full h-28 object-cover rounded mb-2"
+                            className="mb-2 h-24 w-full rounded object-cover"
                           />
                         )}
 

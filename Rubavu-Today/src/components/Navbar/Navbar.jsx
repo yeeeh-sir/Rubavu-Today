@@ -264,9 +264,9 @@ const AdCarousel = ({ ads = [] }) => {
   return (
     <section
       aria-label="Kwamamaza"
-      className="m-0 w-full bg-white p-0"
+      className="mx-auto w-full max-w-7xl bg-white px-2 py-1 sm:px-4 sm:py-2"
     >
-      <div className="relative m-0 w-full overflow-hidden bg-white p-0">
+      <div className="relative m-0 w-full overflow-hidden rounded-sm bg-white p-0">
         <div
           className="
             flex
@@ -312,13 +312,16 @@ const AdCarousel = ({ ads = [] }) => {
                     m-0
                     block
                     h-auto
-                    max-h-[500px]
+                    max-h-[120px]
                     w-full
                     max-w-full
                     select-none
                     object-contain
                     object-center
                     p-0
+                    sm:max-h-[150px]
+                    md:max-h-[180px]
+                    lg:max-h-[210px]
                   "
                   loading="eager"
                   fetchPriority={
