@@ -3,22 +3,31 @@ import { Helmet } from "react-helmet-async";
 
 const SITE_URL = "https://rubavutoday.com";
 const SITE_NAME = "Rubavu Today";
-const DEFAULT_IMAGE = `${SITE_URL}/Rubavu.jpeg`;
+const LOGO_URL = `${SITE_URL}/Rubavu.jpeg`;
+const DEFAULT_IMAGE = LOGO_URL;
 const BACKEND_URL = "https://rubavu-today-backend.onrender.com";
 const DEFAULT_DESCRIPTION =
   "Rubavu Today - Amakuru mashya mu karere ka Rubavu n'ibindi byose. Latest news from Rubavu and beyond.";
 
 function getAbsoluteImageUrl(image) {
   if (!image) return DEFAULT_IMAGE;
-  if (image.startsWith("https://")) return image;
-  if (image.startsWith("http://")) return image.replace(/^http:\/\//, "https://");
-  if (image.startsWith("/")) return `${BACKEND_URL}${image}`;
-  return `${BACKEND_URL}/${image}`;
+
+  const value = String(image).trim();
+
+  if (!value) return DEFAULT_IMAGE;
+  if (/^https?:\/\//i.test(value)) {
+    return value.replace(/^http:\/\//i, "https://");
+  }
+  if (value.startsWith("/")) return `${SITE_URL}${value}`;
+  if (value.startsWith("uploads/")) return `${BACKEND_URL}/${value}`;
+
+  return `${BACKEND_URL}/${value.replace(/^\/+/, "")}`;
 }
 
 function cleanDescription(text) {
   if (!text) return "";
-  return text
+
+  return String(text)
     .replace(/<[^>]*>/g, "")
     .replace(/&amp;/g, "&")
     .replace(/&lt;/g, "<")
@@ -31,20 +40,12 @@ function cleanDescription(text) {
 }
 
 export function SiteSEO() {
-  const jsonLd = {
+  const orgLd = {
     "@context": "https://schema.org",
-    "@type": "NewsMediaOrganization",
+    "@type": "Organization",
     name: SITE_NAME,
     url: SITE_URL,
-    logo: {
-      "@type": "ImageObject",
-      url: DEFAULT_IMAGE,
-    },
-    sameAs: [],
-    contactPoint: {
-      "@type": "ContactPoint",
-      contactType: "customer service",
-    },
+    logo: LOGO_URL,
   };
 
   const websiteLd = {
@@ -52,6 +53,11 @@ export function SiteSEO() {
     "@type": "WebSite",
     name: SITE_NAME,
     url: SITE_URL,
+    publisher: {
+      "@type": "Organization",
+      name: SITE_NAME,
+      logo: LOGO_URL,
+    },
     potentialAction: {
       "@type": "SearchAction",
       target: `${SITE_URL}/?q={search_term_string}`,
@@ -61,14 +67,17 @@ export function SiteSEO() {
 
   return (
     <Helmet>
-      <title>{SITE_NAME} - Amakuru Mashya</title>
+      <title>{SITE_NAME} | Amakuru Mashya</title>
       <meta name="description" content={DEFAULT_DESCRIPTION} />
       <link rel="canonical" href={SITE_URL} />
+      <link rel="icon" href={LOGO_URL} type="image/jpeg" />
+      <link rel="apple-touch-icon" href={LOGO_URL} />
 
       <meta property="og:type" content="website" />
       <meta property="og:title" content={SITE_NAME} />
       <meta property="og:description" content={DEFAULT_DESCRIPTION} />
       <meta property="og:image" content={DEFAULT_IMAGE} />
+      <meta property="og:image:secure_url" content={DEFAULT_IMAGE} />
       <meta property="og:url" content={SITE_URL} />
       <meta property="og:site_name" content={SITE_NAME} />
       <meta property="og:locale" content="rw_RW" />
@@ -78,12 +87,8 @@ export function SiteSEO() {
       <meta name="twitter:description" content={DEFAULT_DESCRIPTION} />
       <meta name="twitter:image" content={DEFAULT_IMAGE} />
 
-      <script type="application/ld+json">
-        {JSON.stringify(jsonLd)}
-      </script>
-      <script type="application/ld+json">
-        {JSON.stringify(websiteLd)}
-      </script>
+      <script type="application/ld+json">{JSON.stringify(orgLd)}</script>
+      <script type="application/ld+json">{JSON.stringify(websiteLd)}</script>
     </Helmet>
   );
 }
@@ -95,8 +100,13 @@ export function ArticleSEO({ post }) {
   const description =
     cleanDescription(post.description || post.summary || "") ||
     `${title} - ${SITE_NAME}`;
-  const image = getAbsoluteImageUrl(
-    post.image || post.image_url || post.imageUrl || post.featured_image
+  const featuredImage = getAbsoluteImageUrl(
+    post.image ||
+    post.image_url ||
+    post.imageUrl ||
+    post.featured_image ||
+    post.featuredImage ||
+    null
   );
   const authorName =
     post.Author || post.author || post.author_name || "Rubavu Today";
@@ -121,13 +131,9 @@ export function ArticleSEO({ post }) {
     "@context": "https://schema.org",
     "@type": "NewsArticle",
     headline: title,
-    description: description,
-    image: image,
+    description,
+    image: featuredImage,
     url: articleUrl,
-    mainEntityOfPage: {
-      "@type": "WebPage",
-      "@id": articleUrl,
-    },
     datePublished: publishedTime,
     dateModified: modifiedTime,
     author: {
@@ -135,12 +141,13 @@ export function ArticleSEO({ post }) {
       name: authorName,
     },
     publisher: {
-      "@type": "NewsMediaOrganization",
+      "@type": "Organization",
       name: SITE_NAME,
-      logo: {
-        "@type": "ImageObject",
-        url: DEFAULT_IMAGE,
-      },
+      logo: LOGO_URL,
+    },
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": articleUrl,
     },
     isPartOf: {
       "@type": "WebSite",
@@ -158,7 +165,8 @@ export function ArticleSEO({ post }) {
       <meta property="og:type" content="article" />
       <meta property="og:title" content={title} />
       <meta property="og:description" content={description} />
-      <meta property="og:image" content={image} />
+      <meta property="og:image" content={featuredImage} />
+      <meta property="og:image:secure_url" content={featuredImage} />
       <meta property="og:image:alt" content={title} />
       <meta property="og:url" content={articleUrl} />
       <meta property="og:site_name" content={SITE_NAME} />
@@ -176,11 +184,9 @@ export function ArticleSEO({ post }) {
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content={title} />
       <meta name="twitter:description" content={description} />
-      <meta name="twitter:image" content={image} />
+      <meta name="twitter:image" content={featuredImage} />
 
-      <script type="application/ld+json">
-        {JSON.stringify(articleLd)}
-      </script>
+      <script type="application/ld+json">{JSON.stringify(articleLd)}</script>
     </Helmet>
   );
 }

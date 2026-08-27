@@ -97,7 +97,7 @@ export default function PostDetails() {
     return () => {
       mounted = false;
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, slug]);
 
 
@@ -853,12 +853,14 @@ export default function PostDetails() {
                 >
 
                   <img
-                    src={getImageUrl(
-                      post.image
-                    )}
+                    src={getImageUrl(post.image)}
                     alt={post.title || "Rubavu Today article image"}
                     className="w-full h-auto max-h-[80vh] object-contain select-none"
+                    style={{ aspectRatio: "16 / 9" }}
                     draggable="false"
+                    loading="eager"
+                    fetchPriority="high"
+                    decoding="async"
                     width="1200"
                     height="675"
                   />

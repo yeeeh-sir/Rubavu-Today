@@ -3,8 +3,10 @@
   "name": "Rubavu Today - Amakuru Mashya",
   "icons": [
     {
-      "src": "Rubavu.jpeg",
-      "type": "image/jpeg"
+      "src": "/Rubavu.jpeg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
     }
   ],
   "start_url": ".",
