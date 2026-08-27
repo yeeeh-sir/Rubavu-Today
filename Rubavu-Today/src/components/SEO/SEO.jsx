@@ -95,7 +95,9 @@ export function ArticleSEO({ post }) {
   const description =
     cleanDescription(post.description || post.summary || "") ||
     `${title} - ${SITE_NAME}`;
-  const image = getAbsoluteImageUrl(post.image);
+  const image = getAbsoluteImageUrl(
+    post.image || post.image_url || post.imageUrl || post.featured_image
+  );
   const authorName =
     post.Author || post.author || post.author_name || "Rubavu Today";
 
