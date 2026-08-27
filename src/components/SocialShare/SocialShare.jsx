@@ -6,12 +6,48 @@ function getShareUrl(post) {
   if (!post) return window.location.href;
   return post.slug
     ? `${SITE_URL}/${post.slug}.html`
-    : `${SITE_URL}/post/${post.id}`;
+    : `${SITE_URL}/post/${post.id || post._id}`;
 }
 
 export default function SocialShare({ post, compact = false }) {
   const url = getShareUrl(post);
   const title = post?.title || "Rubavu Today";
+  const imageUrl = post?.image || post?.image_url || post?.imageUrl || "";
+
+  const sharePost = async () => {
+    const shareData = {
+      title,
+      text: title,
+      url,
+    };
+
+    if (imageUrl && navigator.canShare && navigator.share) {
+      try {
+        const response = await fetch(imageUrl);
+        const imageBlob = await response.blob();
+        const imageFile = new File([imageBlob], "rubavu-today.jpg", {
+          type: imageBlob.type || "image/jpeg",
+        });
+
+        if (navigator.canShare({ files: [imageFile] })) {
+          shareData.files = [imageFile];
+        }
+      } catch (error) {
+        // Share the article link when Cloudinary is unavailable.
+      }
+    }
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch (error) {
+        // The visitor may close the share dialog.
+      }
+      return;
+    }
+
+    await navigator.clipboard?.writeText(url);
+  };
 
   const shareLinks = {
     facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
@@ -22,6 +58,15 @@ export default function SocialShare({ post, compact = false }) {
   if (compact) {
     return (
       <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={sharePost}
+          className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-red-600 text-white transition hover:opacity-80"
+          aria-label="Sangiza inkuru n'ifoto"
+          title="Sangiza inkuru n'ifoto"
+        >
+          <span aria-hidden="true">↗</span>
+        </button>
         <a
           href={shareLinks.facebook}
           target="_blank"
@@ -68,6 +113,16 @@ export default function SocialShare({ post, compact = false }) {
   return (
     <div className="flex flex-wrap items-center gap-3">
       <span className="text-sm font-semibold text-gray-700">Sangiza:</span>
+
+      <button
+        type="button"
+        onClick={sharePost}
+        className="inline-flex items-center gap-1.5 rounded bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-red-700"
+        aria-label="Sangiza inkuru n'ifoto"
+      >
+        <span aria-hidden="true">↗</span>
+        Sangiza n'ifoto
+      </button>
 
       <a
         href={shareLinks.facebook}

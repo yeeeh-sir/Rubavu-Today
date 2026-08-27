@@ -6,11 +6,11 @@ import websiteLogo from "../../Rubavu.jpeg";
 const MAX_POSTS = 200;
 
 const WEBSITE_KNOWLEDGE = `
-Rubavu Today is a news website serving Rubavu and surrounding communities.
-The public departments are Amakuru (general news), Ubukungu (business and economy), Imikino (sports), Imyidagaduro (entertainment), and Uburezi (education).
-Visitors can browse the homepage, filter news by department, search articles, open full article pages, read related stories, share articles, watch available video embeds, and post comments.
-The assistant must explain website features clearly, recommend relevant published articles, summarize only the supplied article information, and answer in the same language as the visitor.
-If a question asks about something not present in the supplied website data, say that the information is not available and direct the visitor to the website search.
+Rubavu Today ni urubuga rw'amakuru rwo muri Rubavu n'ibice biyegereye.
+Ibyiciro by'amakuru ni Amakuru, Ubukungu, Imikino, Imyidagaduro n'Uburezi.
+Abasura urubuga bashobora kureba amakuru mashya, gushakisha inkuru, gufungura inkuru yose, gusoma izifitanye isano, gusangiza inkuru, kureba amashusho no gutanga ibitekerezo.
+Umufasha asobanura imikorere y'urubuga mu buryo busobanutse, agatanga inkuru zijyanye n'ikibazo kandi agakoresha gusa amakuru yatanzwe.
+Niba igisubizo kitari mu makuru yatanzwe, abivuge mu Kinyarwanda kandi ayobore umukoresha kuri Shakisha.
 `;
 
 const cleanText = (value) => String(value || "").trim();
@@ -41,6 +41,13 @@ const getDate = (post) => {
         : "";
 };
 
+const getTime = (post) => {
+    const value = post?.createdDate || post?.created_at || post?.createdAt;
+    const time = value ? new Date(value).getTime() : 0;
+
+    return Number.isNaN(time) ? 0 : time;
+};
+
 const findPosts = (posts, question) => {
     const terms = normalize(question)
         .split(/\s+/)
@@ -69,18 +76,7 @@ const findPosts = (posts, question) => {
         .map(({ post }) => post);
 };
 
-const detectLanguage = (question) => {
-    const text = normalize(question);
-
-    if (/muraho|amakuru|ndashaka|shaka|ibyiciro|inkuru|uyu munsi|ni ayahe/.test(text)) return "rw";
-    if (/bonjour|bonsoir|merci|nouvelles|chercher|rubrique|article/.test(text)) return "fr";
-    if (/habari|asante|tafuta|makala|leo|kategoria|habari mpya/.test(text)) return "sw";
-    if (/hola|buenos|gracias|buscar|noticias|categoria|articulo/.test(text)) return "es";
-    if (/ola|obrigado|procurar|noticias|categoria|artigo/.test(text)) return "pt";
-    if (/hello|hi|latest|news|search|category|article|today|thanks/.test(text)) return "en";
-
-    return "en";
-};
+const detectLanguage = () => "rw";
 
 const localized = {
     rw: {
@@ -155,7 +151,9 @@ const answerQuestion = (question, posts) => {
     const normalizedQuestion = normalize(question);
     const language = detectLanguage(question);
     const copy = localized[language] || localized.en;
-    const latestPosts = [...posts].slice(0, 3);
+    const latestPosts = [...posts]
+        .sort((a, b) => getTime(b) - getTime(a))
+        .slice(0, 3);
     const categories = [...new Set(posts.map((post) => cleanText(post.category)).filter(Boolean))];
     const matchedPosts = findPosts(posts, question);
 
@@ -326,9 +324,16 @@ export default function WebsiteChat() {
                 throw new Error(data.error || "AI request failed");
             }
 
+            const linkedPosts = answerQuestion(text, posts).posts || [];
+
             setMessages((current) => [
                 ...current,
-                { id: `assistant-${Date.now()}`, role: "assistant", text: data.answer },
+                {
+                    id: `assistant-${Date.now()}`,
+                    role: "assistant",
+                    text: data.answer,
+                    posts: linkedPosts,
+                },
             ]);
         } catch (error) {
             const answer = answerQuestion(text, posts);
@@ -365,7 +370,7 @@ export default function WebsiteChat() {
                             </span>
                             <div>
                                 <h2 className="font-body text-sm font-bold">Rubavu Today AI</h2>
-                                <p className="text-[10px] text-slate-300">Ask about Rubavu Today</p>
+                                <p className="text-[10px] text-slate-300">Baza amakuru ya Rubavu Today</p>
                             </div>
                         </div>
                         <button
@@ -415,7 +420,7 @@ export default function WebsiteChat() {
                             <input
                                 value={question}
                                 onChange={(event) => setQuestion(event.target.value)}
-                                placeholder="Andika mu rurimi urwo ari rwo rwose..."
+                                placeholder="Andika ikibazo cyawe hano..."
                                 aria-label="Andika ikibazo"
                                 className="min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-red-500 focus:ring-2 focus:ring-red-100"
                             />
@@ -436,14 +441,14 @@ export default function WebsiteChat() {
                 type="button"
                 onClick={() => setIsOpen((current) => !current)}
                 aria-label={isOpen ? "Funga Rubavu Today AI" : "Fungura Rubavu Today AI"}
-                title={isOpen ? "Close Rubavu Today AI" : "Chat with Rubavu Today AI"}
+                title={isOpen ? "Funga umufasha wa Rubavu Today" : "Fungura umufasha wa Rubavu Today"}
                 className="group fixed bottom-4 right-3 z-[60] flex h-14 w-14 items-center justify-center rounded-full border-2 border-white bg-red-600 p-0.5 text-white shadow-lg transition hover:scale-105 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-300 sm:right-5"
             >
                 {isOpen ? (
                     <X size={21} aria-hidden="true" />
                 ) : (
                     <span className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-white">
-                        <img src={websiteLogo} alt="Rubavu Today AI" className="h-full w-full rounded-full object-cover" />
+                        <img src={websiteLogo} alt="Umufasha wa Rubavu Today" className="h-full w-full rounded-full object-cover" />
                         <span className="absolute bottom-0 right-0 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-slate-950 text-white">
                             <MessageCircle size={10} aria-hidden="true" />
                         </span>

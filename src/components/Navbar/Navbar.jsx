@@ -25,6 +25,7 @@ import {
 } from "../../services/api";
 
 import SearchBar from "../SearchBar/SearchBar";
+import AdBanner from "../common/AdBanner";
 
 
 
@@ -106,10 +107,6 @@ const formatDate = (date, short = false) => {
   );
 };
 
-
-
-
-
 const preloadAdImages = (ads = []) => {
   if (
     typeof window === "undefined" ||
@@ -130,6 +127,20 @@ const preloadAdImages = (ads = []) => {
       image.src = ad.image;
     }
   });
+};
+
+const getHighQualityAdImage = (image) => {
+  if (
+    typeof image !== "string" ||
+    !image.includes("res.cloudinary.com")
+  ) {
+    return image;
+  }
+
+  return image.replace(
+    "/upload/",
+    "/upload/f_auto,q_auto:best/"
+  );
 };
 
 const isAdCurrentlyActive = (ad) => {
@@ -261,127 +272,54 @@ const AdCarousel = ({ ads = [] }) => {
     });
   };
 
+  const renderAd = (ad, index) => {
+    if (!ad) {
+      return null;
+    }
+
+    const key = ad.id || ad._id || `advertisement-${index}`;
+    const targetUrl = String(ad.target_url || "").trim();
+    const content = (
+      <div className="relative flex aspect-[1400/180] w-full items-center justify-center overflow-hidden bg-white">
+        <img
+          src={getHighQualityAdImage(ad.image)}
+          alt={ad.title || "Kwamamaza - Rubavu Today"}
+          className="block h-full w-full select-none object-fill"
+          loading="eager"
+          fetchPriority={index === safeIndex ? "high" : "auto"}
+          decoding="async"
+          draggable="false"
+          onError={() => handleImageError(ad)}
+        />
+      </div>
+    );
+
+    return targetUrl && targetUrl.toLowerCase() !== "null" ? (
+      <a
+        key={key}
+        href={targetUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={ad.title || "Kwamamaza"}
+        className="block w-full"
+      >
+        {content}
+      </a>
+    ) : (
+      <div key={key} className="w-full">
+        {content}
+      </div>
+    );
+  };
+
   return (
     <section
       aria-label="Kwamamaza"
-      className="mx-auto w-full max-w-7xl bg-white px-2 py-1 sm:px-4 sm:py-2"
+      dir="ltr"
+      className="relative mx-auto w-full max-w-7xl bg-white p-0"
     >
-      <div className="relative m-0 w-full overflow-hidden rounded-sm bg-white p-0">
-        <div
-          className="
-            flex
-            w-full
-            transition-transform
-            duration-700
-            ease-in-out
-            will-change-transform
-          "
-          style={{
-            transform: `translateX(-${safeIndex * 100
-              }%)`,
-          }}
-        >
-          {visibleAds.map((ad, index) => {
-            const key =
-              ad.id ||
-              ad._id ||
-              `advertisement-${index}`;
-
-            const content = (
-              <div
-                className="
-                  relative
-                  m-0
-                  flex
-                  w-full
-                  shrink-0
-                  items-center
-                  justify-center
-                  overflow-hidden
-                  bg-white
-                  p-0
-                "
-              >
-                <img
-                  src={ad.image}
-                  alt={
-                    ad.title ||
-                    "Kwamamaza - Rubavu Today"
-                  }
-                  className="
-                    m-0
-                    block
-                    h-auto
-                    max-h-[80px]
-                    w-full
-                    max-w-full
-                    select-none
-                    object-contain
-                    object-center
-                    p-0
-                    sm:max-h-[100px]
-                    md:max-h-[120px]
-                    lg:max-h-[140px]
-                  "
-                  loading="eager"
-                  fetchPriority={
-                    index === safeIndex
-                      ? "high"
-                      : "auto"
-                  }
-                  decoding="async"
-                  draggable="false"
-                  onError={() =>
-                    handleImageError(ad)
-                  }
-                />
-              </div>
-            );
-
-            if (
-              ad.target_url &&
-              String(ad.target_url).trim()
-            ) {
-              return (
-                <a
-                  key={key}
-                  href={ad.target_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={
-                    ad.title ||
-                    "Kwamamaza"
-                  }
-                  className="
-                    m-0
-                    block
-                    w-full
-                    shrink-0
-                    bg-white
-                    p-0
-                  "
-                >
-                  {content}
-                </a>
-              );
-            }
-
-            return (
-              <div
-                key={key}
-                className="
-                  m-0
-                  w-full
-                  shrink-0
-                  bg-white
-                  p-0
-                "
-              >
-                {content}
-              </div>
-            );
-          })}
-        </div>
+      <div className="relative w-full lg:min-h-32">
+        {renderAd(visibleAds[safeIndex], safeIndex)}
 
         {visibleAds.length > 1 && (
           <>
@@ -391,7 +329,7 @@ const AdCarousel = ({ ads = [] }) => {
               aria-label="Kwamamaza kwabanje"
               className="
                 absolute
-                left-2
+                left-1
                 top-1/2
                 z-30
                 flex
@@ -419,7 +357,7 @@ const AdCarousel = ({ ads = [] }) => {
               aria-label="Kwamamaza gukurikira"
               className="
                 absolute
-                right-2
+                right-1
                 top-1/2
                 z-30
                 flex
@@ -444,7 +382,7 @@ const AdCarousel = ({ ads = [] }) => {
             <div
               className="
                 absolute
-                bottom-2
+                bottom-1
                 left-1/2
                 z-30
                 flex
@@ -793,24 +731,17 @@ const MixedPosts = ({
           {mixedPosts.length}
         </span>
       </div>
-
       <div className="grid grid-cols-2 gap-2 sm:gap-2.5 lg:grid-cols-3 lg:gap-2.5">
-        {mixedPosts.map(
-          (post, index) => (
+        {mixedPosts.map((post, index) => (
+          <React.Fragment key={`${getPostId(post, index)}-mixed-${index}`}>
             <SmallPostCard
-              key={`${getPostId(
-                post,
-                index
-              )}-mixed-${index}`}
               post={post}
               index={index}
-              matchedPostId={
-                matchedPostId
-              }
+              matchedPostId={matchedPostId}
               postRefs={postRefs}
             />
-          )
-        )}
+          </React.Fragment>
+        ))}
       </div>
 
       <p className="mt-3 font-body text-[7px] font-semibold uppercase tracking-[0.12em] text-slate-400">
@@ -819,7 +750,6 @@ const MixedPosts = ({
     </section>
   );
 };
-
 /* =========================================================
    TOP FIVE SLIDER
 ========================================================= */
@@ -1247,6 +1177,7 @@ const NewsPostsLayout = ({
             }
             postRefs={postRefs}
           />
+
         </div>
 
         <aside className="order-2 min-w-0 lg:col-span-5">
@@ -1502,7 +1433,7 @@ const Navbar = ({ showHomeContent = true }) => {
                   ad.image.trim() !==
                   ""
                 );
-              })
+              }).slice(0, 1)
               : [];
 
           setAdvertisements(
@@ -2288,47 +2219,46 @@ const Navbar = ({ showHomeContent = true }) => {
 
 
 
-          {advertisements.length > 0 && (
-            <div className="m-0 w-full bg-white p-0">
-              <AdCarousel
-                ads={
-                  advertisements
-                }
-              />
-            </div>
-          )}
-
-
-
-          <div className="px-3 pt-5 sm:px-6 sm:pt-6 lg:px-10">
-            {loading ? (
-              <div className="py-20 text-center font-body text-slate-500">
-                Tegereza gato,
-                amakuru arimo
-                gushakwa...
-              </div>
-            ) : sortedPosts.length ===
-              0 ? (
-              <div className="py-20 text-center font-body text-slate-500">
-                Nta makuru aboneka
-                muri iki cyiciro.
-              </div>
+          <div className="m-0 w-full bg-white p-0">
+            {advertisements.length > 0 ? (
+              <AdCarousel ads={advertisements} />
             ) : (
-              <NewsPostsLayout
-                posts={
-                  sortedPosts
-                }
-                matchedPostId={
-                  matchedPostId
-                }
-                postRefs={
-                  postRefs
-                }
-              />
+              <AdBanner size="728x90" label="Kwamamaza" />
             )}
+
+
+
+            <div className="px-3 pt-5 sm:px-6 sm:pt-6 lg:px-10">
+              {loading ? (
+                <div className="py-20 text-center font-body text-slate-500">
+                  Tegereza gato,
+                  amakuru arimo
+                  gushakwa...
+                </div>
+              ) : sortedPosts.length ===
+                0 ? (
+                <div className="py-20 text-center font-body text-slate-500">
+                  Nta makuru aboneka
+                  muri iki cyiciro.
+                </div>
+              ) : (
+                <NewsPostsLayout
+                  posts={
+                    sortedPosts
+                  }
+                  matchedPostId={
+                    matchedPostId
+                  }
+                  postRefs={
+                    postRefs
+                  }
+                />
+              )}
+            </div>
           </div>
         </main>
       )}
+
     </div>
   );
 };
