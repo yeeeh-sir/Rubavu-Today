@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { Link, useParams, useLocation } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import rubavuLogo from "../Rubavu.jpeg";
 import { API_ROOT as API_URL, commitCommentReaction } from "../services/api";
 import { ArticleSEO } from "../components/SEO/SEO";
@@ -9,7 +9,6 @@ import SocialShare from "../components/SocialShare/SocialShare";
 
 export default function PostDetails() {
   const { id, slug } = useParams();
-  const location = useLocation();
 
   const [post, setPost] = useState(null);
   const [allPosts, setAllPosts] = useState([]);
@@ -179,17 +178,6 @@ export default function PostDetails() {
         if (!mounted) return;
 
         setPost(postData);
-
-        if (
-          !slug &&
-          id &&
-          postData &&
-          postData.slug &&
-          location.pathname !== `/${postData.slug}.html`
-        ) {
-          window.location.replace(`/${postData.slug}.html`);
-          return;
-        }
 
         const commentList = Array.isArray(commentsData)
           ? commentsData

@@ -6,7 +6,7 @@ const SITE_NAME = "Rubavu Today";
 function getShareUrl(post) {
   if (!post) return window.location.href;
   return post.slug
-    ? `${SITE_URL}/${post.slug}.html`
+    ? `${SITE_URL}/${post.slug}`
     : `${SITE_URL}/post/${post.id || post._id || ""}`;
 }
 

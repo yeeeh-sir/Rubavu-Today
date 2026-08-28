@@ -19,7 +19,7 @@ const postTitle = (post) => cleanText(post?.title) || "Inkuru ya Rubavu Today";
 
 const postHref = (post) =>
     post?.slug
-        ? `/${post.slug}.html`
+        ? `/${post.slug}`
         : `/post/${post?.id || post?._id || ""}`;
 
 const normalize = (value) =>

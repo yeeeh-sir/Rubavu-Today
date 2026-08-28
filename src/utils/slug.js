@@ -44,5 +44,5 @@ export function getArticleUrl(postOrSlug) {
         return "/";
     }
 
-    return `/${slug}.html`;
+    return `/${slug}`;
 }
