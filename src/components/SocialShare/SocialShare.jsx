@@ -15,12 +15,9 @@ function buildNativeShareText(post, url) {
   return `${title}\n\n${url}`;
 }
 
-function buildLinkShareText(post, url, imageUrl) {
+function buildLinkShareText(post, url) {
   const title = post?.title || SITE_NAME;
   const parts = [`${SITE_NAME} | ${title}`, "", url];
-  if (imageUrl) {
-    parts.push("", imageUrl);
-  }
   return parts.join("\n");
 }
 
@@ -29,7 +26,7 @@ export default function SocialShare({ post, compact = false }) {
   const title = post?.title || SITE_NAME;
   const imageUrl = post?.image || post?.image_url || post?.imageUrl || "";
   const nativeText = buildNativeShareText(post, url);
-  const linkText = buildLinkShareText(post, url, imageUrl);
+  const linkText = buildLinkShareText(post, url);
 
   const sharePost = async () => {
     const shareData = {
@@ -69,7 +66,7 @@ export default function SocialShare({ post, compact = false }) {
   const shareLinks = {
     facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}&quote=${encodeURIComponent(title + " — " + SITE_NAME)}`,
     whatsapp: `https://wa.me/?text=${encodeURIComponent(linkText)}`,
-    twitter: `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title + "\n" + (imageUrl ? imageUrl + "\n" : "") + SITE_NAME)}`,
+    twitter: `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title + "\n" + SITE_NAME)}`,
   };
 
   if (compact) {
