@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { Link, useParams, useLocation } from "react-router-dom";
 import rubavuLogo from "../Rubavu.jpeg";
-import { API_ROOT as API_URL, toggleCommentLike } from "../services/api";
+import { API_ROOT as API_URL, commitCommentReaction } from "../services/api";
 import { ArticleSEO } from "../components/SEO/SEO";
 import SocialShare from "../components/SocialShare/SocialShare";
 
@@ -23,70 +23,115 @@ export default function PostDetails() {
   const [replyText, setReplyText] = useState("");
   const [replyName, setReplyName] = useState("");
 
-  const [likedComments, setLikedComments] = useState(() => {
+  const [reactions, setReactions] = useState(() => {
     try {
-      const stored = localStorage.getItem("rubavu_liked_comments");
-      return stored ? new Set(JSON.parse(stored)) : new Set();
+      const stored = localStorage.getItem("rubavu_comment_reactions");
+      return stored ? JSON.parse(stored) : {};
     } catch {
-      return new Set();
+      return {};
     }
   });
 
-  const persistLikedComments = (next) => {
-    setLikedComments(new Set(next));
+  const getDeviceId = () => {
+    let id = localStorage.getItem("rubavu_device_id");
+    if (!id) {
+      id = (
+        "dv-" +
+        Date.now().toString(36) +
+        "-" +
+        Math.random().toString(36).slice(2, 12)
+      );
+      localStorage.setItem("rubavu_device_id", id);
+    }
+    return id;
+  };
+  const myDeviceId = getDeviceId();
+
+  const persistReactions = (next) => {
+    setReactions(next);
     localStorage.setItem(
-      "rubavu_liked_comments",
-      JSON.stringify([...next])
+      "rubavu_comment_reactions",
+      JSON.stringify(next)
     );
   };
 
-  const handleLikeComment = async (commentId, e) => {
+  const applyCommentReaction = (comment, commentId, action) => {
+    if (!commentId) return comment;
+    const previous = comment.my_reaction || null;
+    const nextAction =
+      previous === action ? null : action;
+
+    let likes = comment.likes || 0;
+    let dislikes = comment.dislikes || 0;
+
+    if (previous === "like") likes -= 1;
+    if (previous === "dislike") dislikes -= 1;
+    if (nextAction === "like") likes += 1;
+    if (nextAction === "dislike") dislikes += 1;
+
+    return {
+      ...comment,
+      likes: Math.max(0, likes),
+      dislikes: Math.max(0, dislikes),
+      my_reaction: nextAction,
+    };
+  };
+
+  const handleCommentReaction = async (commentId, action, e) => {
     if (e) e.stopPropagation();
     if (!commentId) return;
 
-    const liked = !likedComments.has(commentId);
-    const next = new Set(likedComments);
-    if (liked) {
-      next.add(commentId);
-    } else {
-      next.delete(commentId);
-    }
-
-    setComments((prev) =>
-      prev.map((c) =>
-        c.id === commentId
-          ? {
-            ...c,
-            likes: Math.max(
-              0,
-              (c.likes || 0) + (liked ? 1 : -1)
-            ),
-          }
-          : c
-      )
+    const comment = comments.find((c) => c.id === commentId);
+    const previous = comment?.my_reaction || null;
+    const nextAction = previous === action ? null : action;
+    const optimistic = applyCommentReaction(
+      comment,
+      commentId,
+      action
     );
 
-    persistLikedComments(next);
+    setComments((prev) =>
+      prev.map((c) => (c.id === commentId ? optimistic : c))
+    );
+
+    const nextReactions = {
+      ...reactions,
+      [commentId]: nextAction,
+    };
+    persistReactions(nextReactions);
 
     try {
-      await toggleCommentLike(commentId, liked);
-    } catch (error) {
-      const rollback = new Set(next);
-      if (liked) {
-        rollback.delete(commentId);
-      } else {
-        rollback.add(commentId);
-      }
-      persistLikedComments(rollback);
+      const result = await commitCommentReaction(
+        commentId,
+        nextAction || "none",
+        myDeviceId
+      );
       setComments((prev) =>
         prev.map((c) =>
           c.id === commentId
             ? {
               ...c,
-              likes: Math.max(
-                0,
-                (c.likes || 0) + (liked ? -1 : 1)
-              ),
+              likes: result.likes,
+              dislikes: result.dislikes,
+              my_reaction: result.my_reaction,
+            }
+            : c
+        )
+      );
+    } catch (error) {
+      const rollback = {
+        ...reactions,
+        [commentId]: previous,
+      };
+      persistReactions(rollback);
+      setComments((prev) =>
+        prev.map((c) =>
+          c.id === commentId
+            ? {
+              ...c,
+              likes: comment.likes || 0,
+              dislikes: comment.dislikes || 0,
+              my_reaction: previous,
             }
             : c
         )
@@ -124,7 +169,11 @@ export default function PostDetails() {
         const postData = await postRes.json();
         const allPostsData = await postsRes.json();
         const postId = postData?._id || postData?.id || id || slug;
-        const commentsRes = await fetch(`${API_URL}/api/comments/${postId}`);
+        const commentsRes = await fetch(
+          `${API_URL}/api/comments/${postId}?device_id=${encodeURIComponent(
+            myDeviceId
+          )}`
+        );
         const commentsData = await commentsRes.json();
 
         if (!mounted) return;
@@ -142,9 +191,18 @@ export default function PostDetails() {
           return;
         }
 
-        setComments(
-          Array.isArray(commentsData) ? commentsData : []
-        );
+        const commentList = Array.isArray(commentsData)
+          ? commentsData
+          : [];
+        setComments(commentList);
+
+        const merged = { ...reactions };
+        commentList.forEach((c) => {
+          if (c.my_reaction) {
+            merged[String(c.id)] = c.my_reaction;
+          }
+        });
+        persistReactions(merged);
 
         setAllPosts(
           Array.isArray(allPostsData) ? allPostsData : []
@@ -1103,26 +1161,45 @@ export default function PostDetails() {
 
                           <button
                             onClick={(e) =>
-                              handleLikeComment(
+                              handleCommentReaction(
                                 comment.id,
+                                "like",
                                 e
                               )
                             }
                             className={`ml-2 text-xs font-semibold ${
-                              likedComments.has(
-                                comment.id
-                              )
+                              reactions[comment.id] ===
+                              "like"
                                 ? "text-red-600"
                                 : "text-gray-500 hover:text-red-600"
                             }`}
-                            aria-label="Kunda cyangwa ukure icyifuzo"
+                            aria-label="Kunda ibitekerezo"
+                            title="Kunda"
                           >
-                            {likedComments.has(
-                              comment.id
-                            )
-                              ? "❤️"
-                              : "🤍"}{" "}
+                            👍{" "}
                             {comment.likes ||
+                              0}
+                          </button>
+
+                          <button
+                            onClick={(e) =>
+                              handleCommentReaction(
+                                comment.id,
+                                "dislike",
+                                e
+                              )
+                            }
+                            className={`ml-2 text-xs font-semibold ${
+                              reactions[comment.id] ===
+                              "dislike"
+                                ? "text-blue-600"
+                                : "text-gray-500 hover:text-blue-600"
+                            }`}
+                            aria-label="Utanze ibitekerezo"
+                            title="Ntanze"
+                          >
+                            👎{" "}
+                            {comment.dislikes ||
                               0}
                           </button>
 
@@ -1213,30 +1290,51 @@ export default function PostDetails() {
                                         }
                                       </p>
 
-                                      <button
-                                        onClick={(e) =>
-                                          handleLikeComment(
-                                            reply.id,
-                                            e
-                                          )
-                                        }
-                                        className={`mt-1 text-[10px] font-semibold ${
-                                          likedComments.has(
-                                            reply.id
-                                          )
-                                            ? "text-red-600"
-                                            : "text-gray-500 hover:text-red-600"
-                                        }`}
-                                        aria-label="Kunda cyangwa ukure icyifuzo"
-                                      >
-                                        {likedComments.has(
-                                          reply.id
-                                        )
-                                          ? "❤️"
-                                          : "🤍"}{" "}
-                                        {reply.likes ||
-                                          0}
-                                      </button>
+                                      <div className="mt-1 flex items-center gap-2">
+                                        <button
+                                          onClick={(e) =>
+                                            handleCommentReaction(
+                                              reply.id,
+                                              "like",
+                                              e
+                                            )
+                                          }
+                                          className={`text-[10px] font-semibold ${
+                                            reactions[reply.id] ===
+                                            "like"
+                                              ? "text-red-600"
+                                              : "text-gray-500 hover:text-red-600"
+                                          }`}
+                                          aria-label="Kunda igisubizo"
+                                          title="Kunda"
+                                        >
+                                          👍{" "}
+                                          {reply.likes ||
+                                            0}
+                                        </button>
+
+                                        <button
+                                          onClick={(e) =>
+                                            handleCommentReaction(
+                                              reply.id,
+                                              "dislike",
+                                              e
+                                            )
+                                          }
+                                          className={`text-[10px] font-semibold ${
+                                            reactions[reply.id] ===
+                                            "dislike"
+                                              ? "text-blue-600"
+                                              : "text-gray-500 hover:text-blue-600"
+                                          }`}
+                                          aria-label="Utanze igisubizo"
+                                          title="Ntanze"
+                                        >
+                                          👎{" "}
+                                          {reply.dislikes ||
+                                            0}
+                                        </button>
+                                      </div>
 
                                     </div>
                                   )

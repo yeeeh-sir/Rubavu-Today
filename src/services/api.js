@@ -688,6 +688,16 @@ export async function toggleCommentLike(commentId, liked) {
   });
 }
 
+export async function commitCommentReaction(commentId, action, deviceId) {
+  return request(`/api/comments/${commentId}/reaction`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ action, device_id: deviceId }),
+  });
+}
+
 export async function getEmployees() {
   return request("/api/employees");
 }
@@ -1084,6 +1094,7 @@ const api = {
   updateComment,
   deleteComment,
   toggleCommentLike,
+  commitCommentReaction,
 
   getEmployees,
   getEmployeeById,

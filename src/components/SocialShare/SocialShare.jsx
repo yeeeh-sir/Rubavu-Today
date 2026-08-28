@@ -10,45 +10,31 @@ function getShareUrl(post) {
     : `${SITE_URL}/post/${post.id || post._id || ""}`;
 }
 
-function stripHtml(html) {
-  if (!html) return "";
-  return String(html)
-    .replace(/<[^>]*>/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#0?39;/g, "'")
-    .replace(/&nbsp;/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function getPostText(post) {
-  return (
-    stripHtml(post?.description) ||
-    stripHtml(post?.content) ||
-    stripHtml(post?.summary) ||
-    ""
-  );
-}
-
-function buildShareText(post, url) {
+function buildNativeShareText(post, url) {
   const title = post?.title || SITE_NAME;
-  const text = getPostText(post) || `Soma inkuru yose kuri ${SITE_NAME}.`;
-  return `${SITE_NAME} | ${title}\n\n${text}\n\n🌍 ${SITE_URL}\n🔗 ${url}`;
+  return `${title}\n\n${url}`;
+}
+
+function buildLinkShareText(post, url, imageUrl) {
+  const title = post?.title || SITE_NAME;
+  const parts = [`${SITE_NAME} | ${title}`, "", url];
+  if (imageUrl) {
+    parts.push("", imageUrl);
+  }
+  return parts.join("\n");
 }
 
 export default function SocialShare({ post, compact = false }) {
   const url = getShareUrl(post);
   const title = post?.title || SITE_NAME;
   const imageUrl = post?.image || post?.image_url || post?.imageUrl || "";
-  const shareText = buildShareText(post, url);
+  const nativeText = buildNativeShareText(post, url);
+  const linkText = buildLinkShareText(post, url, imageUrl);
 
   const sharePost = async () => {
     const shareData = {
       title,
-      text: shareText,
+      text: nativeText,
       url,
     };
 
@@ -81,9 +67,9 @@ export default function SocialShare({ post, compact = false }) {
   };
 
   const shareLinks = {
-    facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
-    whatsapp: `https://wa.me/?text=${encodeURIComponent(shareText)}`,
-    twitter: `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title + " — " + SITE_NAME)}`,
+    facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}&quote=${encodeURIComponent(title + " — " + SITE_NAME)}`,
+    whatsapp: `https://wa.me/?text=${encodeURIComponent(linkText)}`,
+    twitter: `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title + "\n" + (imageUrl ? imageUrl + "\n" : "") + SITE_NAME)}`,
   };
 
   if (compact) {

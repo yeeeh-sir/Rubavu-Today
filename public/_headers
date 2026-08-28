@@ -1,0 +1,36 @@
+/*
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: geolocation=(), microphone=(), camera=()
+
+# Hashed/immutable build assets -> cache for a year, NO revalidation
+/static/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Static images & fonts already cached by immutable rules stay fast
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Frequently reused small files
+/favicon.ico
+  Cache-Control: public, max-age=604800
+
+/favicon.jpg
+  Cache-Control: public, max-age=604800
+
+/Rubavu.jpeg
+  Cache-Control: public, max-age=604800
+
+/manifest.json
+  Cache-Control: public, max-age=86400
+
+/robots.txt
+  Cache-Control: public, max-age=86400
+
+# HTML entry point -> always check for a newer version (fast 304 on refresh)
+/*
+  Cache-Control: no-cache
+
+/*.html
+  Cache-Control: no-cache
