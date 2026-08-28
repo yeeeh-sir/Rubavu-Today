@@ -67,12 +67,13 @@ export function SiteSEO() {
 
   return (
     <Helmet>
-      <title>{SITE_NAME} | Amakuru Mashya</title>
+      <title>{SITE_NAME}</title>
       <meta name="description" content={DEFAULT_DESCRIPTION} />
       <link rel="canonical" href={SITE_URL} />
-      <link rel="icon" href={`${SITE_URL}/favicon.jpg`} type="image/jpeg" />
       <link rel="icon" href={`${SITE_URL}/favicon.ico`} sizes="any" />
-      <link rel="apple-touch-icon" href={`${SITE_URL}/favicon.jpg`} />
+      <link rel="icon" type="image/png" sizes="32x32" href={`${SITE_URL}/favicon-32x32.png`} />
+      <link rel="icon" type="image/png" sizes="48x48" href={`${SITE_URL}/favicon-48x48.png`} />
+      <link rel="apple-touch-icon" sizes="192x192" href={`${SITE_URL}/favicon-192x192.png`} />
 
       <meta property="og:type" content="website" />
       <meta property="og:title" content={SITE_NAME} />
