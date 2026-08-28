@@ -17,10 +17,10 @@ const cleanText = (value) => String(value || "").trim();
 
 const postTitle = (post) => cleanText(post?.title) || "Inkuru ya Rubavu Today";
 
-const postHref = (post) =>
-    post?.slug
-        ? `/${post.slug}.html`
-        : `/post/${post?.id || post?._id || ""}`;
+const postHref = (post) => {
+    const postId = post?.id || post?._id;
+    return postId ? `/post/${postId}` : "/";
+};
 
 const normalize = (value) =>
     cleanText(value)

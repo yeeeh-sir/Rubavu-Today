@@ -250,23 +250,6 @@ const AdminDashboard = ({
 
     useEffect(() => {
         loadPosts();
-
-        const interval = setInterval(async () => {
-            try {
-                await loadPosts(true);
-
-                try {
-                    const ads = await getAdvertisements();
-                    setAdvertisements(Array.isArray(ads) ? ads : []);
-                } catch (err) {
-                    console.error("poll advertisements", err);
-                }
-            } catch (err) {
-                console.error("polling loadPosts", err);
-            }
-        }, 8000);
-
-        return () => clearInterval(interval);
     }, [loadPosts]);
 
 

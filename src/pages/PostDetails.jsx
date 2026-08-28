@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
-import { Link, useParams, useLocation } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import rubavuLogo from "../Rubavu.jpeg";
-import { API_ROOT as API_URL, commitCommentReaction } from "../services/api";
+import { API_ROOT as API_URL, getPostById, getPosts, commitCommentReaction } from "../services/api";
 import { ArticleSEO } from "../components/SEO/SEO";
 import SocialShare from "../components/SocialShare/SocialShare";
 
@@ -9,12 +9,13 @@ import SocialShare from "../components/SocialShare/SocialShare";
 
 export default function PostDetails() {
   const { id, slug } = useParams();
-  const location = useLocation();
 
   const [post, setPost] = useState(null);
   const [allPosts, setAllPosts] = useState([]);
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [reloadKey, setReloadKey] = useState(0);
   const [commentStatus, setCommentStatus] = useState("");
 
   const [name, setName] = useState("");
@@ -150,25 +151,56 @@ export default function PostDetails() {
 
 
   useEffect(() => {
-    let mounted = true;
+    let cancelled = false;
 
-    const loadData = async () => {
+    const loadArticle = async () => {
       setLoading(true);
+      setError("");
 
       try {
-        const targetSlug = slug || id;
-        const endpoint = targetSlug && !/^\d+$/.test(String(targetSlug))
-          ? `${API_URL}/api/posts/slug/${encodeURIComponent(String(targetSlug).replace(/\.html$/i, ''))}`
-          : `${API_URL}/api/posts/${id}`;
+        const numericId = /^\d+$/.test(String(id || "").trim())
+          ? String(id).trim()
+          : null;
 
-        const [postRes, postsRes] = await Promise.all([
-          fetch(endpoint),
-          fetch(`${API_URL}/api/posts`),
-        ]);
+        let postData = null;
+        let all = [];
 
-        const postData = await postRes.json();
-        const allPostsData = await postsRes.json();
-        const postId = postData?._id || postData?.id || id || slug;
+        if (numericId) {
+          postData = await getPostById(numericId);
+          if (cancelled) return;
+          const list = await getPosts();
+          if (cancelled) return;
+          all = Array.isArray(list) ? list : [];
+        } else if (slug) {
+          const slugValue = String(slug)
+            .replace(/\.html$/i, "")
+            .trim()
+            .toLowerCase();
+
+          const list = await getPosts();
+          if (cancelled) return;
+          all = Array.isArray(list) ? list : [];
+
+          postData =
+            all.find(
+              (p) =>
+                String(p.slug || "").toLowerCase() === slugValue
+            ) || null;
+        }
+
+        if (cancelled) return;
+
+        if (!postData) {
+          setLoading(false);
+          setPost(null);
+          setComments([]);
+          return;
+        }
+
+        setPost(postData);
+
+        const postId = postData.id ?? postData._id;
+
         const commentsRes = await fetch(
           `${API_URL}/api/comments/${postId}?device_id=${encodeURIComponent(
             myDeviceId
@@ -176,20 +208,7 @@ export default function PostDetails() {
         );
         const commentsData = await commentsRes.json();
 
-        if (!mounted) return;
-
-        setPost(postData);
-
-        if (
-          !slug &&
-          id &&
-          postData &&
-          postData.slug &&
-          location.pathname !== `/${postData.slug}.html`
-        ) {
-          window.location.replace(`/${postData.slug}.html`);
-          return;
-        }
+        if (cancelled) return;
 
         const commentList = Array.isArray(commentsData)
           ? commentsData
@@ -204,32 +223,34 @@ export default function PostDetails() {
         });
         persistReactions(merged);
 
-        setAllPosts(
-          Array.isArray(allPostsData) ? allPostsData : []
-        );
-
+        setAllPosts(all);
         setLoading(false);
 
         window.scrollTo({
           top: 0,
           behavior: "smooth",
         });
-      } catch (error) {
-        console.error("Ikibazo mu gushaka amakuru:", error);
+      } catch (err) {
+        console.error("Ikibazo mu gushaka amakuru:", err);
 
-        if (mounted) {
-          setLoading(false);
-        }
+        if (cancelled) return;
+
+        setLoading(false);
+        setPost(null);
+        setComments([]);
+        setError(
+          "Habaye ikibazo mu kohereza inkuru. Ongera ugerageze."
+        );
       }
     };
 
-    loadData();
+    loadArticle();
 
     return () => {
-      mounted = false;
+      cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, slug]);
+  }, [id, slug, reloadKey]);
 
 
 
@@ -557,6 +578,36 @@ export default function PostDetails() {
 
 
 
+  if (error) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
+        <h2 className="text-2xl font-bold text-gray-800 mb-4">
+          Habaye ikibazo
+        </h2>
+
+        <p className="text-gray-600 mb-6">{error}</p>
+
+        <div className="flex gap-4">
+          <button
+            type="button"
+            onClick={() => setReloadKey((k) => k + 1)}
+            className="rounded bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700"
+          >
+            Ongera Ugerageze
+          </button>
+
+          <Link
+            to="/"
+            className="rounded border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-100"
+          >
+            ← Subira ku Ahabanza
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+
 
   if (!post || post.error) {
     return (
@@ -574,6 +625,7 @@ export default function PostDetails() {
       </div>
     );
   }
+
 
 
 

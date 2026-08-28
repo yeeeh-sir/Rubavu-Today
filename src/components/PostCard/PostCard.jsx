@@ -29,8 +29,8 @@ const PostCard = ({ post }) => {
 
   const getPostSlugPath = (entry) => {
     if (!entry) return "/";
-    const slug = entry.slug || entry.title || "";
-    return slug ? `/${slug}.html` : `/post/${entry.id}`;
+    const postId = entry.id || entry._id;
+    return postId ? `/post/${postId}` : "/";
   };
 
   const handleShare = async (e) => {

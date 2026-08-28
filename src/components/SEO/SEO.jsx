@@ -113,9 +113,10 @@ export function ArticleSEO({ post }) {
   const authorName =
     post.Author || post.author || post.author_name || "Rubavu Today";
 
-  const articleUrl = post.slug
-    ? `${SITE_URL}/${post.slug}.html`
-    : `${SITE_URL}/post/${post.id}`;
+  const postId = post.id || post._id;
+  const articleUrl = postId
+    ? `${SITE_URL}/post/${postId}`
+    : SITE_URL;
 
   const postDate =
     post.createdDate || post.created_at || post.createdAt || post.date;

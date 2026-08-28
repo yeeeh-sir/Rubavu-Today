@@ -33,16 +33,12 @@ export function getArticleUrl(postOrSlug) {
         return "/";
     }
 
-    const slugSource =
-        typeof postOrSlug === "string"
-            ? postOrSlug
-            : postOrSlug.slug || postOrSlug.title || "";
-
-    const slug = String(slugSource).replace(/\.html$/i, "").trim();
-
-    if (!slug) {
-        return "/";
+    if (typeof postOrSlug === "string") {
+        const slug = String(postOrSlug).replace(/\.html$/i, "").trim();
+        return slug ? `/${slug}.html` : "/";
     }
 
-    return `/${slug}.html`;
+    const postId = postOrSlug.id || postOrSlug._id;
+
+    return postId ? `/post/${postId}` : "/";
 }
