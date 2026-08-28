@@ -1,0 +1,24 @@
+{
+  "rewrites": [
+    {
+      "source": "/sitemap.xml",
+      "destination": "https://rubavu-today-backend.onrender.com/sitemap.xml"
+    },
+    {
+      "source": "/api/:path*",
+      "destination": "https://rubavu-today-backend.onrender.com/api/:path*"
+    },
+    {
+      "source": "/:slug.html",
+      "destination": "https://rubavu-today-backend.onrender.com/:slug.html"
+    },
+    {
+      "source": "/article/:slug",
+      "destination": "https://rubavu-today-backend.onrender.com/:slug.html"
+    },
+    {
+      "source": "/:path*",
+      "destination": "/index.html"
+    }
+  ]
+}
