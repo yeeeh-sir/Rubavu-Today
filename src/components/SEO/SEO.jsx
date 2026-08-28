@@ -2,7 +2,7 @@ import React from "react";
 import { Helmet } from "react-helmet-async";
 import { getPostSlug } from "../../utils/slug";
 
-const SITE_URL = "https://rubavutoday.com";
+const SITE_URL = "https://www.rubavutoday.com";
 const SITE_NAME = "Rubavu Today";
 const LOGO_URL = `${SITE_URL}/Rubavu.jpeg`;
 const DEFAULT_IMAGE = LOGO_URL;
@@ -116,7 +116,7 @@ export function ArticleSEO({ post }) {
 
   const postSlug = getPostSlug(post);
   const articleUrl = postSlug
-    ? `${SITE_URL}/${postSlug}`
+    ? `${SITE_URL}/${postSlug}.html`
     : SITE_URL;
 
   const postDate =
@@ -173,6 +173,8 @@ export function ArticleSEO({ post }) {
       <meta property="og:image:secure_url" content={featuredImage} />
       <meta property="og:image:alt" content={title} />
       <meta property="og:image:type" content="image/jpeg" />
+      <meta property="og:image:width" content="1200" />
+      <meta property="og:image:height" content="630" />
       <meta property="og:url" content={articleUrl} />
       <meta property="og:site_name" content={SITE_NAME} />
       <meta property="og:locale" content="rw_RW" />

@@ -58,10 +58,10 @@ export function getArticleUrl(postOrSlug) {
             .trim()
             .replace(/\/+$/, "");
 
-        return slug ? `/${slug}` : "/";
+        return slug ? `/${slug}.html` : "/";
     }
 
     const slug = getPostSlug(postOrSlug);
 
-    return slug ? `/${slug}` : "/";
+    return slug ? `/${slug}.html` : "/";
 }

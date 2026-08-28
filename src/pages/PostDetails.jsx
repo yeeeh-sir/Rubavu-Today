@@ -185,7 +185,7 @@ export default function PostDetails() {
 
           const canonicalSlug = getPostSlug(postData);
           if (canonicalSlug) {
-            navigate(`/${canonicalSlug}`, { replace: true });
+            navigate(`/${canonicalSlug}.html`, { replace: true });
           }
           return;
         }
