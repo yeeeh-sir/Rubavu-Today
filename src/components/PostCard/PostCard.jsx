@@ -30,7 +30,7 @@ const PostCard = ({ post }) => {
   const getPostSlugPath = (entry) => {
     if (!entry) return "/";
     const slug = entry.slug || entry.title || "";
-    return slug ? `/${slug}` : `/post/${entry.id}`;
+    return slug ? `/${slug}.html` : `/post/${entry.id}`;
   };
 
   const handleShare = async (e) => {
