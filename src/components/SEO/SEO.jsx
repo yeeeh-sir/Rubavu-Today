@@ -70,8 +70,9 @@ export function SiteSEO() {
       <title>{SITE_NAME} | Amakuru Mashya</title>
       <meta name="description" content={DEFAULT_DESCRIPTION} />
       <link rel="canonical" href={SITE_URL} />
-      <link rel="icon" href={LOGO_URL} type="image/jpeg" />
-      <link rel="apple-touch-icon" href={LOGO_URL} />
+      <link rel="icon" href={`${SITE_URL}/favicon.jpg`} type="image/jpeg" />
+      <link rel="icon" href={`${SITE_URL}/favicon.ico`} sizes="any" />
+      <link rel="apple-touch-icon" href={`${SITE_URL}/favicon.jpg`} />
 
       <meta property="og:type" content="website" />
       <meta property="og:title" content={SITE_NAME} />
@@ -168,6 +169,7 @@ export function ArticleSEO({ post }) {
       <meta property="og:image" content={featuredImage} />
       <meta property="og:image:secure_url" content={featuredImage} />
       <meta property="og:image:alt" content={title} />
+      <meta property="og:image:type" content="image/jpeg" />
       <meta property="og:url" content={articleUrl} />
       <meta property="og:site_name" content={SITE_NAME} />
       <meta property="og:locale" content="rw_RW" />
@@ -185,6 +187,7 @@ export function ArticleSEO({ post }) {
       <meta name="twitter:title" content={title} />
       <meta name="twitter:description" content={description} />
       <meta name="twitter:image" content={featuredImage} />
+      <meta name="twitter:image:alt" content={title} />
 
       <script type="application/ld+json">{JSON.stringify(articleLd)}</script>
     </Helmet>

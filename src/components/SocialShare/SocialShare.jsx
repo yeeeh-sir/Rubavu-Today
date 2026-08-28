@@ -6,7 +6,7 @@ function getShareUrl(post) {
   if (!post) return window.location.href;
   return post.slug
     ? `${SITE_URL}/${post.slug}.html`
-    : `${SITE_URL}/post/${post.id || post._id}`;
+    : `${SITE_URL}/post/${post.id || post._id || ""}`;
 }
 
 export default function SocialShare({ post, compact = false }) {
@@ -17,7 +17,7 @@ export default function SocialShare({ post, compact = false }) {
   const sharePost = async () => {
     const shareData = {
       title,
-      text: title,
+      text: `${title}\n${url}`,
       url,
     };
 
