@@ -678,6 +678,16 @@ export async function deleteComment(id) {
   });
 }
 
+export async function toggleCommentLike(commentId, liked) {
+  return request(`/api/comments/${commentId}/like`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ liked: Boolean(liked) }),
+  });
+}
+
 export async function getEmployees() {
   return request("/api/employees");
 }
@@ -1073,6 +1083,7 @@ const api = {
   createComment,
   updateComment,
   deleteComment,
+  toggleCommentLike,
 
   getEmployees,
   getEmployeeById,

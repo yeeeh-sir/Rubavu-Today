@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { Link, useParams, useLocation } from "react-router-dom";
 import rubavuLogo from "../Rubavu.jpeg";
-import { API_ROOT as API_URL } from "../services/api";
+import { API_ROOT as API_URL, toggleCommentLike } from "../services/api";
 import { ArticleSEO } from "../components/SEO/SEO";
 import SocialShare from "../components/SocialShare/SocialShare";
 
@@ -22,6 +22,77 @@ export default function PostDetails() {
   const [replyingTo, setReplyingTo] = useState(null);
   const [replyText, setReplyText] = useState("");
   const [replyName, setReplyName] = useState("");
+
+  const [likedComments, setLikedComments] = useState(() => {
+    try {
+      const stored = localStorage.getItem("rubavu_liked_comments");
+      return stored ? new Set(JSON.parse(stored)) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
+
+  const persistLikedComments = (next) => {
+    setLikedComments(new Set(next));
+    localStorage.setItem(
+      "rubavu_liked_comments",
+      JSON.stringify([...next])
+    );
+  };
+
+  const handleLikeComment = async (commentId, e) => {
+    if (e) e.stopPropagation();
+    if (!commentId) return;
+
+    const liked = !likedComments.has(commentId);
+    const next = new Set(likedComments);
+    if (liked) {
+      next.add(commentId);
+    } else {
+      next.delete(commentId);
+    }
+
+    setComments((prev) =>
+      prev.map((c) =>
+        c.id === commentId
+          ? {
+            ...c,
+            likes: Math.max(
+              0,
+              (c.likes || 0) + (liked ? 1 : -1)
+            ),
+          }
+          : c
+      )
+    );
+
+    persistLikedComments(next);
+
+    try {
+      await toggleCommentLike(commentId, liked);
+    } catch (error) {
+      const rollback = new Set(next);
+      if (liked) {
+        rollback.delete(commentId);
+      } else {
+        rollback.add(commentId);
+      }
+      persistLikedComments(rollback);
+      setComments((prev) =>
+        prev.map((c) =>
+          c.id === commentId
+            ? {
+              ...c,
+              likes: Math.max(
+                0,
+                (c.likes || 0) + (liked ? -1 : 1)
+              ),
+            }
+            : c
+        )
+      );
+    }
+  };
 
 
   const [sliderIndex, setSliderIndex] = useState(0);
@@ -1030,6 +1101,31 @@ export default function PostDetails() {
                               : "Subiza"}
                           </button>
 
+                          <button
+                            onClick={(e) =>
+                              handleLikeComment(
+                                comment.id,
+                                e
+                              )
+                            }
+                            className={`ml-2 text-xs font-semibold ${
+                              likedComments.has(
+                                comment.id
+                              )
+                                ? "text-red-600"
+                                : "text-gray-500 hover:text-red-600"
+                            }`}
+                            aria-label="Kunda cyangwa ukure icyifuzo"
+                          >
+                            {likedComments.has(
+                              comment.id
+                            )
+                              ? "❤️"
+                              : "🤍"}{" "}
+                            {comment.likes ||
+                              0}
+                          </button>
+
                           {replyingTo ===
                             comment.id && (
                               <form
@@ -1116,6 +1212,31 @@ export default function PostDetails() {
                                           reply.comment
                                         }
                                       </p>
+
+                                      <button
+                                        onClick={(e) =>
+                                          handleLikeComment(
+                                            reply.id,
+                                            e
+                                          )
+                                        }
+                                        className={`mt-1 text-[10px] font-semibold ${
+                                          likedComments.has(
+                                            reply.id
+                                          )
+                                            ? "text-red-600"
+                                            : "text-gray-500 hover:text-red-600"
+                                        }`}
+                                        aria-label="Kunda cyangwa ukure icyifuzo"
+                                      >
+                                        {likedComments.has(
+                                          reply.id
+                                        )
+                                          ? "❤️"
+                                          : "🤍"}{" "}
+                                        {reply.likes ||
+                                          0}
+                                      </button>
 
                                     </div>
                                   )

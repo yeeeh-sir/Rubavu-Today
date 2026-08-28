@@ -1,6 +1,7 @@
 import React from "react";
 
 const SITE_URL = "https://rubavutoday.com";
+const SITE_NAME = "Rubavu Today";
 
 function getShareUrl(post) {
   if (!post) return window.location.href;
@@ -9,15 +10,45 @@ function getShareUrl(post) {
     : `${SITE_URL}/post/${post.id || post._id || ""}`;
 }
 
+function stripHtml(html) {
+  if (!html) return "";
+  return String(html)
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#0?39;/g, "'")
+    .replace(/&nbsp;/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function getPostText(post) {
+  return (
+    stripHtml(post?.description) ||
+    stripHtml(post?.content) ||
+    stripHtml(post?.summary) ||
+    ""
+  );
+}
+
+function buildShareText(post, url) {
+  const title = post?.title || SITE_NAME;
+  const text = getPostText(post) || `Soma inkuru yose kuri ${SITE_NAME}.`;
+  return `${SITE_NAME} | ${title}\n\n${text}\n\n🌍 ${SITE_URL}\n🔗 ${url}`;
+}
+
 export default function SocialShare({ post, compact = false }) {
   const url = getShareUrl(post);
-  const title = post?.title || "Rubavu Today";
+  const title = post?.title || SITE_NAME;
   const imageUrl = post?.image || post?.image_url || post?.imageUrl || "";
+  const shareText = buildShareText(post, url);
 
   const sharePost = async () => {
     const shareData = {
       title,
-      text: `${title}\n${url}`,
+      text: shareText,
       url,
     };
 
@@ -51,8 +82,8 @@ export default function SocialShare({ post, compact = false }) {
 
   const shareLinks = {
     facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
-    whatsapp: `https://wa.me/?text=${encodeURIComponent(title + " " + url)}`,
-    twitter: `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}`,
+    whatsapp: `https://wa.me/?text=${encodeURIComponent(shareText)}`,
+    twitter: `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title + " — " + SITE_NAME)}`,
   };
 
   if (compact) {

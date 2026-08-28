@@ -36,9 +36,31 @@ const PostCard = ({ post }) => {
   const handleShare = async (e) => {
     e.preventDefault();
     const postUrl = `${window.location.origin}${getPostSlugPath(post)}`;
+
+    const stripHtml = (html) =>
+      (html || "")
+        .replace(/<[^>]*>/g, " ")
+        .replace(/&amp;/g, "&")
+        .replace(/&lt;/g, "<")
+        .replace(/&gt;/g, ">")
+        .replace(/&quot;/g, '"')
+        .replace(/&#0?39;/g, "'")
+        .replace(/&nbsp;/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+
+    const postText =
+      stripHtml(post?.description) ||
+      stripHtml(post?.content) ||
+      stripHtml(post?.summary) ||
+      "";
+
+    const title = post?.title || "Rubavu Today";
+    const shareText = `Rubavu Today | ${title}\n\n${postText}\n\n🌍 https://rubavutoday.com\n🔗 ${postUrl}`;
+
     const shareData = {
-      title: post?.title || "Rubavu Today",
-      text: post?.title || "Rubavu Today",
+      title,
+      text: shareText,
       url: postUrl,
     };
 
