@@ -1,14 +1,16 @@
 import React, { useEffect, useState, useRef } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import rubavuLogo from "../Rubavu.jpeg";
-import { API_ROOT as API_URL, getPostById, getPosts, commitCommentReaction } from "../services/api";
+import { API_ROOT as API_URL, getPostById, getPostBySlug, getPosts, commitCommentReaction } from "../services/api";
 import { ArticleSEO } from "../components/SEO/SEO";
 import SocialShare from "../components/SocialShare/SocialShare";
+import { getPostSlug, getArticleUrl } from "../utils/slug";
 
 
 
 export default function PostDetails() {
   const { id, slug } = useParams();
+  const navigate = useNavigate();
 
   const [post, setPost] = useState(null);
   const [allPosts, setAllPosts] = useState([]);
@@ -162,30 +164,41 @@ export default function PostDetails() {
           ? String(id).trim()
           : null;
 
+        const slugValue = String(slug || "")
+          .replace(/\.html$/i, "")
+          .trim()
+          .replace(/\/+$/, "");
+
         let postData = null;
         let all = [];
 
         if (numericId) {
           postData = await getPostById(numericId);
           if (cancelled) return;
+
+          if (!postData) {
+            setLoading(false);
+            setPost(null);
+            setComments([]);
+            return;
+          }
+
+          const canonicalSlug = getPostSlug(postData);
+          if (canonicalSlug) {
+            navigate(`/${canonicalSlug}`, { replace: true });
+          }
+          return;
+        }
+
+        if (slugValue) {
+          postData = await getPostBySlug(slugValue);
+          if (cancelled) return;
+        }
+
+        if (postData) {
           const list = await getPosts();
           if (cancelled) return;
           all = Array.isArray(list) ? list : [];
-        } else if (slug) {
-          const slugValue = String(slug)
-            .replace(/\.html$/i, "")
-            .trim()
-            .toLowerCase();
-
-          const list = await getPosts();
-          if (cancelled) return;
-          all = Array.isArray(list) ? list : [];
-
-          postData =
-            all.find(
-              (p) =>
-                String(p.slug || "").toLowerCase() === slugValue
-            ) || null;
         }
 
         if (cancelled) return;
@@ -294,9 +307,21 @@ export default function PostDetails() {
   const getImageUrl = (image) => {
     if (!image) return null;
 
-    return image.startsWith("http")
-      ? image
-      : `${API_URL}${image}`;
+    const value = String(image).trim();
+
+    if (/^https?:\/\//i.test(value)) {
+      return value.replace(/^http:\/\//i, "https://");
+    }
+
+    if (value.startsWith("/")) {
+      return `${API_URL}${value}`;
+    }
+
+    if (value.startsWith("uploads/")) {
+      return `${API_URL}/${value}`;
+    }
+
+    return `${API_URL}/uploads/${value}`;
   };
 
 
@@ -744,7 +769,7 @@ export default function PostDetails() {
                     >
 
                       <Link
-                        to={`/post/${pId}`}
+                        to={getArticleUrl(p)}
                         className="block bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition"
                       >
 
@@ -853,7 +878,7 @@ export default function PostDetails() {
                     return (
                       <Link
                         key={pId}
-                        to={`/post/${pId}`}
+                        to={getArticleUrl(p)}
                         className="flex gap-3 rounded-md border border-gray-200 bg-white p-2 transition hover:shadow-sm"
                       >
 
@@ -1039,6 +1064,10 @@ export default function PostDetails() {
                     decoding="async"
                     width="1200"
                     height="675"
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = rubavuLogo;
+                    }}
                   />
 
                   <div className="absolute bottom-3 left-3 bg-black/75 text-white text-xs px-2 py-1 rounded">
@@ -1429,7 +1458,7 @@ export default function PostDetails() {
                     return (
                       <Link
                         key={pId}
-                        to={`/post/${pId}`}
+                        to={getArticleUrl(p)}
                         className="block rounded-md border border-gray-200 bg-white p-2 transition hover:shadow-sm"
                       >
 
@@ -1491,7 +1520,7 @@ export default function PostDetails() {
                 return (
                   <Link
                     key={pId}
-                    to={`/post/${pId}`}
+                    to={getArticleUrl(p)}
                     className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition"
                   >
 

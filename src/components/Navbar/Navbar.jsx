@@ -26,6 +26,7 @@ import {
 
 import SearchBar from "../SearchBar/SearchBar";
 import AdBanner from "../common/AdBanner";
+import { getArticleUrl } from "../../utils/slug";
 
 
 
@@ -549,7 +550,7 @@ const SmallPostCard = ({
   postRefs,
 }) => {
   const postId = getPostId(post, index);
-  const articleHref = postId ? `/post/${postId}` : "/";
+  const articleHref = getArticleUrl(post);
 
   return (
     <article
@@ -926,7 +927,7 @@ const TopFiveSlider = ({
                   `}
                 >
                   <Link
-                    to={postId ? `/post/${postId}` : "/"}
+                    to={getArticleUrl(post)}
                     className="group flex min-h-[150px] flex-col sm:min-h-[190px] sm:flex-row"
                   >
                     <div className="relative h-[150px] w-full shrink-0 overflow-hidden bg-slate-100 sm:h-[190px] sm:w-[42%] md:w-[35%]">
@@ -1106,7 +1107,7 @@ const NewsPostsLayout = ({
             `}
           >
             <Link
-              to={recentId ? `/post/${recentId}` : "/"}
+              to={getArticleUrl(recentPost)}
               className="relative block h-[230px] overflow-hidden bg-slate-100 sm:h-[320px] md:h-[380px] lg:h-[390px]"
             >
               {recentPost.image ? (
@@ -1143,7 +1144,7 @@ const NewsPostsLayout = ({
               )}
 
               <Link
-                to={recentId ? `/post/${recentId}` : "/"}
+                to={getArticleUrl(recentPost)}
               >
                 <h2 className="font-post-title text-xl font-black leading-[1.18] text-slate-950 transition-colors group-hover:text-red-600 sm:text-2xl md:text-3xl">
                   {recentPost.title}
@@ -1161,7 +1162,7 @@ const NewsPostsLayout = ({
                 </p>
 
                 <Link
-                  to={recentId ? `/post/${recentId}` : "/"}
+                  to={getArticleUrl(recentPost)}
                   className="font-body text-[9px] font-bold uppercase tracking-wider text-red-600 transition hover:text-red-800"
                 >
                   Soma →

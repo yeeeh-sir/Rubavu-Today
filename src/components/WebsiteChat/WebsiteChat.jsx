@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { MessageCircle, Send, X } from "lucide-react";
 import { API_BASE_URL, getPosts } from "../../services/api";
+import { getArticleUrl } from "../../utils/slug";
 import websiteLogo from "../../Rubavu.jpeg";
 
 const MAX_POSTS = 200;
@@ -17,10 +18,7 @@ const cleanText = (value) => String(value || "").trim();
 
 const postTitle = (post) => cleanText(post?.title) || "Inkuru ya Rubavu Today";
 
-const postHref = (post) => {
-    const postId = post?.id || post?._id;
-    return postId ? `/post/${postId}` : "/";
-};
+const postHref = (post) => getArticleUrl(post);
 
 const normalize = (value) =>
     cleanText(value)

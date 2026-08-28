@@ -28,17 +28,40 @@ export function slugifyTitle(value) {
         .replace(/^-+|-+$/g, "");
 }
 
+export function slugify(value) {
+    return slugifyTitle(value);
+}
+
+export function getPostSlug(post) {
+    if (!post) {
+        return "";
+    }
+
+    if (post.slug && String(post.slug).trim()) {
+        return String(post.slug)
+            .replace(/\.html$/i, "")
+            .trim()
+            .replace(/\/+$/, "");
+    }
+
+    return slugifyTitle(post.title);
+}
+
 export function getArticleUrl(postOrSlug) {
     if (!postOrSlug) {
         return "/";
     }
 
     if (typeof postOrSlug === "string") {
-        const slug = String(postOrSlug).replace(/\.html$/i, "").trim();
-        return slug ? `/${slug}.html` : "/";
+        const slug = String(postOrSlug)
+            .replace(/\.html$/i, "")
+            .trim()
+            .replace(/\/+$/, "");
+
+        return slug ? `/${slug}` : "/";
     }
 
-    const postId = postOrSlug.id || postOrSlug._id;
+    const slug = getPostSlug(postOrSlug);
 
-    return postId ? `/post/${postId}` : "/";
+    return slug ? `/${slug}` : "/";
 }

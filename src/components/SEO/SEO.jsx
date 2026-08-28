@@ -1,5 +1,6 @@
 import React from "react";
 import { Helmet } from "react-helmet-async";
+import { getPostSlug } from "../../utils/slug";
 
 const SITE_URL = "https://rubavutoday.com";
 const SITE_NAME = "Rubavu Today";
@@ -113,9 +114,9 @@ export function ArticleSEO({ post }) {
   const authorName =
     post.Author || post.author || post.author_name || "Rubavu Today";
 
-  const postId = post.id || post._id;
-  const articleUrl = postId
-    ? `${SITE_URL}/post/${postId}`
+  const postSlug = getPostSlug(post);
+  const articleUrl = postSlug
+    ? `${SITE_URL}/${postSlug}`
     : SITE_URL;
 
   const postDate =

@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, Link } from "react-router-dom";
 import { getPosts } from "../services/api";
 import { SiteSEO } from "../components/SEO/SEO";
+import { getArticleUrl } from "../utils/slug";
 
 
 const summarize = (text, maxWords = 10) => {
@@ -81,8 +82,7 @@ const Home = () => {
 
 
   const PostCard = ({ post }) => {
-    const postId = post.id || post._id;
-    const articleHref = `/post/${postId}`;
+    const articleHref = getArticleUrl(post);
     return (
       <Link to={articleHref} className="group block">
         <article className="flex flex-col h-full bg-white border border-slate-200 rounded-sm overflow-hidden shadow-sm hover:shadow-md transition-shadow">

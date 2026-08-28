@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import { getArticleUrl } from "../../utils/slug";
 
 const FALLBACK_IMAGE =
   "https://images.unsplash.com/photo-1495020689067-958852a7765e?auto=format&fit=crop&w=900&q=80";
@@ -27,11 +28,7 @@ const PostCard = ({ post }) => {
   const readTime = calculateReadTime(contentText);
   const authorName = post?.Author || post?.author || "Rubavu Today";
 
-  const getPostSlugPath = (entry) => {
-    if (!entry) return "/";
-    const postId = entry.id || entry._id;
-    return postId ? `/post/${postId}` : "/";
-  };
+  const getPostSlugPath = (entry) => getArticleUrl(entry);
 
   const handleShare = async (e) => {
     e.preventDefault();

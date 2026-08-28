@@ -425,6 +425,44 @@ export const getPostById = async (id) => {
   return normalizePost(data);
 };
 
+export const getPostBySlug = async (slug) => {
+  const safeSlug = String(slug || "")
+    .replace(/\.html$/i, "")
+    .trim()
+    .replace(/\/+$/, "");
+
+  if (!safeSlug) {
+    return null;
+  }
+
+  const response = await fetch(
+    `${API_BASE_URL}/posts/slug/${encodeURIComponent(safeSlug)}`
+  );
+
+  if (!response.ok) {
+    if (response.status === 404) {
+      return null;
+    }
+
+    throw new Error("Unable to load this post.");
+  }
+
+  const data = await response.json();
+
+  if (!data) {
+    return null;
+  }
+
+  if (
+    String(data.status || "").toLowerCase() !==
+    "approved"
+  ) {
+    return null;
+  }
+
+  return normalizePost(data);
+};
+
 export async function getPublicPosts() {
   return request("/api/posts");
 }
@@ -1071,6 +1109,7 @@ const api = {
 
   getPosts,
   getPostById,
+  getPostBySlug,
   getPost,
   getPublicPosts,
   getAdminPosts,

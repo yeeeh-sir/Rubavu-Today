@@ -1,12 +1,13 @@
 import React from "react";
+import { getPostSlug } from "../../utils/slug";
 
 const SITE_URL = "https://rubavutoday.com";
 const SITE_NAME = "Rubavu Today";
 
 function getShareUrl(post) {
   if (!post) return window.location.href;
-  const postId = post.id || post._id;
-  return postId ? `${SITE_URL}/post/${postId}` : SITE_URL;
+  const slug = getPostSlug(post);
+  return slug ? `${SITE_URL}/${slug}` : window.location.href;
 }
 
 function buildNativeShareText(post, url) {
