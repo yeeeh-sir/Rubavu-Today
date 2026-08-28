@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "@vercel/edge";
+import { next, rewrite } from "@vercel/edge";
 
 export const config = { matcher: ["/:path*"] };
 
@@ -57,13 +57,12 @@ export default async function middleware(request) {
         const slug = await getSlugById(id);
         if (slug) {
           const target = `${SITE_URL}/${encodeURIComponent(slug)}.html`;
-          const response = new Response(null, {
+          return new Response(null, {
             status: 308,
             headers: { Location: target },
           });
-          return response;
         }
-        return NextResponse.next();
+        return next();
       }
     }
 
@@ -76,16 +75,15 @@ export default async function middleware(request) {
       if (looksLikeSlug) {
         const slug = cleanSlug(segments[0]);
         if (slug) {
-          const next = NextResponse.rewrite(
+          return rewrite(
             new URL(`/api/og?slug=${encodeURIComponent(slug)}`, request.url)
           );
-          return next;
         }
       }
     }
 
-    return NextResponse.next();
+    return next();
   } catch (error) {
-    return NextResponse.next();
+    return next();
   }
 }
