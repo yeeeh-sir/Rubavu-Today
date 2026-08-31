@@ -29,6 +29,8 @@ import {
     addAdvertisement,
     changeMyPassword,
     changeMyEmail,
+    getAllComments,
+    deleteComment,
 } from "../../services/api";
 
 import { DashboardLayout } from "../../components/dashboard";
@@ -84,6 +86,10 @@ const AdminDashboard = ({
     const [selectedPosts, setSelectedPosts] = useState([]);
     const [showFilters, setShowFilters] = useState(false);
     const [viewMode, setViewMode] = useState("grid");
+
+    const [allComments, setAllComments] = useState([]);
+    const [loadingComments, setLoadingComments] = useState(true);
+    const [commentsError, setCommentsError] = useState("");
 
     const [editingPost, setEditingPost] = useState(null);
     const [editTitle, setEditTitle] = useState("");
@@ -282,10 +288,45 @@ const AdminDashboard = ({
                 setAdvertisements([]);
             }
 
+            try {
+                const comments = await getAllComments();
+                setAllComments(Array.isArray(comments) ? comments : []);
+            } catch (err) {
+                console.error("loadAllComments", err);
+                setCommentsError(err?.message || "Unable to load comments.");
+                setAllComments([]);
+            } finally {
+                setLoadingComments(false);
+            }
         };
 
         loadAll();
     }, []);
+
+
+
+
+
+    const handleDeleteAllComment = async (commentId) => {
+        if (!commentId) {
+            setCommentsError("Unable to identify this comment.");
+            return;
+        }
+
+        const confirmed = window.confirm("Remove this comment?");
+        if (!confirmed) return;
+
+        try {
+            setCommentsError("");
+            await deleteComment(commentId);
+            setAllComments((prev) =>
+                prev.filter((c) => (c.id ?? c.comment_id ?? c._id) !== commentId)
+            );
+        } catch (err) {
+            console.error("Delete comment error:", err);
+            setCommentsError(err?.message || "Unable to remove comment.");
+        }
+    };
 
 
 
@@ -1176,22 +1217,22 @@ const AdminDashboard = ({
 
             {showEditEmployee && (
                 <ModalShell onClose={() => setShowEditEmployee(false)} maxWidth="max-w-md">
-                    <ModalHeader title="Edit Employee" description="Update employee details." onClose={() => setShowEditEmployee(false)} />
+                    <ModalHeader title="Hindura Umukozi" description="Vugurura amakuru y'umukozi." onClose={() => setShowEditEmployee(false)} />
 
                     <form onSubmit={(e) => { e.preventDefault(); handleSaveEmployeeEdit(); }} className="flex min-h-0 flex-1 flex-col">
                         <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4 sm:p-6">
-                            <input value={editEmpName} onChange={(e) => setEditEmpName(e.target.value)} placeholder="Full name" className="form-input" />
-                            <input value={editEmpEmail} onChange={(e) => setEditEmpEmail(e.target.value)} placeholder="Email" type="email" className="form-input" />
-                            <input value={editEmpPhone} onChange={(e) => setEditEmpPhone(e.target.value)} placeholder="Phone (optional)" className="form-input" />
-                            <FormField label="Status">
+                            <input value={editEmpName} onChange={(e) => setEditEmpName(e.target.value)} placeholder="Izina ry'umuntu" className="form-input" />
+                            <input value={editEmpEmail} onChange={(e) => setEditEmpEmail(e.target.value)} placeholder="Imeyili" type="email" className="form-input" />
+                            <input value={editEmpPhone} onChange={(e) => setEditEmpPhone(e.target.value)} placeholder="Telefone (Byibuze)" className="form-input" />
+                            <FormField label="Imimerere">
                                 <select value={editEmpStatus} onChange={(e) => setEditEmpStatus(e.target.value)} className="form-input">
-                                    <option value="active">Active</option>
-                                    <option value="inactive">Inactive</option>
+                                    <option value="active">Akitirije</option>
+                                    <option value="inactive">Itigize</option>
                                 </select>
                             </FormField>
                         </div>
 
-                        <ModalFooter onCancel={() => setShowEditEmployee(false)} confirmText="Save" confirmClass="bg-emerald-600 hover:bg-emerald-700" confirmType="submit" />
+                        <ModalFooter onCancel={() => setShowEditEmployee(false)} confirmText="Kubika" confirmClass="bg-emerald-600 hover:bg-emerald-700" confirmType="submit" />
                     </form>
                 </ModalShell>
             )}
@@ -1200,22 +1241,22 @@ const AdminDashboard = ({
 
             {showEditChief && (
                 <ModalShell onClose={() => setShowEditChief(false)} maxWidth="max-w-md">
-                    <ModalHeader title="Edit Chief Editor" description="Update chief editor details." onClose={() => setShowEditChief(false)} />
+                    <ModalHeader title="Hindura Umwanditsi Mukuru" description="Vugurura amakuru y'umwanditsi mukuru." onClose={() => setShowEditChief(false)} />
 
                     <form onSubmit={(e) => { e.preventDefault(); handleSaveChiefEdit(); }} className="flex min-h-0 flex-1 flex-col">
                         <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4 sm:p-6">
-                            <input value={editChiefName} onChange={(e) => setEditChiefName(e.target.value)} placeholder="Full name" className="form-input" />
-                            <input value={editChiefEmail} onChange={(e) => setEditChiefEmail(e.target.value)} placeholder="Email" type="email" className="form-input" />
-                            <input value={editChiefPhone} onChange={(e) => setEditChiefPhone(e.target.value)} placeholder="Phone (optional)" className="form-input" />
-                            <FormField label="Status">
+                            <input value={editChiefName} onChange={(e) => setEditChiefName(e.target.value)} placeholder="Izina ry'umuntu" className="form-input" />
+                            <input value={editChiefEmail} onChange={(e) => setEditChiefEmail(e.target.value)} placeholder="Imeyili" type="email" className="form-input" />
+                            <input value={editChiefPhone} onChange={(e) => setEditChiefPhone(e.target.value)} placeholder="Telefone (Byibuze)" className="form-input" />
+                            <FormField label="Imimerere">
                                 <select value={editChiefStatus} onChange={(e) => setEditChiefStatus(e.target.value)} className="form-input">
-                                    <option value="active">Active</option>
-                                    <option value="inactive">Inactive</option>
+                                    <option value="active">Akitirije</option>
+                                    <option value="inactive">Itigize</option>
                                 </select>
                             </FormField>
                         </div>
 
-                        <ModalFooter onCancel={() => setShowEditChief(false)} confirmText="Save" confirmClass="bg-indigo-600 hover:bg-indigo-700" confirmType="submit" />
+                        <ModalFooter onCancel={() => setShowEditChief(false)} confirmText="Kubika" confirmClass="bg-indigo-600 hover:bg-indigo-700" confirmType="submit" />
                     </form>
                 </ModalShell>
             )}
@@ -1224,57 +1265,57 @@ const AdminDashboard = ({
 
             {showEditAd && (
                 <ModalShell onClose={() => setShowEditAd(false)} maxWidth="max-w-2xl">
-                    <ModalHeader title="Edit Advertisement" description="Update advertisement details." onClose={() => setShowEditAd(false)} />
+                    <ModalHeader title="Hindura Kwamamaza" description="Vugurura amakuru y'kwamamaza." onClose={() => setShowEditAd(false)} />
                     <form onSubmit={(e) => { e.preventDefault(); handleSaveAdEdit(); }} className="flex min-h-0 flex-1 flex-col">
                         <div className="min-h-0 flex-1 space-y-5 overflow-y-auto p-4 sm:p-6">
-                            <FormField label="Title">
+                            <FormField label="Umutwe">
                                 <input value={editAdTitle} onChange={(e) => setEditAdTitle(e.target.value)} className="form-input" />
                             </FormField>
 
-                            <FormField label="Position">
+                            <FormField label="Ahandi ko barobanye">
                                 <select value={editAdPosition} onChange={(e) => setEditAdPosition(e.target.value)} className="form-input">
-                                    <option value="">Select position</option>
+                                    <option value="">Hitamo inzira</option>
                                     {editAdPositions.map((p) => (
                                         <option key={p} value={p}>{p}</option>
                                     ))}
                                 </select>
                             </FormField>
 
-                            <FormField label="Target URL">
+                            <FormField label="URL y'ikintu">
                                 <input value={editAdTargetUrl} onChange={(e) => setEditAdTargetUrl(e.target.value)} className="form-input" />
                             </FormField>
 
-                            <FormField label="Fallback Link (optional)">
+                            <FormField label="Ikintu cyokubikira (Byibuze)">
                                 <input value={editAdLink} onChange={(e) => setEditAdLink(e.target.value)} className="form-input" />
                             </FormField>
 
-                            <FormField label="Description">
+                            <FormField label="Ibisobanuro">
                                 <textarea value={editAdDescription} onChange={(e) => setEditAdDescription(e.target.value)} rows={4} className="form-input resize-none" />
                             </FormField>
 
                             <div className="grid gap-4 sm:grid-cols-2">
-                                <FormField label="Start Date">
+                                <FormField label="Itariki y'inzira">
                                     <input type="date" value={editAdStartDate} onChange={(e) => setEditAdStartDate(e.target.value)} className="form-input" />
                                 </FormField>
 
-                                <FormField label="End Date">
+                                <FormField label="Itariki y'impera">
                                     <input type="date" value={editAdEndDate} onChange={(e) => setEditAdEndDate(e.target.value)} className="form-input" />
                                 </FormField>
                             </div>
 
-                            <FormField label="Image (optional)">
+                            <FormField label="Ifoto (Byibuze)">
                                 <input type="file" accept="image/*" onChange={(e) => setEditAdImage(e.target.files?.[0] || null)} className="block w-full text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-indigo-50 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-indigo-700" />
                             </FormField>
 
-                            <FormField label="Status">
+                            <FormField label="Imimerere">
                                 <select value={editAdStatus} onChange={(e) => setEditAdStatus(e.target.value)} className="form-input">
-                                    <option value="active">Active</option>
-                                    <option value="inactive">Inactive</option>
+                                    <option value="active">Akitirije</option>
+                                    <option value="inactive">Itigize</option>
                                 </select>
                             </FormField>
                         </div>
 
-                        <ModalFooter onCancel={() => setShowEditAd(false)} confirmText="Save" confirmClass="bg-indigo-600 hover:bg-indigo-700" confirmType="submit" />
+                        <ModalFooter onCancel={() => setShowEditAd(false)} confirmText="Kubika" confirmClass="bg-indigo-600 hover:bg-indigo-700" confirmType="submit" />
                     </form>
                 </ModalShell>
             )}
@@ -1392,7 +1433,7 @@ const AdminDashboard = ({
                             <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
                                 <div className="min-w-0">
                                     <p className="mb-1 text-sm font-medium text-blue-300">
-                                        Welcome back, Administrator
+                                        Murakaza neza, Imicungire
                                     </p>
 
                                     <h1 className="text-2xl font-black tracking-tight sm:text-3xl">
@@ -1412,7 +1453,7 @@ const AdminDashboard = ({
                                     }
                                     className="w-full shrink-0 rounded-xl bg-white px-5 py-3 text-sm font-bold text-slate-900 shadow-lg transition hover:bg-blue-50 sm:w-auto"
                                 >
-                                    + Add Employee
+                                    + Onjera Umukozi
                                 </button>
                             </div>
                         </div>
@@ -1422,41 +1463,143 @@ const AdminDashboard = ({
 
                     <section className="mb-5 grid grid-cols-2 gap-3 sm:mb-6 sm:grid-cols-3 lg:grid-cols-5">
                         <StatCard
-                            label="Total Stories"
+                            label="Inkuru zose"
                             value={statistics.total}
                             icon="📰"
                             color="blue"
                         />
 
                         <StatCard
-                            label="Pending Review"
+                            label="Zitegereje gusuzumwa"
                             value={statistics.pending}
                             icon="⏳"
                             color="amber"
                         />
 
                         <StatCard
-                            label="Approved"
+                            label="Zemejwe"
                             value={statistics.approved}
                             icon="✓"
                             color="emerald"
                         />
 
                         <StatCard
-                            label="Rejected"
+                            label="Zanzwe"
                             value={statistics.rejected}
                             icon="✕"
                             color="red"
                         />
 
                         <StatCard
-                            label="Comments"
+                            label="Ibigambi"
                             value={statistics.comments}
                             icon="💬"
                             color="purple"
                         />
                     </section>
 
+
+
+                    {/* ---- ALL COMMENTS (every reader comment on every post) ---- */}
+                    <section className="mb-5 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+
+                        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+
+                            <div>
+
+                                <h2 className="text-lg font-black text-slate-900">
+                                    Ibitekerezo byose by'abasomyi
+                                </h2>
+
+                                <p className="mt-1 text-xs text-slate-400">
+                                    Lista ya comments zose z'inkuru; ushobora gusiba icyo ushaka.
+                                </p>
+
+                            </div>
+
+                            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">
+                                {allComments.length}
+                            </span>
+
+                        </div>
+
+                        {commentsError && (
+                            <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-xs font-semibold text-red-600">
+                                {commentsError}
+                            </p>
+                        )}
+
+                        {loadingComments ? (
+                            <p className="py-6 text-center text-sm text-slate-500">
+                                Loading comments...
+                            </p>
+                        ) : allComments.length === 0 ? (
+                            <p className="py-6 text-center text-sm text-slate-500">
+                                Nta bitekerezo bihari.
+                            </p>
+                        ) : (
+                            <div className="max-h-[480px] space-y-3 overflow-y-auto pr-1">
+
+                                {allComments.map((comment) => {
+
+                                    const commentId = comment.id ?? comment.comment_id ?? comment._id;
+
+                                    return (
+
+                                        <div
+                                            key={commentId}
+                                            className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
+                                        >
+
+                                            <div className="flex items-start justify-between gap-3">
+
+                                                <div className="min-w-0">
+
+                                                    <div className="flex flex-wrap items-center gap-2">
+
+                                                        <span className="text-sm font-black text-slate-900">
+                                                            {comment.name || comment.user_name || comment.author || "Anonymous"}
+                                                        </span>
+
+                                                        {comment.post_title && (
+                                                            <span className="truncate rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-black text-blue-700">
+                                                                {comment.post_title}
+                                                            </span>
+                                                        )}
+
+                                                    </div>
+
+                                                    <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-600">
+                                                        {comment.comment || comment.content || comment.text || ""}
+                                                    </p>
+
+                                                    {comment.created_at && (
+                                                        <p className="mt-2 text-[11px] text-slate-400">
+                                                            {new Date(comment.created_at).toLocaleString()}
+                                                        </p>
+                                                    )}
+
+                                                </div>
+
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleDeleteAllComment(commentId)}
+                                                    className="flex-shrink-0 rounded-lg bg-red-50 px-2 py-1 text-[10px] font-black text-red-600 hover:bg-red-600 hover:text-white"
+                                                >
+                                                    Gusiba
+                                                </button>
+
+                                            </div>
+
+                                        </div>
+
+                                    );
+                                })}
+
+                            </div>
+                        )}
+
+                    </section>
 
 
                     <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1fr)_320px] xl:gap-6">
@@ -1552,7 +1695,7 @@ const AdminDashboard = ({
                                                 onChange={(e) =>
                                                     setSearch(e.target.value)
                                                 }
-                                                placeholder="Search stories..."
+                                                placeholder="Shakisha inkuru..."
                                                 className="w-full min-w-0 rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-4 text-sm outline-none transition focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10"
                                             />
                                         </div>
@@ -1565,15 +1708,15 @@ const AdminDashboard = ({
                                             className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium outline-none focus:border-blue-500 md:w-auto"
                                         >
                                             <option value="newest">
-                                                Newest first
+                                                Inyanya zikipiranya
                                             </option>
 
                                             <option value="oldest">
-                                                Oldest first
+                                                Inyanya zizirizaga
                                             </option>
 
                                             <option value="title">
-                                                Title A-Z
+                                                Umutwe A-Z
                                             </option>
                                         </select>
                                     </div>
@@ -1583,7 +1726,7 @@ const AdminDashboard = ({
                                         <div className="grid gap-4 rounded-xl bg-slate-50 p-4 sm:grid-cols-2">
                                             <div className="min-w-0">
                                                 <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-500">
-                                                    Department
+                                                    Ibyiciro
                                                 </label>
 
                                                 <select
@@ -1598,7 +1741,7 @@ const AdminDashboard = ({
                                                     className="w-full min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm"
                                                 >
                                                     <option value="All">
-                                                        All Departments
+                                                        Ibyiciro byose
                                                     </option>
 
                                                     {DEPARTMENTS.map(
@@ -1625,7 +1768,7 @@ const AdminDashboard = ({
 
                                             <div className="min-w-0">
                                                 <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-500">
-                                                    Status
+                                                    Imimerere
                                                 </label>
 
                                                 <select
@@ -1638,19 +1781,19 @@ const AdminDashboard = ({
                                                     className="w-full min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm"
                                                 >
                                                     <option value="all">
-                                                        All Statuses
+                                                        Imimerere yose
                                                     </option>
 
                                                     <option value="pending">
-                                                        Pending
+                                                        Zitegereje gusuzumwa
                                                     </option>
 
                                                     <option value="approved">
-                                                        Approved
+                                                        Zemejwe
                                                     </option>
 
                                                     <option value="rejected">
-                                                        Rejected
+                                                        Zanzwe
                                                     </option>
                                                 </select>
                                             </div>
@@ -1669,7 +1812,7 @@ const AdminDashboard = ({
                                                     POST_STATUSES.PENDING
                                                 )
                                             }
-                                            label="Pending"
+                                            label="Zitegereje gusuzumwa"
                                             count={statistics.pending}
                                             color="amber"
                                         />
@@ -1684,7 +1827,7 @@ const AdminDashboard = ({
                                                     POST_STATUSES.APPROVED
                                                 )
                                             }
-                                            label="Approved"
+                                            label="Zemejwe"
                                             count={statistics.approved}
                                             color="emerald"
                                         />
@@ -1699,7 +1842,7 @@ const AdminDashboard = ({
                                                     POST_STATUSES.REJECTED
                                                 )
                                             }
-                                            label="Rejected"
+                                            label="Zanzwe"
                                             count={statistics.rejected}
                                             color="red"
                                         />
@@ -1714,7 +1857,7 @@ const AdminDashboard = ({
                                                     POST_STATUSES.ALL
                                                 )
                                             }
-                                            label="All"
+                                            label="Zose"
                                             count={statistics.total}
                                             color="slate"
                                         />
@@ -1738,14 +1881,14 @@ const AdminDashboard = ({
                                                 className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
                                             />
 
-                                            <span>Select visible</span>
+                                            <span>Toranya byose byatemuye</span>
                                         </label>
 
                                         {selectedPosts.length > 0 && (
                                             <div className="flex flex-wrap items-center gap-2">
                                                 <span className="text-xs font-semibold text-slate-500">
                                                     {selectedPosts.length}{" "}
-                                                    selected
+                                                    zatoranyijwe
                                                 </span>
 
                                                 <button
@@ -1754,7 +1897,7 @@ const AdminDashboard = ({
                                                     }
                                                     className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700"
                                                 >
-                                                    ✓ Approve
+                                                    ✓ Emeza
                                                 </button>
 
                                                 <button
@@ -1763,14 +1906,14 @@ const AdminDashboard = ({
                                                     }
                                                     className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-red-700"
                                                 >
-                                                    ✕ Reject
+                                                    ✕ Anga
                                                 </button>
 
                                                 <button
                                                     onClick={clearSelection}
                                                     className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600"
                                                 >
-                                                    Clear
+                                                    Siba
                                                 </button>
                                             </div>
                                         )}
@@ -1818,12 +1961,12 @@ const AdminDashboard = ({
                                         </div>
 
                                         <h3 className="font-bold text-slate-800">
-                                            No stories found
+                                            Nta nkuru zabonetse
                                         </h3>
 
                                         <p className="mt-1 text-sm text-slate-500">
-                                            Try changing your search or
-                                            filters.
+                                            Gerageza guhindura umurimo cyangwa
+                                            ibihanga.
                                         </p>
 
                                         <button
@@ -1836,7 +1979,7 @@ const AdminDashboard = ({
                                             }}
                                             className="mt-4 rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
                                         >
-                                            Clear filters
+                                            Sunika ibihanga
                                         </button>
                                     </div>
                                 ) : (
@@ -2136,8 +2279,8 @@ const AdminDashboard = ({
                     maxWidth="max-w-2xl"
                 >
                     <ModalHeader
-                        title="Create Post"
-                        description="Submit a new story to the newsroom."
+                        title="Kora Inkuru"
+                        description="Onjera inkuru nshya mu miryango."
                         onClose={() => setShowCreatePost(false)}
                     />
 
@@ -2146,18 +2289,18 @@ const AdminDashboard = ({
                         className="flex min-h-0 flex-1 flex-col"
                     >
                         <div className="min-h-0 flex-1 space-y-5 overflow-y-auto p-4 sm:p-6">
-                            <FormField label="Title">
+                            <FormField label="Umutwe w'inkuru">
                                 <input
                                     value={newPostTitle}
                                     onChange={(e) =>
                                         setNewPostTitle(e.target.value)
                                     }
                                     className="form-input"
-                                    placeholder="Enter story title"
+                                    placeholder="Andika umutwe w'inkuru"
                                 />
                             </FormField>
 
-                            <FormField label="Category">
+                            <FormField label="Ibyiciro">
                                 <select
                                     value={newPostCategory}
                                     onChange={(e) =>

@@ -21,11 +21,11 @@ const badgeColors = {
 
 const navSections = [
   {
-    label: "Dashboard",
+    label: "Imbonerahamwe",
     items: [
       { icon: <BarChart3 size={16} />, label: "Imbonerahamwe", path: "/employee/dashboard" },
-      { icon: <FileText size={16} />, label: "Workspace", path: "/employee/workspace" },
-      { icon: <Newspaper size={16} />, label: "Profile", path: "/employee/profile" },
+      { icon: <FileText size={16} />, label: "Ubwanditsi", path: "/employee/workspace" },
+      { icon: <Newspaper size={16} />, label: "Profilyi", path: "/employee/profile" },
     ],
   },
 ];
@@ -76,7 +76,7 @@ function Dashboard({ onLogout }) {
         </div>
 
         <div className="card p-5 sm:p-6">
-          <h2 className="mb-4 text-lg font-semibold text-slate-800">Departments Overview</h2>
+          <h2 className="mb-4 text-lg font-semibold text-slate-800">Ibyiciro - Imbonerahamwe</h2>
           <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
             {departments.map((department) => (
               <div key={department} className="rounded-xl border border-slate-100 bg-slate-50 p-4 text-center">
@@ -96,7 +96,7 @@ function Dashboard({ onLogout }) {
             onClick={() => setSelectedDepartment("All")}
             className={`rounded-full px-4 py-2 text-sm font-medium transition ${selectedDepartment === "All" ? "bg-slate-900 text-white shadow" : "card border-0 hover:bg-slate-50"}`}
           >
-            All
+            Zose
           </button>
           {departments.map((department) => (
             <button
@@ -126,8 +126,8 @@ function Dashboard({ onLogout }) {
               <table className="w-full text-left">
                 <thead className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider font-semibold">
                   <tr>
-                    <th className="px-6 py-3">Title</th>
-                    <th className="px-6 py-3">Department</th>
+                    <th className="px-6 py-3">Umutwe</th>
+                    <th className="px-6 py-3">Ibyiciro</th>
                     <th className="px-6 py-3">Byakozwe</th>
                   </tr>
                 </thead>

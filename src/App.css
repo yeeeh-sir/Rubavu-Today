@@ -127,6 +127,38 @@
   text-align: center;
 }
 
+/* Marquee animation for scrolling posts */
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+.marquee-container {
+  overflow: hidden;
+  width: 100%;
+}
+
+.marquee-track {
+  display: flex;
+  gap: 0.75rem;
+  animation: marquee 120s linear infinite;
+  will-change: transform;
+}
+
+.marquee-track:hover {
+  animation-play-state: paused;
+}
+
+.marquee-item {
+  flex: 0 0 auto;
+  min-width: fit-content;
+}
+
 @media (max-width: 700px) {
   .hero {
     padding: 2rem;

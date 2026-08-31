@@ -25,8 +25,9 @@ import {
 } from "../../services/api";
 
 import SearchBar from "../SearchBar/SearchBar";
-import AdBanner from "../common/AdBanner";
+import LanguageSelector from "../LanguageSelector/LanguageSelector";
 import { getArticleUrl } from "../../utils/slug";
+import { useLanguage, translateCategory, translatePostsBatch } from "../../context/LanguageContext";
 
 
 
@@ -83,7 +84,53 @@ const getTime = (post) => {
   return Number.isNaN(time) ? 0 : time;
 };
 
-const formatDate = (date, short = false) => {
+export const MAX_MIXED_POSTS = 15;
+
+export const buildMixedPosts = (posts = []) => {
+  if (!posts.length) {
+    return [];
+  }
+
+  const newest = [...posts].sort((a, b) => getTime(b) - getTime(a));
+  const oldest = [...posts].sort((a, b) => getTime(a) - getTime(b));
+
+  const result = [];
+  const used = new Set();
+
+  let newestIndex = 0;
+  let oldestIndex = 0;
+
+  while (
+    result.length < MAX_MIXED_POSTS &&
+    (newestIndex < newest.length || oldestIndex < oldest.length)
+  ) {
+    if (newestIndex < newest.length && result.length < MAX_MIXED_POSTS) {
+      const post = newest[newestIndex];
+      const id = getPostId(post, newestIndex);
+      newestIndex += 1;
+
+      if (!used.has(id)) {
+        result.push(post);
+        used.add(id);
+      }
+    }
+
+    if (oldestIndex < oldest.length && result.length < MAX_MIXED_POSTS) {
+      const post = oldest[oldestIndex];
+      const id = getPostId(post, oldestIndex);
+      oldestIndex += 1;
+
+      if (!used.has(id)) {
+        result.push(post);
+        used.add(id);
+      }
+    }
+  }
+
+  return result.slice(0, MAX_MIXED_POSTS);
+};
+
+const formatDate = (date, short = false, language = "rw") => {
   if (!date) return "";
 
   const parsed = new Date(date);
@@ -92,8 +139,10 @@ const formatDate = (date, short = false) => {
     return "";
   }
 
+  const locale = language === "fr" ? "fr-FR" : language === "sw" ? "sw-KE" : language === "en" ? "en-US" : "rw-RW";
+
   return parsed.toLocaleDateString(
-    "rw-RW",
+    locale,
     short
       ? {
         day: "numeric",
@@ -281,11 +330,11 @@ const AdCarousel = ({ ads = [] }) => {
     const key = ad.id || ad._id || `advertisement-${index}`;
     const targetUrl = String(ad.target_url || "").trim();
     const content = (
-      <div className="relative flex aspect-[1400/180] w-full items-center justify-center overflow-hidden bg-white">
+      <div className="relative flex w-full items-center justify-center overflow-hidden bg-white aspect-[728/90]">
         <img
           src={getHighQualityAdImage(ad.image)}
           alt={ad.title || "Kwamamaza - Rubavu Today"}
-          className="block h-full w-full select-none object-fill"
+          className="block h-full w-full select-none object-cover"
           loading="eager"
           fetchPriority={index === safeIndex ? "high" : "auto"}
           decoding="async"
@@ -315,11 +364,11 @@ const AdCarousel = ({ ads = [] }) => {
 
   return (
     <section
-      aria-label="Kwamamaza"
+      aria-label="Advertisement"
       dir="ltr"
-      className="relative mx-auto w-full max-w-7xl bg-white p-0"
+      className="relative w-full bg-white border-b-0 shadow-none mt-0 pt-0"
     >
-      <div className="relative w-full lg:min-h-32">
+      <div className="relative w-full overflow-hidden">
         {renderAd(visibleAds[safeIndex], safeIndex)}
 
         {visibleAds.length > 1 && (
@@ -633,79 +682,7 @@ const MixedPosts = ({
   matchedPostId,
   postRefs,
 }) => {
-  const mixedPosts = useMemo(() => {
-    if (!posts.length) {
-      return [];
-    }
-
-    const newest = [...posts].sort(
-      (a, b) =>
-        getTime(b) - getTime(a)
-    );
-
-    const oldest = [...posts].sort(
-      (a, b) =>
-        getTime(a) - getTime(b)
-    );
-
-    const result = [];
-    const used = new Set();
-
-    let newestIndex = 0;
-    let oldestIndex = 0;
-
-    while (
-      result.length < 24 &&
-      (
-        newestIndex < newest.length ||
-        oldestIndex < oldest.length
-      )
-    ) {
-      if (
-        newestIndex < newest.length &&
-        result.length < 24
-      ) {
-        const post =
-          newest[newestIndex];
-
-        const id =
-          getPostId(
-            post,
-            newestIndex
-          );
-
-        newestIndex++;
-
-        if (!used.has(id)) {
-          result.push(post);
-          used.add(id);
-        }
-      }
-
-      if (
-        oldestIndex < oldest.length &&
-        result.length < 24
-      ) {
-        const post =
-          oldest[oldestIndex];
-
-        const id =
-          getPostId(
-            post,
-            oldestIndex
-          );
-
-        oldestIndex++;
-
-        if (!used.has(id)) {
-          result.push(post);
-          used.add(id);
-        }
-      }
-    }
-
-    return result.slice(0, 24);
-  }, [posts]);
+  const mixedPosts = useMemo(() => buildMixedPosts(posts), [posts]);
 
   if (!mixedPosts.length) {
     return null;
@@ -713,25 +690,6 @@ const MixedPosts = ({
 
   return (
     <section className="w-full">
-      <div className="mb-3 flex items-end justify-between border-b border-slate-200 pb-2.5">
-        <div>
-          <div className="mb-1 flex items-center gap-1.5">
-            <span className="h-1.5 w-1.5 rounded-full bg-slate-900" />
-
-            <span className="font-body text-[7px] font-bold uppercase tracking-[0.18em] text-slate-500">
-              Andi makuru
-            </span>
-          </div>
-
-          <h2 className="font-post-title text-lg font-black text-slate-950 sm:text-xl">
-            Izindi nkuru
-          </h2>
-        </div>
-
-        <span className="font-body text-[7px] font-bold uppercase tracking-wider text-slate-400">
-          {mixedPosts.length}
-        </span>
-      </div>
       <div className="grid grid-cols-2 gap-2 sm:gap-2.5 lg:grid-cols-3 lg:gap-2.5">
         {mixedPosts.map((post, index) => (
           <React.Fragment key={`${getPostId(post, index)}-mixed-${index}`}>
@@ -744,10 +702,6 @@ const MixedPosts = ({
           </React.Fragment>
         ))}
       </div>
-
-      <p className="mt-3 font-body text-[7px] font-semibold uppercase tracking-[0.12em] text-slate-400">
-        Amakuru mashya n'andi makuru
-      </p>
     </section>
   );
 };
@@ -760,6 +714,8 @@ const TopFiveSlider = ({
   matchedPostId,
   postRefs,
 }) => {
+  const { t } = useLanguage();
+
   const newestFive = useMemo(() => {
     return [...posts]
       .sort(
@@ -862,7 +818,7 @@ const TopFiveSlider = ({
           <span className="h-2 w-2 animate-pulse rounded-full bg-red-500" />
 
           <h2 className="font-post-title text-sm font-black text-white sm:text-base">
-            Amakuru mashya
+            {t("latestNews")}
           </h2>
         </div>
 
@@ -870,7 +826,7 @@ const TopFiveSlider = ({
           <button
             type="button"
             onClick={goPrevious}
-            aria-label="Inkuru ibanza"
+            aria-label={t("previousPost")}
             className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-700 bg-slate-900 text-lg text-white transition hover:bg-red-600"
           >
             ‹
@@ -879,7 +835,7 @@ const TopFiveSlider = ({
           <button
             type="button"
             onClick={goNext}
-            aria-label="Inkuru ikurikira"
+            aria-label={t("nextPost")}
             className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-700 bg-slate-900 text-lg text-white transition hover:bg-red-600"
           >
             ›
@@ -1055,24 +1011,8 @@ const NewsPostsLayout = ({
 
   return (
     <section className="w-full">
-      <div className="mb-5 flex items-end justify-between border-b border-slate-200 pb-3">
-        <div>
-          <div className="mb-1.5 flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-red-600" />
-
-            <span className="font-body text-[9px] font-bold uppercase tracking-[0.2em] text-red-600">
-              Amakuru
-            </span>
-          </div>
-
-          <h1 className="font-post-title text-2xl font-black text-slate-950 sm:text-3xl">
-            Amakuru agezweho
-          </h1>
-        </div>
-
-        <span className="hidden font-body text-[10px] font-semibold uppercase tracking-wider text-slate-400 sm:block">
-          Rubavu Today
-        </span>
+      <div className="mb-0 mt-0 flex items-end justify-between border-b-0 pb-0">
+        <div />
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-7">
@@ -1128,12 +1068,6 @@ const NewsPostsLayout = ({
               )}
 
               <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/70 to-transparent" />
-
-              <div className="absolute bottom-4 left-4 right-4 sm:bottom-5 sm:left-5 sm:right-5">
-                <span className="font-body text-[8px] font-bold uppercase tracking-[0.2em] text-white/80">
-                  Rubavu Today
-                </span>
-              </div>
             </Link>
 
             <div className="p-4 sm:p-5 md:p-6">
@@ -1200,6 +1134,8 @@ const NewsPostsLayout = ({
 ========================================================= */
 
 const Navbar = ({ showHomeContent = true }) => {
+  const { language, t, setTranslating, setTranslationUnavailable } = useLanguage();
+
   const [
     isMenuOpen,
     setIsMenuOpen,
@@ -1221,6 +1157,11 @@ const Navbar = ({ showHomeContent = true }) => {
   ] = useState([]);
 
   const [
+    translatedPosts,
+    setTranslatedPosts,
+  ] = useState([]);
+
+  const [
     loading,
     setLoading,
   ] = useState(true);
@@ -1238,7 +1179,7 @@ const Navbar = ({ showHomeContent = true }) => {
   const [
     isPageInitializing,
     setIsPageInitializing,
-  ] = useState(true);
+  ] = useState(false);
 
   const navigate =
     useNavigate();
@@ -1434,7 +1375,7 @@ const Navbar = ({ showHomeContent = true }) => {
                   ad.image.trim() !==
                   ""
                 );
-              }).slice(0, 1)
+              })
               : [];
 
           setAdvertisements(
@@ -1460,25 +1401,65 @@ const Navbar = ({ showHomeContent = true }) => {
   }, []);
 
   /* =====================================================
+     TRANSLATE POSTS
+  ===================================================== */
+
+  useEffect(() => {
+    let mounted = true;
+
+    const translate = async () => {
+      if (posts.length === 0) return;
+
+      if (language === "rw") {
+        if (mounted) {
+          setTranslatedPosts(posts);
+          setTranslating(false);
+          setTranslationUnavailable(false);
+        }
+        return;
+      }
+
+      setTranslating(true);
+      setTranslationUnavailable(false);
+
+      try {
+        const translated = await translatePostsBatch(posts, language);
+        if (mounted) setTranslatedPosts(translated);
+      } catch (error) {
+        if (mounted) setTranslatedPosts(posts);
+      } finally {
+        if (mounted) {
+          setTranslating(false);
+        }
+      }
+    };
+
+    translate();
+
+    return () => {
+      mounted = false;
+    };
+  }, [language, posts, setTranslating, setTranslationUnavailable]);
+
+  /* =====================================================
      NAV LINKS
   ===================================================== */
 
   const links = useMemo(
     () => [
       {
-        label: "Ahabanza",
+        label: t("home"),
         category: "All",
       },
       ...DEPARTMENTS.map(
         (department) => ({
-          label:
-            department.label,
+          label: translateCategory(department.name, language),
           category:
             department.name,
         })
       ),
     ],
-    []
+    [language, t]
   );
 
   /* =====================================================
@@ -1518,6 +1499,19 @@ const Navbar = ({ showHomeContent = true }) => {
           getTime(a)
       );
     }, [filteredPosts]);
+
+  /* translated display posts (matched by id) */
+  const displayPosts =
+    useMemo(() => {
+      const translatedMap = new Map(
+        translatedPosts.map((p) => [getPostId(p), p])
+      );
+
+      return sortedPosts.map((post) => {
+        const translated = translatedMap.get(getPostId(post));
+        return translated || post;
+      });
+    }, [sortedPosts, translatedPosts]);
 
   /* =====================================================
      SEARCH MATCH
@@ -1693,7 +1687,7 @@ const Navbar = ({ showHomeContent = true }) => {
 
   const todayLabel =
     currentTime.toLocaleDateString(
-      "rw-RW",
+      language === "fr" ? "fr-FR" : language === "sw" ? "sw-KE" : language === "en" ? "en-US" : "rw-RW",
       {
         weekday: "long",
         day: "numeric",
@@ -1704,7 +1698,7 @@ const Navbar = ({ showHomeContent = true }) => {
 
   const timeLabel =
     currentTime.toLocaleTimeString(
-      "rw-RW",
+      language === "fr" ? "fr-FR" : language === "sw" ? "sw-KE" : language === "en" ? "en-US" : "rw-RW",
       {
         hour: "2-digit",
         minute: "2-digit",
@@ -1719,13 +1713,13 @@ const Navbar = ({ showHomeContent = true }) => {
   const tickerHeadlines =
     useMemo(
       () =>
-        sortedPosts
+        displayPosts
           .map(
             (post) =>
               post.title
           )
           .filter(Boolean),
-      [sortedPosts]
+      [displayPosts]
     );
 
   /* =====================================================
@@ -1782,7 +1776,7 @@ const Navbar = ({ showHomeContent = true }) => {
         </div>
 
         <p className="mt-6 font-body text-sm font-bold uppercase tracking-[0.2em] text-slate-300">
-          Rubavu Today irafungura...
+          {t("loading")}
         </p>
       </div>
     );
@@ -1849,8 +1843,7 @@ const Navbar = ({ showHomeContent = true }) => {
             </span>
 
             <span className="hidden font-semibold text-white md:inline">
-              Amakuru yizewe,
-              igihe cyose
+              {language === "rw" ? "Amakuru yizewe, igihe cyose" : t("trustedNews")}
             </span>
           </div>
         </div>
@@ -1864,11 +1857,11 @@ const Navbar = ({ showHomeContent = true }) => {
             <span className="h-2 w-2 animate-ping rounded-full bg-red-500" />
 
             <span className="hidden sm:inline">
-              Amakuru agezweho:
+              {language === "rw" ? "Amakuru agezweho:" : t("breakingNews")}
             </span>
 
             <span className="sm:hidden">
-              LIVE
+              {language === "rw" ? "LIVE" : "LIVE"}
             </span>
           </div>
 
@@ -1876,7 +1869,7 @@ const Navbar = ({ showHomeContent = true }) => {
             <div
               className="rubavu-ticker-scroll"
               style={{
-                animation: "rubavuTicker 120s linear infinite",
+                animation: "rubavuTicker 350s linear infinite",
                 willChange: "transform",
               }}
             >
@@ -1994,7 +1987,8 @@ const Navbar = ({ showHomeContent = true }) => {
 
 
 
-          <div className="absolute right-3 hidden sm:block sm:right-6 lg:right-10">
+          <div className="absolute right-3 hidden flex-col items-end gap-3 sm:flex sm:right-6 lg:right-10">
+            <LanguageSelector compact={false} />
             <SocialLinks />
           </div>
 
@@ -2151,9 +2145,15 @@ const Navbar = ({ showHomeContent = true }) => {
 
           {isMenuOpen && (
             <div className="border-t border-slate-800 bg-slate-900 px-4 py-4 shadow-2xl sm:hidden">
+              <div className="mb-4 flex items-center justify-between">
+                <p className="font-body text-[9px] font-bold uppercase tracking-[0.2em] text-slate-500">
+                  {language === "rw" ? "Ururimi" : t("language")}
+                </p>
+                <LanguageSelector compact />
+              </div>
               <div className="mb-4">
                 <p className="mb-2 font-body text-[9px] font-bold uppercase tracking-[0.2em] text-slate-500">
-                  Ibice by'amakuru
+                  {language === "rw" ? "Ibice by'amakuru" : t("categories")}
                 </p>
 
                 <div className="grid grid-cols-2 gap-2">
@@ -2203,7 +2203,7 @@ const Navbar = ({ showHomeContent = true }) => {
 
               <div className="border-t border-slate-800 pt-4">
                 <p className="mb-3 font-body text-[9px] font-bold uppercase tracking-[0.2em] text-slate-500">
-                  Dukurikire kuri
+                  {language === "rw" ? "Dukurikire kuri" : t("followUs")}
                 </p>
 
                 <SocialLinks compact />
@@ -2213,39 +2213,28 @@ const Navbar = ({ showHomeContent = true }) => {
         </div>
       </header>
 
-
+      {/* Full-width Advertisement Section - spans the full viewport */}
+      {showHomeContent && advertisements.length > 0 && (
+        <div className="relative left-1/2 z-10 w-[100vw] -ml-[50vw] border-b border-slate-100 bg-white">
+          <div className="mx-auto w-full max-w-[1800px]">
+            <AdCarousel ads={advertisements} />
+          </div>
+        </div>
+      )}
 
       {showHomeContent && (
-        <main className="relative z-20 mx-auto w-full max-w-7xl px-0 pb-5 pt-0 sm:pb-6">
-
-
-
-          <div className="m-0 w-full bg-white p-0">
-            {advertisements.length > 0 ? (
-              <AdCarousel ads={advertisements} />
-            ) : (
-              <AdBanner size="728x90" label="Kwamamaza" />
-            )}
-
-
-
+        <>
+          <main className="relative z-20 mx-auto w-full max-w-7xl px-0 pb-5 pt-6 sm:pb-6">
             <div className="px-3 pt-5 sm:px-6 sm:pt-6 lg:px-10">
-              {loading ? (
-                <div className="py-20 text-center font-body text-slate-500">
-                  Tegereza gato,
-                  amakuru arimo
-                  gushakwa...
-                </div>
-              ) : sortedPosts.length ===
+              {loading ? null : sortedPosts.length ===
                 0 ? (
                 <div className="py-20 text-center font-body text-slate-500">
-                  Nta makuru aboneka
-                  muri iki cyiciro.
+                  {language === "rw" ? "Nta makuru aboneka muri iki cyiciro." : t("noPostsInCategory")}
                 </div>
               ) : (
                 <NewsPostsLayout
                   posts={
-                    sortedPosts
+                    displayPosts
                   }
                   matchedPostId={
                     matchedPostId
@@ -2256,16 +2245,12 @@ const Navbar = ({ showHomeContent = true }) => {
                 />
               )}
             </div>
-          </div>
-        </main>
+          </main>
+        </>
       )}
 
     </div>
   );
 };
-
-/* =========================================================
-   EXPORT
-========================================================= */
 
 export default Navbar;

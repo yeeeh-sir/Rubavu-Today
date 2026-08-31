@@ -2,8 +2,10 @@ import React from "react";
 import { Link } from "react-router-dom";
 import rubavuLogo from "../Rubavu.jpeg";
 import { NotFoundSEO } from "../components/SEO/SEO";
+import { useLanguage } from "../context/LanguageContext";
 
 function NotFound() {
+  const { t } = useLanguage();
   return (
     <div className="min-h-[80vh] bg-slate-50 flex flex-col justify-center items-center px-4 sm:px-6 py-12 text-center font-serif">
       <NotFoundSEO />
@@ -20,16 +22,16 @@ function NotFound() {
         404
       </h1>
       <p className="text-base sm:text-lg font-medium text-slate-500 mt-2 font-serif">
-        Page Not Found
+        {t("pageNotFound")}
       </p>
       <p className="text-sm text-slate-400 max-w-sm mt-1 font-serif">
-        The page you are looking for might have been removed, had its name changed, or is temporarily unavailable.
+        {t("pageNotFoundDescription")}
       </p>
       <Link
         to="/"
         className="mt-6 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-xl transition text-sm shadow-sm cursor-pointer font-sans"
       >
-        Return to Homepage
+        {t("returnHome")}
       </Link>
     </div>
   );

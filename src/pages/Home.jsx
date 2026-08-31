@@ -3,6 +3,7 @@ import { useLocation, Link } from "react-router-dom";
 import { getPosts } from "../services/api";
 import { SiteSEO } from "../components/SEO/SEO";
 import { getArticleUrl } from "../utils/slug";
+import { useLanguage, translatePostsBatch } from "../context/LanguageContext";
 
 
 const summarize = (text, maxWords = 10) => {
@@ -13,9 +14,10 @@ const summarize = (text, maxWords = 10) => {
 };
 
 
-const formatDate = (dateStr) => {
+const formatDate = (dateStr, language) => {
   if (!dateStr) return "";
-  return new Date(dateStr).toLocaleDateString("rw-RW", {
+  const locale = language === "fr" ? "fr-FR" : language === "sw" ? "sw-KE" : language === "en" ? "en-US" : "rw-RW";
+  return new Date(dateStr).toLocaleDateString(locale, {
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -29,14 +31,17 @@ const Home = () => {
   const [error, setError] = useState("");
   const [visibleCount, setVisibleCount] = useState(16);
   const location = useLocation();
+  const { language, t, setTranslating, setTranslationUnavailable } = useLanguage();
 
 
+
+  const [originalPosts, setOriginalPosts] = useState([]);
 
   useEffect(() => {
     const loadPosts = async () => {
       try {
         const data = await getPosts();
-        setPosts(Array.isArray(data) ? data : []);
+        setOriginalPosts(Array.isArray(data) ? data : []);
       } catch (err) {
         setError(err.message || "Ntibyashobotse kubona amakuru.");
       } finally {
@@ -45,6 +50,43 @@ const Home = () => {
     };
     loadPosts();
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const translate = async () => {
+      if (originalPosts.length === 0) return;
+
+      if (language === "rw") {
+        if (!cancelled) {
+          setPosts(originalPosts);
+          setTranslating(false);
+          setTranslationUnavailable(false);
+        }
+        return;
+      }
+
+      setTranslating(true);
+      setTranslationUnavailable(false);
+
+      try {
+        const translated = await translatePostsBatch(originalPosts, language);
+        if (!cancelled) setPosts(translated);
+      } catch (err) {
+        if (!cancelled) setPosts(originalPosts);
+      } finally {
+        if (!cancelled) {
+          setTranslating(false);
+        }
+      }
+    };
+
+    translate();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [language, originalPosts, setTranslating, setTranslationUnavailable]);
 
 
   useEffect(() => {
@@ -83,100 +125,72 @@ const Home = () => {
 
   const PostCard = ({ post }) => {
     const articleHref = getArticleUrl(post);
+    const imageUrl = post.image || "https://images.unsplash.com/photo-1495020689067-958852a7765e?auto=format&fit=crop&w=1200&q=80";
+
     return (
-      <Link to={articleHref} className="group block">
-        <article className="flex flex-col h-full bg-white border border-slate-200 rounded-sm overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-          <div className="relative overflow-hidden bg-slate-100 h-40 sm:h-44">
-            {post.image ? (
-              <img
-                src={post.image}
-                alt={post.title}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                loading="lazy"
-              />
-            ) : (
-              <div className="w-full h-full bg-slate-200 flex items-center justify-center">
-                <span className="text-slate-400 text-[10px]">Nta ishusho</span>
-              </div>
-            )}
+      <Link to={articleHref} className="group block h-full">
+        <article className="flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-red-200 hover:shadow-xl">
+          <div className="relative overflow-hidden bg-slate-100">
+            <div className="aspect-[16/11] overflow-hidden">
+              {post.image ? (
+                <img
+                  src={imageUrl}
+                  alt={post.title}
+                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  loading="lazy"
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = "https://images.unsplash.com/photo-1495020689067-958852a7765e?auto=format&fit=crop&w=1200&q=80";
+                  }}
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-200 via-slate-100 to-slate-300">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">{language === "rw" ? "Nta ishusho" : ""}</span>
+                </div>
+              )}
+            </div>
+
           </div>
-          <div className="p-3 flex flex-col flex-grow">
-            <span className="text-red-600 text-[9px] font-bold uppercase tracking-widest">
-              {post.category}
-            </span>
-            <h4 className="font-masthead text-sm font-bold text-slate-900 leading-snug group-hover:text-red-600 transition-colors line-clamp-2 mt-1">
+
+          <div className="flex flex-1 flex-col p-3 sm:p-3.5">
+            <div className="mb-1.5 text-[9px] font-medium uppercase tracking-[0.12em] text-slate-500">
+              <span>{formatDate(post.createdDate, language)}</span>
+            </div>
+
+            <h4 className="font-masthead text-sm font-extrabold leading-snug text-slate-900 transition-colors group-hover:text-red-600 sm:text-[15px]">
               {post.title}
             </h4>
-            <p className="text-slate-600 text-[11px] leading-relaxed line-clamp-2 mt-1">
-              {summarize(post.summary || post.content, 12)}
+
+            <p className="mt-1.5 line-clamp-2 text-[11px] leading-relaxed text-slate-600">
+              {summarize(post.summary || post.content, 10)}
             </p>
-            <div className="mt-auto pt-2 flex items-center gap-2 text-[10px] text-slate-400 font-mono">
-              <span>Rubavu Today</span>
-              <span>•</span>
-              <span>{formatDate(post.createdDate)}</span>
-            </div>
+
+            <div className="mt-auto pt-2" />
           </div>
         </article>
       </Link>
     );
   };
 
-  const SectionHeader = ({ title, count }) => (
-    <div className="flex items-end justify-between border-b-2 border-black pb-3 mb-6">
-      <h3 className="font-masthead text-xl sm:text-2xl font-black text-slate-900 uppercase tracking-tight">
-        {title}
-      </h3>
-      {count !== undefined && (
-        <span className="text-xs font-mono text-slate-500 uppercase tracking-wider">
-          {count} Byose
-        </span>
-      )}
-    </div>
-  );
+  const SectionHeader = ({ title }) => {
+    if (!title) return null;
+
+    return (
+      <div className="mb-0 sm:mb-0">
+        <h3 className="font-masthead text-xl font-black uppercase tracking-tight text-slate-900 sm:text-2xl">
+          {title}
+        </h3>
+      </div>
+    );
+  };
 
   return (
-    <div className="min-h-screen bg-[#F9F6F0] text-black flex flex-col font-body selection:bg-red-600 selection:text-white">
+    <div className="min-h-screen emotional-gradient-bg text-black flex flex-col font-body selection:bg-red-600 selection:text-white">
       <SiteSEO />
       <main className="flex-grow">
 
-        <section className="bg-white border-b-2 border-black py-3">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-dashed border-slate-300 pb-2">
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 bg-red-600 inline-block"></span>
-                <span className="font-mono text-xs uppercase tracking-widest text-slate-700 font-bold">
-                  Rubavu Today • Amakuru Mashya & Igazeti Y'ibanze
-                </span>
-              </div>
-              <div className="font-mono text-xs text-slate-500">
-                {new Date().toLocaleDateString("rw-RW", {
-                  weekday: "long",
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                })}
-              </div>
-            </div>
-          </div>
-        </section>
-
-
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-          {loading ? (
-            /* Loading Skeleton */
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="animate-pulse">
-                  <div className="bg-slate-200 h-40 sm:h-44 rounded-sm"></div>
-                  <div className="mt-2 space-y-2">
-                    <div className="bg-slate-200 h-3 w-16"></div>
-                    <div className="bg-slate-200 h-4 w-full"></div>
-                    <div className="bg-slate-200 h-3 w-3/4"></div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : error ? (
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 pt-0 pb-2">
+          {loading ? null : error ? (
             /* Error State */
             <div className="bg-red-50 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] p-6 max-w-lg mx-auto text-center my-12">
               <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-red-600 text-white mb-3 border border-black font-bold text-lg">
@@ -193,10 +207,12 @@ const Home = () => {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b-2 border-black pb-4">
                 <div>
                   <h2 className="font-masthead text-2xl font-black text-slate-900">
-                    Ibyavuye mu gushakisha
+                    {language === "rw" ? "Ibyavuye mu gushakisha" : t("search")}
                   </h2>
                   <p className="mt-1 break-words text-sm text-slate-600">
-                    <span className="font-semibold">"{query}"</span> — habonetse {sortedPosts.length} {sortedPosts.length === 1 ? "igisubizo" : "ibisubizo"}
+                    <span className="font-semibold">"{query}"</span> — {language === "rw"
+                      ? `habonetse ${sortedPosts.length} ${sortedPosts.length === 1 ? "igisubizo" : "ibisubizo"}`
+                      : `${sortedPosts.length} ${sortedPosts.length === 1 ? t("result") : t("results")}`}
                   </p>
                 </div>
 
@@ -211,21 +227,20 @@ const Home = () => {
               ) : (
                 <div className="bg-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] p-8 max-w-md mx-auto text-center my-12">
                   <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">
-                    Nta makuru ahari
+                    {t("noPostsFound")}
                   </h3>
                   <p className="text-slate-600 font-medium mt-2 text-sm">
-                    Ongera ugerageze ukoresheje andi magambo.
+                    {language === "rw" ? "Ongera ugerageze ukoresheje andi magambo." : t("tryAgain")}
                   </p>
                 </div>
               )}
             </div>
           ) : sortedPosts.length > 0 ? (
 
-            <div className="space-y-14">
+            <div className="space-y-0">
 
               <SectionHeader
-                title={query.trim() ? "Ibyavuye mu gushakisha" : "Amakuru agezweho"}
-                count={sortedPosts.length}
+                title={query.trim() ? (language === "rw" ? "Ibyavuye mu gushakisha" : t("search")) : ""}
               />
 
 
@@ -242,7 +257,7 @@ const Home = () => {
                     onClick={handleLoadMore}
                     className="inline-flex items-center gap-2 rounded border border-slate-900 bg-slate-950 px-4 py-2 font-body text-[10px] font-bold uppercase tracking-[0.14em] text-white shadow-sm transition hover:border-red-600 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-200"
                   >
-                    Soma Andi Makuru <span aria-hidden="true">→</span>
+                    {language === "rw" ? "Soma Andi Makuru" : t("loadMore")} <span aria-hidden="true">→</span>
                   </button>
                 </div>
               )}
@@ -251,10 +266,10 @@ const Home = () => {
 
             <div className="bg-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] p-8 max-w-md mx-auto text-center my-12">
               <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">
-                Nta makuru ahari
+                {t("noPostsFound")}
               </h3>
               <p className="text-slate-600 font-medium mt-2 text-sm">
-                Nta nkuru zihari ubu. Ongera ugerageze nyuma.
+                {language === "rw" ? "Nta nkuru zihari ubu. Ongera ugerageze nyuma." : t("noPostsNow")}
               </p>
             </div>
           )}

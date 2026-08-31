@@ -10,6 +10,245 @@ export const API_ROOT = API_BASE_URL.replace(
   ""
 );
 
+/* =====================================================
+   TRANSLATION SERVICE
+   =====================================================
+   Centralized client-side translation coordinator.
+
+   - Uses the BATCH endpoint so a whole page translates in
+     ONE HTTP request instead of one call per field.
+   - De-duplicates identical strings across concurrent calls.
+   - Caches results per (text, targetLang, sourceLang).
+   - Uses a TIME-BASED cooldown (NOT a sticky boolean) so a
+     429 only pauses translation briefly; cached + static UI
+     keep working, and translation resumes after cooldown.
+   ===================================================== */
+
+const translationMemory = new Map();
+
+const COOLDOWN_MS = 10 * 60 * 1000; // default cooldown when provider does not send Retry-After
+
+let cooldownUntil = 0;
+
+let translationUnavailable = false;
+
+export const isTranslationUnavailable = () => translationUnavailable;
+
+export const setTranslationUnavailable = (value) => {
+  translationUnavailable = Boolean(value);
+};
+
+const makeKey = (text, targetLang, sourceLang) =>
+  `${sourceLang || "rw"}:${targetLang}:${String(text).trim()}`;
+
+export const getCachedTranslation = (text, targetLang, sourceLang) => {
+  if (!text) return "";
+  return translationMemory.get(makeKey(text, targetLang, sourceLang)) || null;
+};
+
+export const setCachedTranslation = (text, targetLang, sourceLang, translated) => {
+  if (!text) return;
+  translationMemory.set(makeKey(text, targetLang, sourceLang), translated);
+};
+
+/* ---------------------------------------------------------------------------
+   GLOBAL BATCH COALESCER
+   ---------------------------------------------------------------------------
+   Home, Navbar and PostDetails each call translateBatchTexts() on mount and on
+   a language change (a page-load can trigger 2-3 simultaneous calls). Without
+   a shared coordinator that would fire 2-3 identical /api/translate/batch
+   requests and multiply OpenAI calls, eventually triggering a 429.
+
+   This coalescer merges every call that happens in the SAME tick into ONE
+   network request per (source:target) language. All callers await that single
+   request and get their own results back. The per-text cache guarantees that
+   unchanged text is never re-sent, so after the first successful batch the
+   same posts resolve instantly from memory with no network request at all.
+   --------------------------------------------------------------------------- */
+
+const batchFlush = {}; // langKey -> { pending: [...], unique: Map<key,text>, scheduled }
+let flushChain = {}; // langKey -> Promise (never more than one in-flight request per language)
+
+function scheduleFlush(langKey, targetLang, sourceLang) {
+  const state = batchFlush[langKey];
+  if (!state || state.scheduled) return;
+  state.scheduled = true;
+
+  queueMicrotask(() => {
+    // Serialize: wait for the previous request for this language to finish,
+    // then drain whatever accumulated while it was running.
+    flushChain[langKey] = (flushChain[langKey] || Promise.resolve()).then(
+      () => drainBatch(langKey, targetLang, sourceLang)
+    );
+  });
+}
+
+async function drainBatch(langKey, targetLang, sourceLang) {
+  const state = batchFlush[langKey];
+  batchFlush[langKey] = null;
+
+  if (!state || state.pending.length === 0) return;
+
+  const uniqueTexts = Array.from(state.unique.values());
+
+  // Short-circuit if the provider is in cooldown: return originals immediately.
+  if (cooldownUntil > Date.now()) {
+    for (const entry of state.pending) {
+      entry.results[entry.index] = entry.text;
+      entry.done();
+    }
+    return;
+  }
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/translate/batch`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({
+        items: uniqueTexts,
+        targetLang,
+        sourceLang: sourceLang || undefined,
+      }),
+    });
+
+    const data = await response.json().catch(() => ({}));
+
+    if (data?.translationUnavailable || data?.code === "AI_NO_CREDITS") {
+      // Apply a cooldown: use the provider's Retry-After when present, else default.
+      const retryAfter =
+        Number.isFinite(Number(data?.retryAfter)) && Number(data?.retryAfter) > 0
+          ? Number(data?.retryAfter)
+          : COOLDOWN_MS;
+
+      cooldownUntil = Date.now() + retryAfter;
+      setTranslationUnavailable(true);
+
+      console.warn(`[translateBatchTexts] 429 cooldown ${Math.round(retryAfter / 1000)}s`);
+
+      for (const entry of state.pending) {
+        entry.results[entry.index] = entry.text;
+        entry.done();
+      }
+      return;
+    }
+
+    if (response.ok && Array.isArray(data?.results)) {
+      // Healthy again.
+      setTranslationUnavailable(false);
+
+      const uniqueArr = Array.from(state.unique.entries());
+      uniqueArr.forEach(([key, text], i) => {
+        const translated = data.results[i];
+        if (translated) {
+          setCachedTranslation(text, targetLang, sourceLang, translated);
+        }
+      });
+    }
+  } catch (error) {
+    console.error("[translateBatchTexts] Error:", error);
+  }
+
+  // Resolve each pending caller, preferring a now-cached translation.
+  for (const entry of state.pending) {
+    const cached = getCachedTranslation(entry.text, targetLang, sourceLang);
+    entry.results[entry.index] = cached || entry.text;
+    entry.done();
+  }
+}
+
+/* Main batch translator. Given an array of strings, returns a Promise for a
+   parallel array of translated strings (originals where unavailable). Called
+   from several components in the same tick; all coalesce into ONE request. */
+export const translateBatchTexts = (texts, targetLang, sourceLang) => {
+  return new Promise((resolve) => {
+    const clean = (texts || []).map((t) => String(t || "").trim());
+    const results = new Array(clean.length);
+    const pendingList = [];
+
+    // 1) Resolve everything already cached; collect only genuinely missing text.
+    for (let i = 0; i < clean.length; i++) {
+      const text = clean[i];
+      if (!text) {
+        results[i] = "";
+        continue;
+      }
+
+      const cached = getCachedTranslation(text, targetLang, sourceLang);
+      if (cached) {
+        results[i] = cached;
+      } else {
+        pendingList.push({ index: i, text });
+      }
+    }
+
+    // 2) Nothing to translate — resolve from cache immediately (no request).
+    if (pendingList.length === 0) {
+      resolve(results);
+      return;
+    }
+
+    const langKey = `${sourceLang || "rw"}:${targetLang}`;
+    const state = batchFlush[langKey] || (batchFlush[langKey] = { pending: [], unique: new Map() });
+
+    for (const item of pendingList) {
+      state.unique.set(makeKey(item.text, targetLang, sourceLang), item.text);
+      state.pending.push({
+        index: item.index,
+        text: item.text,
+        results,
+        done: () => resolve(results),
+      });
+    }
+
+    // Coalesce all callers in this tick into one request.
+    scheduleFlush(langKey, targetLang, sourceLang);
+  });
+};
+
+// Single-text convenience wrapper (backed by the same batch cache + coalescer).
+export const translateText = async (text, targetLang, sourceLang) => {
+  const cleanText = String(text || "").trim();
+  if (!cleanText) return "";
+  if (targetLang === "rw") return cleanText;
+
+  const [out] = await translateBatchTexts([cleanText], targetLang, sourceLang);
+  return out || cleanText;
+};
+
+// Backward-compatible wrapper (uses the coalescing batch internally).
+export const translatePosts = async (posts, targetLang, sourceLang) => {
+  if (!Array.isArray(posts) || posts.length === 0 || targetLang === "rw") {
+    return posts;
+  }
+
+  const translated = await Promise.all(
+    posts.map(async (post) => {
+      if (!post) return post;
+
+      const translatedTitle = await translateText(post.title, targetLang, sourceLang);
+      const translatedSummary = await translateText(
+        post.summary || post.description,
+        targetLang,
+        sourceLang
+      );
+      const translatedDescription = await translateText(
+        post.description,
+        targetLang,
+        sourceLang
+      );
+
+      return {
+        ...post,
+        title: translatedTitle || post.title,
+        summary: translatedSummary || post.summary,
+        description: translatedDescription || post.description,
+      };
+    })
+  );
+
+  return translated;
+};
+
 export const normalizeImageUrl = (image) => {
   if (!image) return null;
 
@@ -370,30 +609,38 @@ export const isEmployee = () => {
   );
 };
 
+let postsInFlightPromise = null;
+
 export const getPosts = async () => {
-  const response = await fetch(
-    `${API_BASE_URL}/posts`
-  );
+  // Deduplicate concurrent/rapid calls (Navbar, Home, WebsiteChat all
+  // call getPosts on mount simultaneously). The same resolved promise
+  // is returned to all callers; the entry is dropped once it settles
+  // so later navigation re-fetches fresh data.
+  if (postsInFlightPromise) return postsInFlightPromise;
 
-  if (!response.ok) {
-    throw new Error(
-      "Unable to load posts from the server."
-    );
-  }
+  const load = async () => {
+    const response = await fetch(`${API_BASE_URL}/posts`);
 
-  const data = await response.json();
+    if (!response.ok) {
+      throw new Error("Unable to load posts from the server.");
+    }
 
-  if (!Array.isArray(data)) {
-    return [];
-  }
+    const data = await response.json();
 
-  return data
-    .filter(
-      (post) =>
-        String(post.status || "").toLowerCase() ===
-        "approved"
-    )
-    .map(normalizePost);
+    if (!Array.isArray(data)) {
+      return [];
+    }
+
+    return data
+      .filter((post) => String(post.status || "").toLowerCase() === "approved")
+      .map(normalizePost);
+  };
+
+  postsInFlightPromise = load().finally(() => {
+    postsInFlightPromise = null;
+  });
+
+  return postsInFlightPromise;
 };
 
 export const getPostById = async (id) => {
@@ -669,6 +916,11 @@ export async function getMyPosts() {
 
 export async function getComments(postId) {
   return request(`/api/comments/${postId}`);
+}
+
+// List ALL comments across every post (Admin / Chief Editor role required).
+export async function getAllComments() {
+  return request("/api/comments");
 }
 
 export async function addComment(commentData) {
@@ -1128,6 +1380,7 @@ const api = {
   getMyPosts,
 
   getComments,
+  getAllComments,
   addComment,
   createComment,
   updateComment,

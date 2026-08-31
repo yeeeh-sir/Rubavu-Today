@@ -1,9 +1,13 @@
 import React from 'react';
+import { useLanguage } from '../../context/LanguageContext';
 
-const Footer = () => (
+const Footer = () => {
+  const { t } = useLanguage();
+
+  return (
   <footer className="bg-slate-900 text-sm text-slate-300">
     <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-6 text-center sm:px-6 md:flex-row md:items-center md:justify-between md:text-left lg:px-10">
-      <p>© 2026 Rubavu Today. All rights reserved.</p>
+      <p>© 2026 Rubavu Today. {t("footerRights")}</p>
 
 
       <div className="flex items-center justify-center gap-4 [&_svg]:h-5 [&_svg]:w-5">
@@ -57,6 +61,7 @@ const Footer = () => (
       </div>
     </div>
   </footer>
-);
+  );
+};
 
 export default Footer;

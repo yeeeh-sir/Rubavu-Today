@@ -135,7 +135,7 @@ const Home = () => {
   );
 
   return (
-    <div className="min-h-screen bg-[#F9F6F0] text-black flex flex-col font-body selection:bg-red-600 selection:text-white">
+    <div className="min-h-screen emotional-gradient-bg text-black flex flex-col font-body selection:bg-red-600 selection:text-white">
       <SiteSEO />
       <main className="flex-grow">
 

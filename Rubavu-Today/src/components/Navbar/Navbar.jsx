@@ -1944,7 +1944,7 @@ const Navbar = ({ showHomeContent = true }) => {
             <div
               className="rubavu-ticker-scroll"
               style={{
-                animation: "rubavuTicker 120s linear infinite",
+                animation: "rubavuTicker 350s linear infinite",
                 willChange: "transform",
               }}
             >

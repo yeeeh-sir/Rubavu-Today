@@ -1,27 +1,31 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { getArticleUrl } from "../../utils/slug";
+import { useLanguage } from "../../context/LanguageContext";
 
 const FALLBACK_IMAGE =
   "https://images.unsplash.com/photo-1495020689067-958852a7765e?auto=format&fit=crop&w=900&q=80";
 
 const PostCard = ({ post }) => {
   const [copied, setCopied] = useState(false);
+  const { language, t } = useLanguage();
+
+  const locale = language === "fr" ? "fr-FR" : language === "sw" ? "sw-KE" : language === "en" ? "en-US" : "rw-RW";
 
   const published = post?.createdDate
-    ? new Date(post.createdDate).toLocaleDateString("rw-RW", {
+    ? new Date(post.createdDate).toLocaleDateString(locale, {
       day: "numeric",
       month: "short",
       year: "numeric",
     })
-    : "Uyu munsi";
+    : t("today");
 
 
   const calculateReadTime = (text) => {
-    if (!text) return "iminota 1 yo gusoma";
+    if (!text) return t("readTimeMin").replace("{count}", "1");
     const words = text.trim().split(/\s+/).length;
     const minutes = Math.ceil(words / 200);
-    return `iminota ${minutes} yo gusoma`;
+    return t("readTimeMin").replace("{count}", String(minutes));
   };
 
   const contentText = post?.summary || post?.description || "";
@@ -122,18 +126,18 @@ const PostCard = ({ post }) => {
           to={getPostSlugPath(post)}
           className="font-bold uppercase tracking-wider text-[#161616] transition hover:text-[#B3261E]"
         >
-          Soma byinshi →
+          {t("readMorePost")} →
         </Link>
 
         <div className="flex items-center gap-3">
-          <span className="text-[#888780]" title="Abayirebye">👁 {post.views || 0}</span>
+          <span className="text-[#888780]" title={t("views")}>👁 {post.views || 0}</span>
           <button
             type="button"
             onClick={handleShare}
             className="text-slate-600 hover:text-red-600 transition font-medium relative"
-            title="Koporora ubutumwa"
+            title={t("shareCode")}
           >
-            {copied ? "Byakoporowe!" : "🔗 Sangiza"}
+            {copied ? t("copied") : `🔗 ${t("shareCode")}`}
           </button>
         </div>
       </div>

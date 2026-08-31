@@ -76,72 +76,117 @@ const findPosts = (posts, question) => {
 
 const detectLanguage = () => "rw";
 
+const detectSentiment = (text) => {
+    const negative = /ne|ntabwo|nta|siyo|ntera|tera|ubwoba|agaciro|cane|cyane|bibi|impi|ibibazo|icyo kibabaje|ntabuke|amakubire|ubwiyunge/i;
+    const positive = /yego|neza|cyiza|kuryama|agaciro|agahinda|mwiza|mahoro|agasigaye|mwacu|mwacu cyane|numva neza|ijoro cyiza|neza cyane/i;
+
+    if (negative.test(text)) return "concerned";
+    if (positive.test(text)) return "happy";
+    return "neutral";
+};
+
 const localized = {
     rw: {
-        welcome: "Muraho! Ndi umufasha wa Rubavu Today. Wabaza amakuru mashya, ibyiciro, cyangwa ugashaka inkuru runaka.",
-        greeting: "Muraho neza! Nakwereka amakuru mashya cyangwa nkagufasha kubona inkuru ushaka.",
-        about: "Rubavu Today ni urubuga rw'amakuru rufasha abantu kumenya amakuru yo muri Rubavu n'ahandi. Rukubiyemo Amakuru, Ubukungu, Imikino, Imyidagaduro n'Uburezi.",
-        categories: (items) => `Ibyiciro biboneka kuri Rubavu Today ni: ${items.join(", ")}.`,
-        latest: (items) => `Amakuru agezweho ni:\n${items.map((item) => `• ${item}`).join("\n")}`,
-        search: "Koresha akazu ka Shakisha inkuru cyangwa wandike umutwe w'inkuru ushaka.",
-        matches: "Nabonye izi nkuru zijyanye n'ibyo wanditse:",
-        empty: "Ntabwo nabonye inkuru ihuye neza n'ibyo wanditse. Nshobora kugufasha kureba Amakuru agezweho, Ubukungu, Imikino, Imyidagaduro cyangwa Uburezi. Andika umutwe w'inkuru, izina ry'umuntu, cyangwa ingingo ushaka.",
-        unavailable: "Nta makuru abonetse ubu. Ongera ugerageze nyuma.",
+        welcome: "Muraho ubwacu! 👋 Ndi Rubavu Today Assistant, umufasha wacu mu gushakisha amakuru n'ubwenge. Kandi woza maze wabaza ibibazo byacu. Ndi imvano kumweka ushaka kandi nzafasha.",
+        greeting: "Muraho cyane! 😊 Niweze kumukweka amakuru mashya n'agapitiye cyane. Andi kundi nshobora kugufasha gushakisha inkuru runaka.",
+        greetingHappy: "Ijoro cyiza cyane! 🌟 Nitwiyunge ari amakuru mashya yo muri Rubavu n'ahandi hose. Ndi hano kugufasha wacu mu mafaranga n'amakuru.",
+        greetingConcerned: "Muramutse neza! 💙 Ntakibabaje, nshobora kugufasha kumenya ibyose ushaka. Nimugukoreshera imikorere y'urubuga.",
+        about: "Rubavu Today ni urubuga rw'amakuru rwimbitse n'ibwishiki. Ruzigira inzira ishya y'amakuru yo muri Rubavu n'ibice biyegereye. Hano urubuga, hari ibyiciro bitanu: Amakuru (ibyiciro by'ibanze), Ubukungu (amakuru y'imari n'ubwigenge), Imikino (amakuru y'umukino n'imitwe), Imyidagaduro (ikinema, muzika, n'indi bikinema) n'Uburezi (amakuru y'ikiyigira). Urubuga rwacu rufasha abantu kumenya ibyo bivugurura mu gihugu n'inyenzi.",
+        thanks: "Mwacu cyane! 🙏 Ndi hano igihe cyose kugufasha n'uko ikintu cyose nzakwera. Aho niba ufite umuntu wa Rubavu cyangwa andi, nzagushakira amakuru neza.",
+        help: "Ndi hano kugufasha na imikorere yose y'urubuga:\n✓ Guherereza amakuru mashya cyane\n✓ Gushakisha inkuru runaka ushaka\n✓ Kubazirizira ibyiciro byote\n✓ Kubisobanura uburyo bwo kwiyigira Rubavu Today\n✓ Gukoresha akazu ka Shakisha\n✓ Kubaza ibibazo byo hafi cyangwa kure",
+        categories: (items) => `Ibyiciro byose byari kuri Rubavu Today: ${items.join(", ")}. Umuntu ushobora gushakisha mu buri gihe.`,
+        latest: (items) => `Iyi ni amakuru agezeho ubwambere:\n${items.map((item) => `• ${item}`).join("\n")}\n\nNiba ushaka kugarura ingeri, ndakagusabyira.`,
+        search: "Gukoresha akazu ka Shakisha cyangwa wandike umutwe w'inkuru ushaka kubona. Niba nta makuru aho, ndizafasha kugushakisha mu myanya yose.",
+        matches: "Nabonye izi nkuru zijyanye neza n'ibyo wanditse:\n",
+        empty: "Ntabwo nabonye inkuru ihuriye neza n'ibyakoze. Ariko nshobora kubajyamuvuga mu ibwambere - Amakuru agezweho, Ubukungu, Imikino, Imyidagaduro cyangwa Uburezi. Andi ushakire neza ku muntu runaka cyangwa ingingo runaka.",
+        unavailable: "Ahubwo nta makuru abonetse ubu, nkoramo kubanja mugihe. Ongera ugerageze nyuma. Rubavu Today ninzira nziza yo kumenya ibyo bivugurura.",
+        confused: "Sinshoboye kubyumva neza icyo uvuze! 🤔 Mushobora kugerageza neza na magambo atandukanye? Ariko nagufasha gushakisha cyangwa kukubariza amakuru mashya.",
+        encourage: "Bakire! 💪 Urubuga rwacu ruzibuka neza kandi ruzigira ibyinshi. Ongera ugerageze neza! Urubuga rwacu inzira nziza yo gusobanukiranya byose.",
     },
     en: {
-        welcome: "Hello! I am the Rubavu Today assistant. Ask about the latest news, categories, or find a specific article.",
-        greeting: "Hello! I can show you the latest news or help you find an article.",
+        welcome: "Hello! I'm the Rubavu Today assistant. 👋 Ask about the latest news, categories, or find a specific article.",
+        greeting: "Hello! 😊 I can show you the latest news or help you find an article.",
+        greetingHappy: "Great to see you! 🌟 I'm here to keep you updated with news from Rubavu.",
+        greetingConcerned: "Hi there! 💙 I can help you find information about what you're looking for.",
         about: "Rubavu Today is a news website covering Rubavu and surrounding communities. It includes News, Business, Sports, Entertainment, and Education departments.",
+        thanks: "Happy to help! 🙏 I'm always here for you.",
+        help: "I can help you with:\n✓ Show the latest news\n✓ Search for specific articles\n✓ Explain news categories\n✓ Guide you through the website",
         categories: (items) => `Rubavu Today categories include: ${items.join(", ")}.`,
         latest: (items) => `The latest news is:\n${items.map((item) => `• ${item}`).join("\n")}`,
         search: "Use the search box or type the title or subject of the article you want.",
         matches: "I found these articles related to your question:",
         empty: "I could not find an exact article match yet. I can help with the latest news, Business, Sports, Entertainment, Education, or any topic published on Rubavu Today. Try an article title, person, or subject.",
         unavailable: "No news is available right now. Please try again later.",
+        confused: "I'm not quite sure! 🤔 Could you rephrase your question? I can help with searching or showing you our latest news.",
+        encourage: "Keep exploring! 💪 Our website has lots of great content. Try again!",
     },
     fr: {
-        welcome: "Bonjour ! Je suis l'assistant de Rubavu Today. Demandez les dernières nouvelles, les rubriques ou un article précis.",
-        greeting: "Bonjour ! Je peux vous montrer les dernières nouvelles ou vous aider à trouver un article.",
+        welcome: "Bonjour ! Je suis l'assistant de Rubavu Today. 👋 Demandez les dernières nouvelles, les rubriques ou un article précis.",
+        greeting: "Bonjour ! 😊 Je peux vous montrer les dernières nouvelles ou vous aider à trouver un article.",
+        greetingHappy: "Ravi de vous voir! 🌟 Je suis ici pour vous tenir informé des nouvelles de Rubavu.",
+        greetingConcerned: "Bonjour! 💙 Je peux vous aider à trouver l'information que vous recherchez.",
         about: "Rubavu Today est un site d'actualités consacré à Rubavu et aux communautés voisines. Il propose les rubriques actualités, économie, sport, divertissement et éducation.",
+        thanks: "Heureux de pouvoir aider! 🙏 Je suis toujours là pour vous.",
+        help: "Je peux vous aider avec:\n✓ Afficher les dernières nouvelles\n✓ Rechercher des articles spécifiques\n✓ Expliquer les catégories\n✓ Vous guider sur le site",
         categories: (items) => `Les rubriques de Rubavu Today sont : ${items.join(", ")}.`,
         latest: (items) => `Les dernières nouvelles sont :\n${items.map((item) => `• ${item}`).join("\n")}`,
         search: "Utilisez la recherche ou écrivez le titre ou le sujet de l'article recherché.",
         matches: "Voici les articles liés à votre question :",
         empty: "Je n'ai pas trouvé d'article correspondant exactement. Je peux vous aider avec les actualités, l'économie, le sport, le divertissement ou l'éducation. Essayez un titre, un nom ou un sujet.",
         unavailable: "Aucune nouvelle n'est disponible pour le moment. Réessayez plus tard.",
+        confused: "Je ne suis pas certain! 🤔 Pouviez-vous reformuler votre question? Je peux vous aider à chercher.",
+        encourage: "Continuez votre exploration! 💪 Notre site propose d'excellents contenus. Réessayez!",
     },
     sw: {
-        welcome: "Habari! Mimi ni msaidizi wa Rubavu Today. Uliza kuhusu habari mpya, kategoria, au tafuta makala.",
-        greeting: "Habari! Ninaweza kukuonyesha habari mpya au kukusaidia kupata makala.",
+        welcome: "Habari! 👋 Mimi ni msaidizi wa Rubavu Today. Uliza kuhusu habari mpya, kategoria, au tafuta makala.",
+        greeting: "Habari! 😊 Ninaweza kukuonyesha habari mpya au kukusaidia kupata makala.",
+        greetingHappy: "Karibu sana! 🌟 Niko hapa kukukabari habari za Rubavu.",
+        greetingConcerned: "Jambo! 💙 Niweza kukusaidia kupata taarifa unayotaka.",
         about: "Rubavu Today ni tovuti ya habari kuhusu Rubavu na jamii zinazozunguka. Ina habari, biashara, michezo, burudani na elimu.",
+        thanks: "Furaha ya kusaidia! 🙏 Niko hapa kila wakati.",
+        help: "Niweza kukusaidia na:\n✓ Kuonyesha habari mpya\n✓ Kutafuta makala mahsusi\n✓ Kueleza kategoria\n✓ Kukuongoza kwenye tovuti",
         categories: (items) => `Kategoria za Rubavu Today ni: ${items.join(", ")}.`,
         latest: (items) => `Habari mpya ni:\n${items.map((item) => `• ${item}`).join("\n")}`,
         search: "Tumia kisanduku cha kutafuta au andika kichwa cha makala unayotaka.",
         matches: "Nimepata makala hizi zinazohusiana na swali lako:",
         empty: "Sikupata makala inayolingana kabisa. Ninaweza kusaidia kuhusu habari mpya, biashara, michezo, burudani au elimu. Andika kichwa, jina au mada.",
         unavailable: "Hakuna habari kwa sasa. Tafadhali jaribu tena baadaye.",
+        confused: "Sijafaulu kuelewa! 🤔 Tafadhali uzunguke swali? Niweza kusaidia kuipatia.",
+        encourage: "Endelea kutafuta! 💪 Tovuti yetu ina maudhui mazuri. Jaribu tena!",
     },
     es: {
-        welcome: "¡Hola! Soy el asistente de Rubavu Today. Pregunta por las últimas noticias, categorías o un artículo.",
-        greeting: "¡Hola! Puedo mostrarte las últimas noticias o ayudarte a encontrar un artículo.",
+        welcome: "¡Hola! 👋 Soy el asistente de Rubavu Today. Pregunta por las últimas noticias, categorías o un artículo.",
+        greeting: "¡Hola! 😊 Puedo mostrarte las últimas noticias o ayudarte a encontrar un artículo.",
+        greetingHappy: "¡Qué gusto verte! 🌟 Estoy aquí para mantenerte informado sobre Rubavu.",
+        greetingConcerned: "¡Hola! 💙 Puedo ayudarte a encontrar la información que buscas.",
         about: "Rubavu Today es un sitio de noticias sobre Rubavu y las comunidades cercanas. Incluye noticias, negocios, deportes, entretenimiento y educación.",
+        thanks: "¡Feliz de ayudar! 🙏 Siempre estoy aquí para ti.",
+        help: "Puedo ayudarte con:\n✓ Mostrar las últimas noticias\n✓ Buscar artículos específicos\n✓ Explicar las categorías\n✓ Guiarte por el sitio",
         categories: (items) => `Las categorías de Rubavu Today son: ${items.join(", ")}.`,
         latest: (items) => `Las últimas noticias son:\n${items.map((item) => `• ${item}`).join("\n")}`,
         search: "Usa el buscador o escribe el título o tema del artículo que buscas.",
         matches: "Encontré estos artículos relacionados con tu pregunta:",
         empty: "No encontré un artículo exacto. Puedo ayudarte con noticias, negocios, deportes, entretenimiento o educación. Prueba con un título, nombre o tema.",
         unavailable: "No hay noticias disponibles ahora. Inténtalo más tarde.",
+        confused: "¡No estoy muy seguro! 🤔 ¿Podrías reformular tu pregunta? Puedo ayudarte a buscar.",
+        encourage: "¡Sigue explorando! 💪 Nuestro sitio tiene contenido excelente. ¡Inténtalo de nuevo!",
     },
     pt: {
-        welcome: "Olá! Sou o assistente do Rubavu Today. Pergunte pelas notícias, categorias ou por um artigo.",
-        greeting: "Olá! Posso mostrar as notícias recentes ou ajudar a encontrar um artigo.",
+        welcome: "Olá! 👋 Sou o assistente do Rubavu Today. Pergunte pelas notícias, categorias ou por um artigo.",
+        greeting: "Olá! 😊 Posso mostrar as notícias recentes ou ajudar a encontrar um artigo.",
+        greetingHappy: "Que bom te ver! 🌟 Estou aqui para te manter informado sobre notícias de Rubavu.",
+        greetingConcerned: "Olá! 💙 Posso ajudá-lo a encontrar a informação que procura.",
         about: "Rubavu Today é um site de notícias sobre Rubavu e as comunidades próximas. Inclui notícias, negócios, desporto, entretenimento e educação.",
+        thanks: "Feliz em ajudar! 🙏 Sempre estou aqui para você.",
+        help: "Posso ajudar com:\n✓ Mostrar as notícias recentes\n✓ Procurar artigos específicos\n✓ Explicar as categorias\n✓ Orientá-lo no site",
         categories: (items) => `As categorias do Rubavu Today são: ${items.join(", ")}.`,
         latest: (items) => `As notícias recentes são:\n${items.map((item) => `• ${item}`).join("\n")}`,
         search: "Use a pesquisa ou escreva o título ou assunto do artigo que procura.",
         matches: "Encontrei estes artigos relacionados à sua pergunta:",
         empty: "Não encontrei um artigo exato. Posso ajudar com notícias, negócios, desporto, entretenimento ou educação. Tente um título, nome ou assunto.",
         unavailable: "Não há notícias disponíveis agora. Tente novamente mais tarde.",
+        confused: "Não tenho certeza! 🤔 Poderia reformular sua pergunta? Posso ajudá-lo a procurar.",
+        encourage: "Continue explorando! 💪 Nosso site tem excelente conteúdo. Tente novamente!",
     },
 };
 
@@ -154,57 +199,51 @@ const answerQuestion = (question, posts) => {
         .slice(0, 3);
     const categories = [...new Set(posts.map((post) => cleanText(post.category)).filter(Boolean))];
     const matchedPosts = findPosts(posts, question);
+    const sentiment = detectSentiment(question);
 
     if (!normalizedQuestion) {
-        return {
-            text: copy.welcome,
-        };
+        return { text: copy.welcome };
     }
 
-    if (/muraho|hello|hi|bonjour|hola|habari|amakuru yawe/.test(normalizedQuestion)) {
-        return {
-            text: copy.greeting,
-        };
+    // Sentiment-aware greeting with enhanced Kinyarwanda patterns
+    if (/muraho|mwaramutse|muramutse|mwacu|hello|hi|bonjour|hola|habari|amakuru yawe|thanks|merci|gracias|asante|obrigado|mwacu kandi/.test(normalizedQuestion)) {
+        if (/thanks|merci|gracias|asante|obrigado|mwacu kandi|mwacu/.test(normalizedQuestion)) {
+            return { text: copy.thanks };
+        }
+        const greetingKey = sentiment === "happy" ? "greetingHappy" : sentiment === "concerned" ? "greetingConcerned" : "greeting";
+        return { text: copy[greetingKey] || copy.greeting };
     }
 
-    if (/rubavu today|website|urubuga|site|about|iki ikora|what do you do|que fait|que es/.test(normalizedQuestion)) {
+    if (/rubavu today|website|urubuga|site|about|iki ikora|what do you do|que fait|que es|ayoboye|funga umufasha|ni iki/.test(normalizedQuestion)) {
         return { text: copy.about };
     }
 
-    if (/category|categories|ibyiciro|sections|igice|kategoria|rubrique/.test(normalizedQuestion)) {
-        return {
-            text: categories.length
-                ? copy.categories(categories)
-                : copy.unavailable,
-        };
+    if (/help|ndihanje|huluda|gufasha|aide|ayuda|kusaidia|ushobora kugufasha/.test(normalizedQuestion)) {
+        return { text: copy.help };
     }
 
-    if (/latest|new|mashya|agezweho|uyu munsi|amakuru|nouvelles|noticias|leo|habari mpya/.test(normalizedQuestion) && !matchedPosts.length) {
-        return {
-            text: latestPosts.length
-                ? copy.latest(latestPosts.map((post) => postTitle(post)))
-                : copy.unavailable,
-            posts: latestPosts,
-        };
+    if (/category|categories|ibyiciro|sections|igice|kategoria|rubrique|byiciro/.test(normalizedQuestion)) {
+        return { text: categories.length ? copy.categories(categories) : copy.unavailable };
     }
 
-    if (/search|shaka|ndashaka|find|chercher|buscar|procurar|tafuta|kubona/.test(normalizedQuestion)) {
-        return {
-            text: copy.search,
-            posts: matchedPosts,
-        };
+    if (/latest|new|mashya|agezweho|uyu munsi|amakuru|nouvelles|noticias|leo|habari mpya|agezeho/.test(normalizedQuestion) && !matchedPosts.length) {
+        return { text: latestPosts.length ? copy.latest(latestPosts.map((post) => postTitle(post))) : copy.unavailable, posts: latestPosts };
+    }
+
+    if (/search|shaka|ndashaka|find|chercher|buscar|procurar|tafuta|kubona|shakisha/.test(normalizedQuestion)) {
+        return { text: copy.search, posts: matchedPosts };
     }
 
     if (matchedPosts.length) {
-        return {
-            text: `${copy.matches}\n${matchedPosts.map((post) => `• ${postTitle(post)}${getDate(post) ? ` (${getDate(post)})` : ""}`).join("\n")}`,
-            posts: matchedPosts,
-        };
+        return { text: `${copy.matches}\n${matchedPosts.map((post) => `• ${postTitle(post)}${getDate(post) ? ` (${getDate(post)})` : ""}`).join("\n")}`, posts: matchedPosts };
     }
 
-    return {
-        text: copy.empty,
-    };
+    // If no specific match but question is too short or unclear
+    if (normalizedQuestion.split(/\s+/).length < 2) {
+        return { text: copy.confused };
+    }
+
+    return { text: copy.empty };
 };
 
 const buildWebsiteContext = (posts) => [

@@ -11,6 +11,8 @@ import {
   deleteComment,
   getStoredUser,
   getChiefEditorPosts,
+  getAllComments,
+  getComments,
   updatePostStatus,
 } from "../../services/api";
 
@@ -34,6 +36,10 @@ export default function ChiefDashboard({ onLogout }) {
   const [selectedIds, setSelectedIds] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(12);
+
+  const [allComments, setAllComments] = useState([]);
+  const [loadingComments, setLoadingComments] = useState(true);
+  const [commentsError, setCommentsError] = useState("");
 
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("All");
@@ -599,6 +605,66 @@ export default function ChiefDashboard({ onLogout }) {
 
 
 
+  // Load every reader comment across all posts (Admin / Chief Editor).
+  const loadAllComments = useCallback(async () => {
+    setLoadingComments(true);
+    setCommentsError("");
+    try {
+      const data = await getAllComments();
+      setAllComments(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Load all comments error:", err);
+      setCommentsError(err?.message || "Unable to load comments.");
+      setAllComments([]);
+    } finally {
+      setLoadingComments(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadAllComments();
+  }, [loadAllComments]);
+
+  const handleDeleteAllComment = async (commentId) => {
+    if (!commentId) {
+      setCommentsError("Unable to identify this comment.");
+      return;
+    }
+
+    const confirmed = window.confirm("Remove this comment?");
+    if (!confirmed) return;
+
+    try {
+      setCommentsError("");
+      await deleteComment(commentId);
+      setAllComments((prev) =>
+        prev.filter((c) => (c.id ?? c.comment_id ?? c._id) !== commentId)
+      );
+      setMessage("Comment removed.");
+    } catch (err) {
+      console.error("Delete comment error:", err);
+      setCommentsError(err?.message || "Unable to remove comment.");
+    }
+  };
+
+  // Open a post's details and load that post's reader comments so the
+  // "Reader Comments" section shows real data (previously it was always empty).
+  const handleViewPost = async (post) => {
+    const postId = getPostId(post);
+
+    if (postId) {
+      try {
+        const comments = await getComments(postId);
+        post = { ...post, comments: Array.isArray(comments) ? comments : [] };
+      } catch (err) {
+        console.error("Load post comments error:", err);
+        post = { ...post, comments: [] };
+      }
+    }
+
+    setSelectedPost(post);
+  };
+
 
 
   const filteredPosts =
@@ -973,6 +1039,110 @@ export default function ChiefDashboard({ onLogout }) {
             </p>
 
           </div>
+
+        </section>
+
+
+
+        {/* ---- ALL COMMENTS (every reader comment on every post) ---- */}
+        <section className="mb-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+
+            <div>
+
+              <p className="text-xs font-black uppercase tracking-wide text-slate-400">
+                Comments
+              </p>
+
+              <h3 className="mt-1 text-lg font-black text-slate-900">
+                Ibitekerezo byose by'abasomyi
+              </h3>
+
+            </div>
+
+            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">
+              {allComments.length}
+            </span>
+
+          </div>
+
+          {commentsError && (
+            <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-xs font-semibold text-red-600">
+              {commentsError}
+            </p>
+          )}
+
+          {loadingComments ? (
+            <p className="py-6 text-center text-sm text-slate-500">
+              Loading comments...
+            </p>
+          ) : allComments.length === 0 ? (
+            <p className="py-6 text-center text-sm text-slate-500">
+              Nta bitekerezo bihari.
+            </p>
+          ) : (
+            <div className="max-h-[480px] space-y-3 overflow-y-auto pr-1">
+
+              {allComments.map((comment) => {
+
+                const commentId = comment.id ?? comment.comment_id ?? comment._id;
+
+                return (
+
+                  <div
+                    key={commentId}
+                    className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
+                  >
+
+                    <div className="flex items-start justify-between gap-3">
+
+                      <div className="min-w-0">
+
+                        <div className="flex flex-wrap items-center gap-2">
+
+                          <span className="text-sm font-black text-slate-900">
+                            {comment.name || comment.user_name || comment.author || "Anonymous"}
+                          </span>
+
+                          {comment.post_title && (
+                            <span className="truncate rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-black text-blue-700">
+                              {comment.post_title}
+                            </span>
+                          )}
+
+                        </div>
+
+                        <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-600">
+                          {comment.comment || comment.content || comment.text || ""}
+                        </p>
+
+                        {comment.created_at && (
+                          <p className="mt-2 text-[11px] text-slate-400">
+                            {new Date(comment.created_at).toLocaleString()}
+                          </p>
+                        )}
+
+                      </div>
+
+                      <button
+                        type="button"
+                        disabled={saving}
+                        onClick={() => handleDeleteAllComment(commentId)}
+                        className="flex-shrink-0 rounded-lg bg-red-50 px-2 py-1 text-[10px] font-black text-red-600 hover:bg-red-600 hover:text-white disabled:opacity-50"
+                      >
+                        Gusiba
+                      </button>
+
+                    </div>
+
+                  </div>
+
+                );
+              })}
+
+            </div>
+          )}
 
         </section>
 
@@ -1442,7 +1612,7 @@ export default function ChiefDashboard({ onLogout }) {
 
                         <button
                           onClick={() =>
-                            setSelectedPost(
+                            handleViewPost(
                               post
                             )
                           }

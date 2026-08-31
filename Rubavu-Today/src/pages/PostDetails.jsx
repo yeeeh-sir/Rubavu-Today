@@ -382,7 +382,7 @@ export default function PostDetails() {
     (p) =>
       (p._id || p.id)?.toString() !==
       id?.toString()
-  );
+  ).slice(0, 16);
 
   const maxSliderIndex = Math.max(
     otherPosts.length - 3,

@@ -5,14 +5,18 @@ import { API_ROOT as API_URL, getPostById, getPostBySlug, getPosts, commitCommen
 import { ArticleSEO } from "../components/SEO/SEO";
 import SocialShare from "../components/SocialShare/SocialShare";
 import { getPostSlug, getArticleUrl } from "../utils/slug";
+import { useLanguage, translatePostsBatch } from "../context/LanguageContext";
 
 
 
 export default function PostDetails() {
   const { id, slug } = useParams();
   const navigate = useNavigate();
+  const { language, t, setTranslating, setTranslationUnavailable } = useLanguage();
 
   const [post, setPost] = useState(null);
+  const [originalPost, setOriginalPost] = useState(null);
+  const [originalAllPosts, setOriginalAllPosts] = useState([]);
   const [allPosts, setAllPosts] = useState([]);
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -177,17 +181,16 @@ export default function PostDetails() {
           if (cancelled) return;
 
           if (!postData) {
-            setLoading(false);
             setPost(null);
             setComments([]);
+            setLoading(false);
             return;
           }
 
           const canonicalSlug = getPostSlug(postData);
-          if (canonicalSlug) {
+          if (canonicalSlug && canonicalSlug !== slugValue) {
             navigate(`/${canonicalSlug}.html`, { replace: true });
           }
-          return;
         }
 
         if (slugValue) {
@@ -204,12 +207,13 @@ export default function PostDetails() {
         if (cancelled) return;
 
         if (!postData) {
-          setLoading(false);
           setPost(null);
           setComments([]);
+          setLoading(false);
           return;
         }
 
+        setOriginalPost(postData);
         setPost(postData);
 
         const postId = postData.id ?? postData._id;
@@ -236,6 +240,7 @@ export default function PostDetails() {
         });
         persistReactions(merged);
 
+        setOriginalAllPosts(all);
         setAllPosts(all);
         setLoading(false);
 
@@ -248,9 +253,9 @@ export default function PostDetails() {
 
         if (cancelled) return;
 
-        setLoading(false);
         setPost(null);
         setComments([]);
+        setLoading(false);
         setError(
           "Habaye ikibazo mu kohereza inkuru. Ongera ugerageze."
         );
@@ -272,6 +277,57 @@ export default function PostDetails() {
   useEffect(() => {
     setSliderIndex(0);
   }, [id]);
+
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const translate = async () => {
+      if (!originalPost) return;
+
+      if (language === "rw") {
+        if (!cancelled) {
+          setPost(originalPost);
+          setAllPosts(originalAllPosts);
+          setTranslating(false);
+          setTranslationUnavailable(false);
+        }
+        return;
+      }
+
+      setTranslating(true);
+      setTranslationUnavailable(false);
+
+      try {
+        const combined = [originalPost, ...originalAllPosts].filter(Boolean);
+        const translatedCombined = await translatePostsBatch(combined, language);
+
+        if (cancelled) return;
+
+        if (translatedCombined && translatedCombined.length > 0) {
+          setPost(translatedCombined[0]);
+          if (originalAllPosts.length > 0) {
+            setAllPosts(translatedCombined.slice(1));
+          }
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setPost(originalPost);
+          setAllPosts(originalAllPosts);
+        }
+      } finally {
+        if (!cancelled) {
+          setTranslating(false);
+        }
+      }
+    };
+
+    translate();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [language, originalPost, originalAllPosts, setTranslating, setTranslationUnavailable]);
 
 
 
@@ -410,6 +466,15 @@ export default function PostDetails() {
 
 
 
+
+  // Open any related post in full using its title-based slug URL (e.g. /slug.html).
+  const openPostFull = (p) => (e) => {
+    if (e) e.preventDefault();
+    const url = getArticleUrl(p);
+    if (url && url !== "/") {
+      navigate(url);
+    }
+  };
 
   const getAuthorName = (p) => {
     if (!p) return "Unknown Author";
@@ -557,7 +622,7 @@ export default function PostDetails() {
     (p) =>
       (p._id || p.id)?.toString() !==
       id?.toString()
-  );
+  ).slice(0, 16);
 
   const maxSliderIndex = Math.max(
     otherPosts.length - 3,
@@ -589,25 +654,14 @@ export default function PostDetails() {
 
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <p className="text-gray-600 font-semibold">
-            Birimo gushakishwa...
-          </p>
-        </div>
-      </div>
-    );
+    return null;
   }
-
-
-
 
   if (error) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
         <h2 className="text-2xl font-bold text-gray-800 mb-4">
-          Habaye ikibazo
+          {language === "rw" ? "Habaye ikibazo" : t("somethingWentWrong")}
         </h2>
 
         <p className="text-gray-600 mb-6">{error}</p>
@@ -618,14 +672,14 @@ export default function PostDetails() {
             onClick={() => setReloadKey((k) => k + 1)}
             className="rounded bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700"
           >
-            Ongera Ugerageze
+            {language === "rw" ? "Ongera Ugerageze" : t("retry")}
           </button>
 
           <Link
             to="/"
             className="rounded border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-100"
           >
-            ← Subira ku Ahabanza
+            {language === "rw" ? "← Subira ku Ahabanza" : t("backHome")}
           </Link>
         </div>
       </div>
@@ -635,20 +689,7 @@ export default function PostDetails() {
 
 
   if (!post || post.error) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">
-          Inkuru ntiyabonetse
-        </h2>
-
-        <Link
-          to="/"
-          className="text-blue-600 hover:text-blue-800 font-semibold"
-        >
-          ← Subira ku Ahabanza
-        </Link>
-      </div>
-    );
+    return null;
   }
 
 
@@ -673,16 +714,18 @@ export default function PostDetails() {
     post.createdAt ||
     post.date;
 
+  const locale = language === "fr" ? "fr-FR" : language === "sw" ? "sw-KE" : language === "en" ? "en-US" : "rw-RW";
+
   const formattedDate = postDate
     ? new Date(postDate).toLocaleDateString(
-      "rw-RW",
+      locale,
       {
         year: "numeric",
         month: "long",
         day: "numeric",
       }
     )
-    : "Uyu munsi";
+    : language === "rw" ? "Uyu munsi" : "";
 
   const embedUrl = getEmbedUrl(
     post.youtube_url
@@ -711,11 +754,11 @@ export default function PostDetails() {
 
               <div>
                 <h2 className="text-lg sm:text-xl font-black text-gray-900">
-                  Andi Makuru
+                  {language === "rw" ? "Andi Makuru" : t("otherStories")}
                 </h2>
 
                 <p className="text-xs text-gray-500">
-                  Izindi nkuru
+                  {language === "rw" ? "Izindi nkuru" : t("moreStories")}
                 </p>
               </div>
 
@@ -770,6 +813,7 @@ export default function PostDetails() {
 
                       <Link
                         to={getArticleUrl(p)}
+                        onClick={openPostFull(p)}
                         className="block bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition"
                       >
 
@@ -787,7 +831,7 @@ export default function PostDetails() {
                           </div>
                         ) : (
                           <div className="h-40 bg-gray-200 flex items-center justify-center text-gray-400 text-sm">
-                            Nta foto
+                            {language === "rw" ? "Nta foto" : t("noPhoto")}
                           </div>
                         )}
 
@@ -803,7 +847,7 @@ export default function PostDetails() {
                           </h3>
 
                           <p className="text-xs text-gray-500 mt-2">
-                            Soma inkuru yose →
+                            {language === "rw" ? "Soma inkuru yose" : t("readStory")} →
                           </p>
 
                         </div>
@@ -863,7 +907,7 @@ export default function PostDetails() {
             <div className="lg:sticky lg:top-6 lg:max-w-[240px] lg:mx-auto">
 
               <h3 className="mb-3 border-l-4 border-red-600 pl-2 text-sm font-black uppercase">
-                Andi Makuru
+                {language === "rw" ? "Andi Makuru" : t("otherStories")}
               </h3>
 
               <div className="space-y-3">
@@ -879,6 +923,7 @@ export default function PostDetails() {
                       <Link
                         key={pId}
                         to={getArticleUrl(p)}
+                        onClick={openPostFull(p)}
                         className="flex gap-3 rounded-md border border-gray-200 bg-white p-2 transition hover:shadow-sm"
                       >
 
@@ -926,7 +971,7 @@ export default function PostDetails() {
               to="/"
               className="print:hidden inline-flex text-blue-600 hover:text-blue-800 font-semibold text-sm mb-6"
             >
-              ← Subira ku Ahabanza
+              {language === "rw" ? "← Subira ku Ahabanza" : t("backHome")}
             </Link>
 
 
@@ -984,7 +1029,7 @@ export default function PostDetails() {
                   <div className="flex items-center gap-2">
 
                     <span className="text-sm font-bold text-red-600">
-                      Yanditswe Na:
+                      {language === "rw" ? "Yanditswe Na:" : t("writtenBy")}
                     </span>
 
                     <span className="text-sm font-bold text-gray-900">
@@ -1015,7 +1060,7 @@ export default function PostDetails() {
                   </div>
 
                   <div className="text-xs text-gray-500 mt-1">
-                    Yanditswe ku wa{" "}
+                    {language === "rw" ? "Yanditswe ku wa" : t("publishedOn")}{" "}
                     <strong>
                       {formattedDate}
                     </strong>
@@ -1103,10 +1148,6 @@ export default function PostDetails() {
             {embedUrl && (
               <div className="mb-10 print:hidden">
 
-                <h3 className="font-bold text-lg mb-4">
-                  📺 Videwo y'Inkuru
-                </h3>
-
                 <div className="relative w-full aspect-video bg-black rounded overflow-hidden">
 
                   <iframe
@@ -1127,7 +1168,7 @@ export default function PostDetails() {
             <section className="mt-8 print:hidden">
 
               <h3 className="text-xl font-bold mb-6 border-b pb-3">
-                Ibitekerezo ({comments.length})
+                {language === "rw" ? "Ibitekerezo" : t("comments")} ({comments.length})
               </h3>
 
 
@@ -1138,12 +1179,12 @@ export default function PostDetails() {
               >
 
                 <h4 className="font-bold mb-3 text-sm">
-                  Tanga igitekerezo cyawe
+                  {language === "rw" ? "Tanga igitekerezo cyawe" : t("leaveComment")}
                 </h4>
 
                 <input
                   type="text"
-                  placeholder="Amazina yawe"
+                  placeholder={language === "rw" ? "Amazina yawe" : t("yourName")}
                   value={name}
                   onChange={(e) =>
                     setName(e.target.value)
@@ -1153,7 +1194,7 @@ export default function PostDetails() {
                 />
 
                 <textarea
-                  placeholder="Andika igitekerezo cyawe hano..."
+                  placeholder={language === "rw" ? "Andika igitekerezo cyawe hano..." : t("commentPlaceholder")}
                   value={commentText}
                   onChange={(e) =>
                     setCommentText(
@@ -1169,7 +1210,7 @@ export default function PostDetails() {
                   type="submit"
                   className="rounded bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  Ohereza Igitekerezo
+                  {language === "rw" ? "Ohereza Igitekerezo" : t("sendComment")}
                 </button>
 
                 {commentStatus && (
@@ -1186,7 +1227,7 @@ export default function PostDetails() {
 
                 {topLevelComments.length === 0 ? (
                   <p className="text-gray-500 italic text-sm">
-                    Nta bitekerezo birabaho.
+                    {language === "rw" ? "Nta bitekerezo birabaho." : t("noComments")}
                   </p>
                 ) : (
                   topLevelComments.map(
@@ -1236,8 +1277,8 @@ export default function PostDetails() {
                           >
                             {replyingTo ===
                               comment.id
-                              ? "Hagarika"
-                              : "Subiza"}
+                              ? (language === "rw" ? "Hagarika" : t("cancel"))
+                              : (language === "rw" ? "Subiza" : t("reply"))}
                           </button>
 
                           <button
@@ -1248,12 +1289,11 @@ export default function PostDetails() {
                                 e
                               )
                             }
-                            className={`ml-2 text-xs font-semibold ${
-                              reactions[comment.id] ===
+                            className={`ml-2 text-xs font-semibold ${reactions[comment.id] ===
                               "like"
-                                ? "text-red-600"
-                                : "text-gray-500 hover:text-red-600"
-                            }`}
+                              ? "text-red-600"
+                              : "text-gray-500 hover:text-red-600"
+                              }`}
                             aria-label="Kunda ibitekerezo"
                             title="Kunda"
                           >
@@ -1270,12 +1310,11 @@ export default function PostDetails() {
                                 e
                               )
                             }
-                            className={`ml-2 text-xs font-semibold ${
-                              reactions[comment.id] ===
+                            className={`ml-2 text-xs font-semibold ${reactions[comment.id] ===
                               "dislike"
-                                ? "text-blue-600"
-                                : "text-gray-500 hover:text-blue-600"
-                            }`}
+                              ? "text-blue-600"
+                              : "text-gray-500 hover:text-blue-600"
+                              }`}
                             aria-label="Utanze ibitekerezo"
                             title="Ntanze"
                           >
@@ -1298,7 +1337,7 @@ export default function PostDetails() {
 
                                 <input
                                   type="text"
-                                  placeholder="Amazina yawe"
+                                  placeholder={language === "rw" ? "Amazina yawe" : t("yourName")}
                                   value={
                                     replyName
                                   }
@@ -1312,7 +1351,7 @@ export default function PostDetails() {
                                 />
 
                                 <textarea
-                                  placeholder="Subiza..."
+                                  placeholder={language === "rw" ? "Subiza..." : t("replyPlaceholder")}
                                   value={
                                     replyText
                                   }
@@ -1330,7 +1369,7 @@ export default function PostDetails() {
                                   type="submit"
                                   className="bg-black text-white text-xs px-3 py-1 rounded"
                                 >
-                                  Ohereza
+                                  {language === "rw" ? "Ohereza" : t("send")}
                                 </button>
 
                               </form>
@@ -1371,28 +1410,26 @@ export default function PostDetails() {
                                         }
                                       </p>
 
-                                      <div className="mt-1 flex items-center gap-2">
-                                        <button
-                                          onClick={(e) =>
-                                            handleCommentReaction(
-                                              reply.id,
-                                              "like",
-                                              e
-                                            )
-                                          }
-                                          className={`text-[10px] font-semibold ${
-                                            reactions[reply.id] ===
-                                            "like"
-                                              ? "text-red-600"
-                                              : "text-gray-500 hover:text-red-600"
+                                      <div className="mt-1 flex items-center gap-2">                                        <button
+                                        onClick={(e) =>
+                                          handleCommentReaction(
+                                            reply.id,
+                                            "like",
+                                            e
+                                          )
+                                        }
+                                        className={`text-[10px] font-semibold ${reactions[reply.id] ===
+                                          "like"
+                                          ? "text-red-600"
+                                          : "text-gray-500 hover:text-red-600"
                                           }`}
-                                          aria-label="Kunda igisubizo"
-                                          title="Kunda"
-                                        >
-                                          👍{" "}
-                                          {reply.likes ||
-                                            0}
-                                        </button>
+                                        aria-label="Kunda igisubizo"
+                                        title="Kunda"
+                                      >
+                                        👍{" "}
+                                        {reply.likes ||
+                                          0}
+                                      </button>
 
                                         <button
                                           onClick={(e) =>
@@ -1402,12 +1439,11 @@ export default function PostDetails() {
                                               e
                                             )
                                           }
-                                          className={`text-[10px] font-semibold ${
-                                            reactions[reply.id] ===
+                                          className={`text-[10px] font-semibold ${reactions[reply.id] ===
                                             "dislike"
-                                              ? "text-blue-600"
-                                              : "text-gray-500 hover:text-blue-600"
-                                          }`}
+                                            ? "text-blue-600"
+                                            : "text-gray-500 hover:text-blue-600"
+                                            }`}
                                           aria-label="Utanze igisubizo"
                                           title="Ntanze"
                                         >
@@ -1443,7 +1479,7 @@ export default function PostDetails() {
             <div className="lg:sticky lg:top-6 lg:max-w-[240px] lg:mx-auto">
 
               <h3 className="mb-3 border-l-4 border-red-600 pl-2 text-sm font-black uppercase">
-                Izindi Nkuru
+                {language === "rw" ? "Izindi Nkuru" : t("otherStories")}
               </h3>
 
               <div className="space-y-3">
@@ -1459,6 +1495,7 @@ export default function PostDetails() {
                       <Link
                         key={pId}
                         to={getArticleUrl(p)}
+                        onClick={openPostFull(p)}
                         className="block rounded-md border border-gray-200 bg-white p-2 transition hover:shadow-sm"
                       >
 
@@ -1501,11 +1538,11 @@ export default function PostDetails() {
             <div className="border-l-4 border-red-600 pl-3 mb-5">
 
               <h2 className="text-xl sm:text-2xl font-black text-gray-900">
-                Soma n'izindi nkuru
+                {language === "rw" ? "Soma n'izindi nkuru" : t("readMoreStories")}
               </h2>
 
               <p className="text-sm text-gray-500">
-                Izindi nkuru zose ziboneka hano hepfo.
+                {language === "rw" ? "Izindi nkuru zose ziboneka hano hepfo." : t("allStoriesBelow")}
               </p>
 
             </div>
@@ -1521,6 +1558,7 @@ export default function PostDetails() {
                   <Link
                     key={pId}
                     to={getArticleUrl(p)}
+                    onClick={openPostFull(p)}
                     className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition"
                   >
 

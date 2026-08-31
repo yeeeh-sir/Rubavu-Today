@@ -126,6 +126,7 @@ a {
   from {
     transform: translateX(0);
   }
+
   to {
     transform: translateX(-50%);
   }
@@ -134,10 +135,43 @@ a {
 .rubavu-ticker-scroll {
   display: inline-flex;
   white-space: nowrap;
-  animation: rubavuTicker 120s linear infinite;
+  animation: rubavuTicker 350s linear infinite;
   will-change: transform;
 }
 
 .rubavu-ticker-scroll:hover {
   animation-play-state: paused;
+}
+
+/* Emotional moving gradient background - subtle and muted */
+@keyframes emotionalGradient {
+  0% {
+    background: linear-gradient(135deg, #F5F5F5 0%, #E8E8E8 25%, #F5F5F5 50%, #ECECEC 75%, #F0F0F0 100%);
+    background-size: 400% 400%;
+  }
+
+  25% {
+    background: linear-gradient(135deg, #E8E8E8 0%, #F5F5F5 25%, #ECECEC 50%, #F0F0F0 75%, #E8E8E8 100%);
+    background-size: 400% 400%;
+  }
+
+  50% {
+    background: linear-gradient(135deg, #ECECEC 0%, #E8E8E8 25%, #F0F0F0 50%, #E8E8E8 75%, #ECECEC 100%);
+    background-size: 400% 400%;
+  }
+
+  75% {
+    background: linear-gradient(135deg, #F0F0F0 0%, #ECECEC 25%, #E8E8E8 50%, #ECECEC 75%, #F5F5F5 100%);
+    background-size: 400% 400%;
+  }
+
+  100% {
+    background: linear-gradient(135deg, #F5F5F5 0%, #E8E8E8 25%, #F5F5F5 50%, #ECECEC 75%, #F0F0F0 100%);
+    background-size: 400% 400%;
+  }
+}
+
+.emotional-gradient-bg {
+  animation: emotionalGradient 15s ease infinite;
+  background-attachment: fixed;
 }

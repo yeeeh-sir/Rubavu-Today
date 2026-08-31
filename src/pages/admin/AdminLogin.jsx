@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import { login } from "../../services/api";
+import { useLanguage } from "../../context/LanguageContext";
 import logo from "../../Rubavu.jpeg";
 
 const AdminLogin = ({ onLogin }) => {
+  const { t } = useLanguage();
   const [email, setEmail] = useState(
     ""
   );
@@ -82,7 +84,7 @@ const AdminLogin = ({ onLogin }) => {
 
       setStatus(
         error?.message ||
-        "Invalid email or password."
+        t("invalidCredentials")
       );
     } finally {
       setLoading(false);
@@ -222,11 +224,11 @@ const AdminLogin = ({ onLogin }) => {
             />
 
             <h1 className="mt-6 text-3xl font-bold text-white">
-              Kwinjira k'Umuyobozi
+              {t("loginTitle")}
             </h1>
 
             <p className="mt-2 text-sm text-slate-400">
-              Injira muri sisitemu y'ubuyobozi ya Rubavu Today.
+              {t("loginSubtitle")}
             </p>
           </div>
 
@@ -242,7 +244,7 @@ const AdminLogin = ({ onLogin }) => {
 
               <label className="block">
                 <span className="text-sm font-medium text-slate-300">
-                  Imeyili
+                  {t("email")}
                 </span>
 
                 <input
@@ -251,7 +253,7 @@ const AdminLogin = ({ onLogin }) => {
                   onChange={(e) =>
                     setEmail(e.target.value)
                   }
-                  placeholder="Andika imeyili yawe"
+                  placeholder={t("emailPlaceholder")}
                   autoComplete="username"
                   className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3.5 text-white outline-none placeholder:text-slate-500 transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
                   required
@@ -262,7 +264,7 @@ const AdminLogin = ({ onLogin }) => {
 
               <label className="block">
                 <span className="text-sm font-medium text-slate-300">
-                  Ijambo ry'ibanga
+                  {t("password")}
                 </span>
 
                 <div className="relative mt-2">
@@ -277,7 +279,7 @@ const AdminLogin = ({ onLogin }) => {
                     onChange={(e) =>
                       setPassword(e.target.value)
                     }
-                    placeholder="Andika ijambo ry'ibanga"
+                    placeholder={t("passwordPlaceholder")}
                     autoComplete="current-password"
                     className="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3.5 text-white outline-none placeholder:text-slate-500 transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
                     required
@@ -314,8 +316,8 @@ const AdminLogin = ({ onLogin }) => {
                 className="w-full rounded-xl bg-blue-600 px-4 py-3.5 font-semibold text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-900 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {loading
-                  ? "Birimo kwinjira..."
-                  : "Injira"}
+                  ? t("loggingIn")
+                  : t("login")}
               </button>
 
 
