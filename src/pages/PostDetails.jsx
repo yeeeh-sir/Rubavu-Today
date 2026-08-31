@@ -748,27 +748,17 @@ export default function PostDetails() {
       {otherPosts.length > 0 && (
         <section className="w-full bg-white border-b border-gray-200 print:hidden">
 
-          <div className="max-w-7xl mx-auto px-3 sm:px-4 py-5">
+          <div className="max-w-7xl mx-auto px-3 sm:px-4 py-3">
 
-            <div className="flex items-center justify-between mb-4">
-
-              <div>
-                <h2 className="text-lg sm:text-xl font-black text-gray-900">
-                  {language === "rw" ? "Andi Makuru" : t("otherStories")}
-                </h2>
-
-                <p className="text-xs text-gray-500">
-                  {language === "rw" ? "Izindi nkuru" : t("moreStories")}
-                </p>
-              </div>
+            <div className="flex items-center justify-end mb-2.5">
 
               {otherPosts.length > 3 && (
-                <div className="flex gap-2">
+                <div className="flex gap-1.5">
 
                   <button
                     type="button"
                     onClick={previousSlide}
-                    className="w-8 h-8 rounded-full bg-gray-900 text-white flex items-center justify-center hover:bg-red-600 transition"
+                    className="w-6 h-6 rounded-full bg-gray-900 text-white flex items-center justify-center hover:bg-red-600 transition text-xs"
                     aria-label="Previous posts"
                   >
                     ←
@@ -777,7 +767,7 @@ export default function PostDetails() {
                   <button
                     type="button"
                     onClick={nextSlide}
-                    className="w-8 h-8 rounded-full bg-gray-900 text-white flex items-center justify-center hover:bg-red-600 transition"
+                    className="w-6 h-6 rounded-full bg-gray-900 text-white flex items-center justify-center hover:bg-red-600 transition text-xs"
                     aria-label="Next posts"
                   >
                     →
@@ -808,49 +798,27 @@ export default function PostDetails() {
                   return (
                     <div
                       key={pId}
-                      className="flex-shrink-0 w-full sm:w-1/2 lg:w-1/3 px-2"
+                      className="flex-shrink-0 w-full sm:w-1/2 lg:w-1/3 px-1.5"
                     >
 
                       <Link
                         to={getArticleUrl(p)}
                         onClick={openPostFull(p)}
-                        className="block bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition"
+                        className="block bg-white border border-gray-200 rounded overflow-hidden shadow-sm hover:shadow-md transition p-2 sm:p-3"
                       >
 
-                        {p.image ? (
-                          <div className="h-40 overflow-hidden bg-gray-100">
+                        <span className="inline-block bg-red-600 text-white text-[7px] sm:text-[8px] uppercase font-bold px-1 py-0.5 rounded mb-1">
+                          {p.category ||
+                            "Inkuru"}
+                        </span>
 
-                            <img
-                              src={getImageUrl(
-                                p.image
-                              )}
-                              alt={p.title}
-                              className="w-full h-full object-cover"
-                            />
+                        <h3 className="font-bold text-gray-900 text-xs sm:text-sm leading-tight line-clamp-2">
+                          {p.title}
+                        </h3>
 
-                          </div>
-                        ) : (
-                          <div className="h-40 bg-gray-200 flex items-center justify-center text-gray-400 text-sm">
-                            {language === "rw" ? "Nta foto" : t("noPhoto")}
-                          </div>
-                        )}
-
-                        <div className="p-3">
-
-                          <span className="inline-block bg-red-600 text-white text-[9px] uppercase font-bold px-2 py-1 rounded mb-2">
-                            {p.category ||
-                              "Inkuru"}
-                          </span>
-
-                          <h3 className="font-black text-gray-900 text-sm sm:text-base leading-snug line-clamp-2">
-                            {p.title}
-                          </h3>
-
-                          <p className="text-xs text-gray-500 mt-2">
-                            {language === "rw" ? "Soma inkuru yose" : t("readStory")} →
-                          </p>
-
-                        </div>
+                        <p className="text-[8px] text-gray-500 mt-2">
+                          {language === "rw" ? "Soma →" : t("readStory")} →
+                        </p>
 
                       </Link>
 
@@ -860,39 +828,42 @@ export default function PostDetails() {
 
               </div>
 
-            </div>
+            </div >
 
 
 
-            {otherPosts.length > 3 && (
-              <div className="flex justify-center gap-1.5 mt-4">
+            {
+              otherPosts.length > 3 && (
+                <div className="flex justify-center gap-1 mt-2">
 
-                {Array.from({
-                  length:
-                    maxSliderIndex + 1,
-                }).map((_, index) => (
-                  <button
-                    key={index}
-                    type="button"
-                    onClick={() =>
-                      setSliderIndex(index)
-                    }
-                    className={`h-1.5 rounded-full transition-all ${index === sliderIndex
-                      ? "w-7 bg-red-600"
-                      : "w-2 bg-gray-300"
-                      }`}
-                    aria-label={`Go to slide ${index + 1
-                      }`}
-                  />
-                ))}
+                  {Array.from({
+                    length:
+                      maxSliderIndex + 1,
+                  }).map((_, index) => (
+                    <button
+                      key={index}
+                      type="button"
+                      onClick={() =>
+                        setSliderIndex(index)
+                      }
+                      className={`h-1 rounded-full transition-all ${index === sliderIndex
+                        ? "w-6 bg-red-600"
+                        : "w-1 bg-gray-300"
+                        }`}
+                      aria-label={`Go to slide ${index + 1
+                        }`}
+                    />
+                  ))}
 
-              </div>
-            )}
+                </div>
+              )
+            }
 
-          </div>
+          </div >
 
-        </section>
-      )}
+        </section >
+      )
+      }
 
 
 
@@ -904,13 +875,9 @@ export default function PostDetails() {
 
           <aside className="print:hidden order-2 lg:order-1 lg:col-span-1">
 
-            <div className="lg:sticky lg:top-6 lg:max-w-[240px] lg:mx-auto">
+            <div className="lg:sticky lg:top-6 lg:max-w-[220px] lg:mx-auto">
 
-              <h3 className="mb-3 border-l-4 border-red-600 pl-2 text-sm font-black uppercase">
-                {language === "rw" ? "Andi Makuru" : t("otherStories")}
-              </h3>
-
-              <div className="space-y-3">
+              <div className="space-y-2">
 
                 {otherPosts
                   .slice(0, 6)
@@ -924,29 +891,17 @@ export default function PostDetails() {
                         key={pId}
                         to={getArticleUrl(p)}
                         onClick={openPostFull(p)}
-                        className="flex gap-3 rounded-md border border-gray-200 bg-white p-2 transition hover:shadow-sm"
+                        className="flex flex-col gap-1 rounded border border-gray-200 bg-white p-2 transition hover:shadow-sm"
                       >
 
-                        {p.image && (
-                          <img
-                            src={getImageUrl(
-                              p.image
-                            )}
-                            alt={p.title}
-                            className="h-16 w-20 flex-shrink-0 rounded object-cover"
-                          />
-                        )}
+                        <span className="text-[7px] uppercase text-red-600 font-bold">
+                          {p.category ||
+                            "Inkuru"}
+                        </span>
 
-                        <div>
-                          <span className="text-[9px] uppercase text-red-600 font-bold">
-                            {p.category ||
-                              "Inkuru"}
-                          </span>
-
-                          <h4 className="font-bold text-xs text-gray-900 line-clamp-3">
-                            {p.title}
-                          </h4>
-                        </div>
+                        <h4 className="font-bold text-[10px] text-gray-900 line-clamp-3">
+                          {p.title}
+                        </h4>
 
                       </Link>
                     );
@@ -1533,62 +1488,60 @@ export default function PostDetails() {
 
 
         {otherPosts.length > 0 && (
-          <section className="print:hidden mt-10 bg-white border rounded-lg p-4 sm:p-6">
+          <section className="print:hidden mt-10 sm:mt-12 bg-gradient-to-br from-slate-50 to-white rounded-2xl border border-slate-200 p-4 sm:p-8">
 
-            <div className="border-l-4 border-red-600 pl-3 mb-5">
-
-              <h2 className="text-xl sm:text-2xl font-black text-gray-900">
-                {language === "rw" ? "Soma n'izindi nkuru" : t("readMoreStories")}
-              </h2>
-
-              <p className="text-sm text-gray-500">
-                {language === "rw" ? "Izindi nkuru zose ziboneka hano hepfo." : t("allStoriesBelow")}
-              </p>
-
+            <div className="mb-6 sm:mb-8">
+              <div className="border-l-4 border-red-600 pl-4">
+                <h2 className="text-2xl sm:text-3xl font-black text-slate-900">
+                  {language === "rw" ? "Soma n'izindi nkuru" : t("readMoreStories")}
+                </h2>
+                <p className="text-sm sm:text-base text-slate-500 mt-2">
+                  {language === "rw" ? "Izindi nkuru zose ziboneka hano hepfo." : t("allStoriesBelow")}
+                </p>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
 
               {otherPosts.map((p) => {
 
-                const pId =
-                  p._id || p.id;
+                const pId = p._id || p.id;
 
                 return (
                   <Link
                     key={pId}
                     to={getArticleUrl(p)}
                     onClick={openPostFull(p)}
-                    className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition"
+                    className="group flex flex-col bg-white rounded-xl border border-slate-200 overflow-hidden hover:border-red-300 transition-all duration-300 hover:shadow-md hover:-translate-y-1"
                   >
 
-                    {p.image ? (
-                      <img
-                        src={getImageUrl(
-                          p.image
-                        )}
-                        alt={p.title}
-                        className="w-full h-40 object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-40 bg-gray-100 flex items-center justify-center text-xs text-gray-400">
-                        Nta foto
-                      </div>
-                    )}
+                    <div className="relative overflow-hidden bg-slate-100 aspect-square">
+                      {p.image ? (
+                        <img
+                          src={getImageUrl(p.image)}
+                          alt={p.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-slate-200 to-slate-100 flex items-center justify-center">
+                          <span className="text-xs text-slate-400 font-medium">📷</span>
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-300" />
+                    </div>
 
-                    <div className="p-3">
+                    <div className="flex flex-col flex-1 p-2 sm:p-3">
 
-                      <span className="text-[9px] uppercase font-bold text-red-600">
-                        {p.category ||
-                          "Inkuru"}
+                      <span className="text-[8px] sm:text-[9px] uppercase font-bold text-red-600 tracking-wide">
+                        {p.category || "Inkuru"}
                       </span>
 
-                      <h3 className="font-bold text-sm text-gray-900 line-clamp-3 mt-1">
+                      <h3 className="font-bold text-xs sm:text-sm text-slate-900 line-clamp-2 mt-1.5 leading-tight flex-1">
                         {p.title}
                       </h3>
 
-                      <p className="text-xs text-blue-600 font-semibold mt-3">
-                        Soma inkuru yose →
+                      <p className="text-[10px] sm:text-xs text-red-600 font-semibold mt-2 group-hover:text-red-700 transition">
+                        Soma →
                       </p>
 
                     </div>
@@ -1603,6 +1556,6 @@ export default function PostDetails() {
         )}
 
       </div>
-    </div>
+    </div >
   );
 }
