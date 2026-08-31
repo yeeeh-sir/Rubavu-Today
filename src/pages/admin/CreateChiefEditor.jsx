@@ -52,7 +52,7 @@ export default function CreateChiefEditor({ onLogout }) {
       setMessage("Chief Editor created successfully.");
       setMessageType("success");
       setForm({ full_name: "", email: "", phone: "", password: "" });
-      setTimeout(() => navigate("/admin/dashboard"), 1000);
+      navigate("/admin/dashboard");
     } catch (error) {
       setMessage(error?.message || "Failed to create Chief Editor. Please try again.");
       setMessageType("error");
@@ -78,9 +78,8 @@ export default function CreateChiefEditor({ onLogout }) {
           <div className="p-5 sm:p-6">
 
             {message && (
-              <div className={`mb-5 rounded-xl border p-4 text-sm font-medium ${
-                messageType === "success" ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-red-200 bg-red-50 text-red-700"
-              }`}>
+              <div className={`mb-5 rounded-xl border p-4 text-sm font-medium ${messageType === "success" ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-red-200 bg-red-50 text-red-700"
+                }`}>
                 {message}
               </div>
             )}

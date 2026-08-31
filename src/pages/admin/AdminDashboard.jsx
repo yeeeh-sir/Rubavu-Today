@@ -1458,52 +1458,7 @@ const AdminDashboard = ({
                             </div>
                         </div>
 
-                        <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-                            <button onClick={() => setShowCreatePost(true)} className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md">
-                                <div className="mb-2 flex items-center justify-between">
-                                    <span className="text-xl">📝</span>
-                                    <span className="rounded-full bg-blue-600 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-white">Action</span>
-                                </div>
-                                <p className="text-sm font-black text-blue-800">New story</p>
-                                <p className="mt-1 text-xs text-blue-700">Publish a fresh newsroom update.</p>
-                            </button>
 
-                            <button onClick={() => setShowCreateEmployee(true)} className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md">
-                                <div className="mb-2 flex items-center justify-between">
-                                    <span className="text-xl">👤</span>
-                                    <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-white">Staff</span>
-                                </div>
-                                <p className="text-sm font-black text-emerald-800">Add employee</p>
-                                <p className="mt-1 text-xs text-emerald-700">Create a new team account quickly.</p>
-                            </button>
-
-                            <button onClick={() => setShowCreateChief(true)} className="rounded-2xl border border-violet-200 bg-violet-50 p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md">
-                                <div className="mb-2 flex items-center justify-between">
-                                    <span className="text-xl">🛡️</span>
-                                    <span className="rounded-full bg-violet-600 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-white">Editors</span>
-                                </div>
-                                <p className="text-sm font-black text-violet-800">Add chief editor</p>
-                                <p className="mt-1 text-xs text-violet-700">Assign editorial leadership roles.</p>
-                            </button>
-
-                            <button onClick={() => setShowCreateAd(true)} className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md">
-                                <div className="mb-2 flex items-center justify-between">
-                                    <span className="text-xl">📢</span>
-                                    <span className="rounded-full bg-amber-600 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-white">Ads</span>
-                                </div>
-                                <p className="text-sm font-black text-amber-800">Create ad</p>
-                                <p className="mt-1 text-xs text-amber-700">Launch a promotional campaign.</p>
-                            </button>
-
-                            <button onClick={exportPosts} className="rounded-2xl border border-slate-200 bg-white p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md">
-                                <div className="mb-2 flex items-center justify-between">
-                                    <span className="text-xl">📥</span>
-                                    <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-white">Export</span>
-                                </div>
-                                <p className="text-sm font-black text-slate-800">Download report</p>
-                                <p className="mt-1 text-xs text-slate-600">Export the current newsroom list.</p>
-                            </button>
-                        </div>
                     </section>
 
 
@@ -1555,11 +1510,11 @@ const AdminDashboard = ({
                             <div>
 
                                 <h2 className="text-lg font-black text-slate-900">
-                                    Ibitekerezo byose by'abasomyi
+                                    All comments
                                 </h2>
 
                                 <p className="mt-1 text-xs text-slate-400">
-                                    Lista ya comments zose z'inkuru; ushobora gusiba icyo ushaka.
+                                    View every reader comment across all stories.
                                 </p>
 
                             </div>
@@ -2008,12 +1963,11 @@ const AdminDashboard = ({
                                         </div>
 
                                         <h3 className="font-bold text-slate-800">
-                                            Nta nkuru zabonetse
+                                            No stories found
                                         </h3>
 
                                         <p className="mt-1 text-sm text-slate-500">
-                                            Gerageza guhindura umurimo cyangwa
-                                            ibihanga.
+                                            Try adjusting the filters or publish a new story.
                                         </p>
 
                                         <button
@@ -2026,7 +1980,7 @@ const AdminDashboard = ({
                                             }}
                                             className="mt-4 rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
                                         >
-                                            Sunika ibihanga
+                                            Reset filters
                                         </button>
                                     </div>
                                 ) : (
@@ -3461,7 +3415,7 @@ const ModalFooter = ({
 
             <button
                 type={confirmType}
-                onClick={onConfirm}
+                onClick={confirmType === "submit" ? undefined : onConfirm}
                 className={`w-full rounded-xl px-5 py-2.5 text-sm font-bold text-white shadow-lg transition sm:w-auto ${confirmClass}`}
             >
                 {confirmText}

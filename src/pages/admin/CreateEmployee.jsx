@@ -86,7 +86,7 @@ export default function CreateEmployee({ onLogout }) {
       setMessage(result.message || "Employee created successfully.");
       setMessageType("success");
       setForm({ full_name: "", email: "", phone: "", password: "" });
-      setTimeout(() => navigate("/admin"), 1200);
+      navigate("/admin");
     } catch (error) {
       setMessage(error.message || "Unable to create employee.");
       setMessageType("error");
@@ -112,9 +112,8 @@ export default function CreateEmployee({ onLogout }) {
           <div className="p-5 sm:p-6">
 
             {message && (
-              <div className={`mb-5 rounded-xl border p-4 text-sm font-medium ${
-                messageType === "success" ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-red-200 bg-red-50 text-red-700"
-              }`}>
+              <div className={`mb-5 rounded-xl border p-4 text-sm font-medium ${messageType === "success" ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-red-200 bg-red-50 text-red-700"
+                }`}>
                 {message}
               </div>
             )}

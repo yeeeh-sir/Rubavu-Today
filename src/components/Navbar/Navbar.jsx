@@ -1135,7 +1135,7 @@ const NewsPostsLayout = ({
                   to={getArticleUrl(recentPost)}
                   className="font-body text-[9px] font-bold uppercase tracking-wider text-red-600 transition hover:text-red-800"
                 >
-                  Soma â†’
+                  Soma
                 </Link>
               </div>
             </div>
