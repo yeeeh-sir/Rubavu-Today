@@ -79,7 +79,9 @@ export default function SocialShare({ post, compact = false }) {
           aria-label="Sangiza inkuru n'ifoto"
           title="Sangiza inkuru n'ifoto"
         >
-          <span aria-hidden="true">↗</span>
+          <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current" aria-hidden="true">
+            <path d="M18 16a2.99 2.99 0 0 0-2.16 1.02L9.83 14.4a3.13 3.13 0 0 0 0-4.8l6.01-2.62A3 3 0 1 0 15 5a3 3 0 0 0 .07.7L9.06 8.33a3 3 0 1 0 0 7.34l6.01 2.63A3 3 0 1 0 18 16Zm0-11a1 1 0 1 1 0 2 1 1 0 0 1 0-2ZM6 13a1 1 0 1 1 0-2 1 1 0 0 1 0 2Zm12 7a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z" />
+          </svg>
         </button>
         <a
           href={shareLinks.facebook}

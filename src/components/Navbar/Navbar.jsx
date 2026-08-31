@@ -2043,8 +2043,8 @@ const Navbar = ({ showHomeContent = true }) => {
             }
             className="absolute right-2 flex h-9 items-center justify-center rounded-full border border-slate-700 bg-slate-900 px-2.5 font-body text-[10px] font-bold uppercase tracking-wider text-slate-200 transition hover:bg-slate-800 sm:hidden"
           >
-            <span className="mr-1.5 text-sm">
-              â˜°
+            <span className="mr-1.5 text-sm" aria-hidden="true">
+              ☰
             </span>
           </button>
         </div>
