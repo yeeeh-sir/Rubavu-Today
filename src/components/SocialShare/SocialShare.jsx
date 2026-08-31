@@ -64,9 +64,9 @@ export default function SocialShare({ post, compact = false }) {
   };
 
   const shareLinks = {
-    facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}&quote=${encodeURIComponent(title + " — " + SITE_NAME)}`,
-    whatsapp: `https://wa.me/?text=${encodeURIComponent(linkText)}`,
-    twitter: `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title + "\n" + SITE_NAME)}`,
+    facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}&quote=${encodeURIComponent(title + " — " + SITE_NAME)}&picture=${encodeURIComponent(imageUrl || "")}`,
+    whatsapp: `https://wa.me/?text=${encodeURIComponent(`${linkText}\n\n${imageUrl || url}`)}`,
+    twitter: `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title + "\n" + SITE_NAME)}&media=${encodeURIComponent(imageUrl || "")}`,
   };
 
   if (compact) {

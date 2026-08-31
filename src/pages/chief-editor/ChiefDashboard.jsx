@@ -946,6 +946,44 @@ export default function ChiefDashboard({ onLogout }) {
 
           </div>
 
+          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <button onClick={() => { resetForm(); window.scrollTo({ top: 0, behavior: "smooth" }); }} className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md">
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-xl">✍️</span>
+                <span className="rounded-full bg-blue-600 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-white">Write</span>
+              </div>
+              <p className="text-sm font-black text-blue-800">Create story</p>
+              <p className="mt-1 text-xs text-blue-700">Start a fresh article for publication.</p>
+            </button>
+
+            <button onClick={() => setStatusFilter("pending")} className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md">
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-xl">⏳</span>
+                <span className="rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-white">Review</span>
+              </div>
+              <p className="text-sm font-black text-amber-800">Pending review</p>
+              <p className="mt-1 text-xs text-amber-700">Open stories that still need approval.</p>
+            </button>
+
+            <button onClick={() => bulkAction("approve")} className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md">
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-xl">✅</span>
+                <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-white">Publish</span>
+              </div>
+              <p className="text-sm font-black text-emerald-800">Approve selected</p>
+              <p className="mt-1 text-xs text-emerald-700">Publish any chosen story in one click.</p>
+            </button>
+
+            <button onClick={exportCSV} className="rounded-2xl border border-slate-200 bg-white p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md">
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-xl">📥</span>
+                <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-white">Report</span>
+              </div>
+              <p className="text-sm font-black text-slate-800">Export report</p>
+              <p className="mt-1 text-xs text-slate-600">Download the current editorial overview.</p>
+            </button>
+          </div>
+
         </section>
 
 

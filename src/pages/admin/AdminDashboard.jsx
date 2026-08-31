@@ -1429,7 +1429,7 @@ const AdminDashboard = ({
 
 
                     <section className="mb-5 sm:mb-6">
-                        <div className="overflow-hidden rounded-2xl bg-gradient-to-r from-slate-950 via-slate-900 to-blue-950 p-5 text-white shadow-xl sm:p-7">
+                        <div className="overflow-hidden rounded-3xl bg-gradient-to-r from-slate-950 via-slate-900 to-blue-950 p-5 text-white shadow-xl sm:p-7">
                             <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
                                 <div className="min-w-0">
                                     <p className="mb-1 text-sm font-medium text-blue-300">
@@ -1456,6 +1456,53 @@ const AdminDashboard = ({
                                     + Onjera Umukozi
                                 </button>
                             </div>
+                        </div>
+
+                        <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+                            <button onClick={() => setShowCreatePost(true)} className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md">
+                                <div className="mb-2 flex items-center justify-between">
+                                    <span className="text-xl">📝</span>
+                                    <span className="rounded-full bg-blue-600 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-white">Action</span>
+                                </div>
+                                <p className="text-sm font-black text-blue-800">New story</p>
+                                <p className="mt-1 text-xs text-blue-700">Publish a fresh newsroom update.</p>
+                            </button>
+
+                            <button onClick={() => setShowCreateEmployee(true)} className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md">
+                                <div className="mb-2 flex items-center justify-between">
+                                    <span className="text-xl">👤</span>
+                                    <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-white">Staff</span>
+                                </div>
+                                <p className="text-sm font-black text-emerald-800">Add employee</p>
+                                <p className="mt-1 text-xs text-emerald-700">Create a new team account quickly.</p>
+                            </button>
+
+                            <button onClick={() => setShowCreateChief(true)} className="rounded-2xl border border-violet-200 bg-violet-50 p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md">
+                                <div className="mb-2 flex items-center justify-between">
+                                    <span className="text-xl">🛡️</span>
+                                    <span className="rounded-full bg-violet-600 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-white">Editors</span>
+                                </div>
+                                <p className="text-sm font-black text-violet-800">Add chief editor</p>
+                                <p className="mt-1 text-xs text-violet-700">Assign editorial leadership roles.</p>
+                            </button>
+
+                            <button onClick={() => setShowCreateAd(true)} className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md">
+                                <div className="mb-2 flex items-center justify-between">
+                                    <span className="text-xl">📢</span>
+                                    <span className="rounded-full bg-amber-600 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-white">Ads</span>
+                                </div>
+                                <p className="text-sm font-black text-amber-800">Create ad</p>
+                                <p className="mt-1 text-xs text-amber-700">Launch a promotional campaign.</p>
+                            </button>
+
+                            <button onClick={exportPosts} className="rounded-2xl border border-slate-200 bg-white p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md">
+                                <div className="mb-2 flex items-center justify-between">
+                                    <span className="text-xl">📥</span>
+                                    <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-white">Export</span>
+                                </div>
+                                <p className="text-sm font-black text-slate-800">Download report</p>
+                                <p className="mt-1 text-xs text-slate-600">Export the current newsroom list.</p>
+                            </button>
                         </div>
                     </section>
 

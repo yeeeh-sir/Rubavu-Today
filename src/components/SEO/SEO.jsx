@@ -170,6 +170,7 @@ export function ArticleSEO({ post }) {
       <meta property="og:title" content={title} />
       <meta property="og:description" content={description} />
       <meta property="og:image" content={featuredImage} />
+      <meta property="og:image:url" content={featuredImage} />
       <meta property="og:image:secure_url" content={featuredImage} />
       <meta property="og:image:alt" content={title} />
       <meta property="og:image:type" content="image/jpeg" />
@@ -192,6 +193,7 @@ export function ArticleSEO({ post }) {
       <meta name="twitter:title" content={title} />
       <meta name="twitter:description" content={description} />
       <meta name="twitter:image" content={featuredImage} />
+      <meta name="twitter:image:src" content={featuredImage} />
       <meta name="twitter:image:alt" content={title} />
 
       <script type="application/ld+json">{JSON.stringify(articleLd)}</script>

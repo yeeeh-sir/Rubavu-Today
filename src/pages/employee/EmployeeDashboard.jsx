@@ -69,14 +69,67 @@ function Dashboard({ onLogout }) {
     <DashboardLayout navigationSections={navSections} roleLabel="Employee" onLogout={onLogout}>
       <div className="p-4 sm:p-6 lg:p-8 space-y-6">
 
+        <section className="rounded-3xl bg-gradient-to-r from-slate-900 via-sky-900 to-indigo-900 p-6 text-white shadow-lg">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <p className="mb-2 text-xs font-black uppercase tracking-[0.2em] text-sky-200">Employee workspace</p>
+              <h1 className="text-2xl font-black sm:text-3xl">Your newsroom overview</h1>
+              <p className="mt-2 max-w-2xl text-sm text-sky-100">
+                Stay on top of stories, track article volume by department, and jump directly into the work that matters most.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button type="button" onClick={() => setSelectedDepartment("All")} className="rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-slate-900 shadow-md transition hover:bg-sky-50">All stories</button>
+              <button type="button" onClick={() => setSelectedDepartment("Amakuru")} className="rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-white/15">Quick focus</button>
+            </div>
+          </div>
+        </section>
+
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           <StatCard label="Inkuru zose" value={totalPosts} icon={<FileText size={18} />} color="blue" />
           <StatCard label="Departments" value={departments.length} icon={<BarChart3 size={18} />} color="emerald" />
           <StatCard label="Inkuru iheruka" value={posts[0]?.title || "Nta nkuru"} icon={<Newspaper size={18} />} color="purple" />
         </div>
 
+        <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+          {departments.map((department) => (
+            <button
+              key={department}
+              type="button"
+              onClick={() => setSelectedDepartment(department)}
+              className={`rounded-2xl border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md ${selectedDepartment === department ? "border-blue-200 bg-blue-50 shadow-sm" : "border-slate-200 bg-white"}`}
+            >
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-xl">{department === "Amakuru" ? "📰" : department === "Ubukungu" ? "💼" : department === "Imikino" ? "⚽" : department === "Imyidagaduro" ? "🎭" : "🎓"}</span>
+                <span className={`rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-wide ${badgeColors[department]}`}>
+                  {department}
+                </span>
+              </div>
+              <p className="text-2xl font-black text-slate-900">{departmentStats[department]}</p>
+              <p className="mt-1 text-xs text-slate-500">Stories</p>
+            </button>
+          ))}
+        </section>
+
         <div className="card p-5 sm:p-6">
-          <h2 className="mb-4 text-lg font-semibold text-slate-800">Ibyiciro - Imbonerahamwe</h2>
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-lg font-semibold text-slate-800">Ibyiciro - Imbonerahamwe</h2>
+            <div className="flex flex-wrap gap-2">
+              <button type="button" onClick={() => setSelectedDepartment("All")} className={`rounded-full px-3 py-1.5 text-xs font-bold transition ${selectedDepartment === "All" ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>
+                Zose
+              </button>
+              {departments.map((department) => (
+                <button
+                  key={department}
+                  type="button"
+                  onClick={() => setSelectedDepartment(department)}
+                  className={`rounded-full px-3 py-1.5 text-xs font-bold transition ${selectedDepartment === department ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
+                >
+                  {department}
+                </button>
+              ))}
+            </div>
+          </div>
           <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
             {departments.map((department) => (
               <div key={department} className="rounded-xl border border-slate-100 bg-slate-50 p-4 text-center">
@@ -88,26 +141,6 @@ function Dashboard({ onLogout }) {
               </div>
             ))}
           </div>
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() => setSelectedDepartment("All")}
-            className={`rounded-full px-4 py-2 text-sm font-medium transition ${selectedDepartment === "All" ? "bg-slate-900 text-white shadow" : "card border-0 hover:bg-slate-50"}`}
-          >
-            Zose
-          </button>
-          {departments.map((department) => (
-            <button
-              key={department}
-              type="button"
-              onClick={() => setSelectedDepartment(department)}
-              className={`rounded-full px-4 py-2 text-sm font-medium transition ${selectedDepartment === department ? "bg-blue-600 text-white shadow" : "card border-0 hover:bg-slate-50"}`}
-            >
-              {department}
-            </button>
-          ))}
         </div>
 
         <div className="card overflow-hidden">

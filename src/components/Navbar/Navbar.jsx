@@ -37,27 +37,27 @@ export const DEPARTMENTS = [
   {
     name: "Amakuru",
     label: "Amakuru",
-    icon: "📰",
+    icon: "ðŸ“°",
   },
   {
     name: "Ubukungu",
     label: "Ubukungu",
-    icon: "💼",
+    icon: "ðŸ’¼",
   },
   {
     name: "Imikino",
     label: "Imikino",
-    icon: "⚽",
+    icon: "âš½",
   },
   {
     name: "Imyidagaduro",
     label: "Imyidagaduro",
-    icon: "🎭",
+    icon: "ðŸŽ­",
   },
   {
     name: "Uburezi",
     label: "Uburezi",
-    icon: "🎓",
+    icon: "ðŸŽ“",
   },
 ];
 
@@ -191,6 +191,39 @@ const getHighQualityAdImage = (image) => {
     "/upload/",
     "/upload/f_auto,q_auto:best/"
   );
+};
+
+const normalizeAdTargetUrl = (ad) => {
+  if (!ad) {
+    return "";
+  }
+
+  const candidates = [
+    ad.target_url,
+    ad.link,
+    ad.url,
+    ad.href,
+  ];
+
+  for (const candidate of candidates) {
+    const value = String(candidate || "").trim();
+
+    if (!value || value.toLowerCase() === "null" || value === "#") {
+      continue;
+    }
+
+    return value;
+  }
+
+  return "";
+};
+
+const prefersReducedMotion = () => {
+  if (typeof window === "undefined" || !window.matchMedia) {
+    return false;
+  }
+
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 };
 
 const isAdCurrentlyActive = (ad) => {
@@ -328,155 +361,158 @@ const AdCarousel = ({ ads = [] }) => {
     }
 
     const key = ad.id || ad._id || `advertisement-${index}`;
-    const targetUrl = String(ad.target_url || "").trim();
+    const targetUrl = normalizeAdTargetUrl(ad);
+    const title = ad.title || ad.name || "Rubavu Today";
+    const reducedMotion = prefersReducedMotion();
+
     const content = (
-      <div className="relative flex w-full items-center justify-center overflow-hidden bg-white aspect-[728/90]">
+      <div className="relative w-full overflow-hidden rounded-none border border-slate-200 bg-slate-100 aspect-[728/90]">
         <img
           src={getHighQualityAdImage(ad.image)}
-          alt={ad.title || "Kwamamaza - Rubavu Today"}
-          className="block h-full w-full select-none object-cover"
+          alt={title}
           loading="eager"
           fetchPriority={index === safeIndex ? "high" : "auto"}
           decoding="async"
           draggable="false"
           onError={() => handleImageError(ad)}
+          className="absolute inset-0 h-full w-full select-none object-cover"
+          style={{
+            transform: reducedMotion ? "none" : "scale(1.04)",
+            animation: reducedMotion ? "none" : "ad-pan 16s ease-in-out infinite alternate",
+          }}
         />
+
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/30 via-slate-900/10 to-slate-900/10" />
       </div>
     );
 
-    return targetUrl && targetUrl.toLowerCase() !== "null" ? (
+    return targetUrl ? (
       <a
         key={key}
         href={targetUrl}
         target="_blank"
         rel="noopener noreferrer"
-        aria-label={ad.title || "Kwamamaza"}
-        className="block w-full"
+        aria-label={title}
+        className="block w-full transition-opacity duration-500"
       >
         {content}
       </a>
     ) : (
-      <div key={key} className="w-full">
+      <div key={key} className="w-full transition-opacity duration-500">
         {content}
       </div>
     );
   };
 
   return (
-    <section
-      aria-label="Advertisement"
-      dir="ltr"
-      className="relative w-full bg-white border-b-0 shadow-none mt-0 pt-0"
-    >
-      <div className="relative w-full overflow-hidden">
-        {renderAd(visibleAds[safeIndex], safeIndex)}
+    <>
+      <style>{`\n        @keyframes ad-pan {\n          0% { transform: scale(1.04) translateX(0); }\n          50% { transform: scale(1.08) translateX(-1.5%); }\n          100% { transform: scale(1.12) translateX(1.5%); }\n        }\n\n        @keyframes ad-slide-in {\n          0% { opacity: 0; transform: translateX(-16px); }\n          100% { opacity: 1; transform: translateX(0); }\n        }\n\n        @keyframes ad-fade-up {\n          0% { opacity: 0; transform: translateY(10px); }\n          100% { opacity: 1; transform: translateY(0); }\n        }\n\n        @keyframes ad-cta {\n          0% { opacity: 0; transform: scale(0.96); }\n          60% { opacity: 1; transform: scale(1.04); }\n          100% { opacity: 1; transform: scale(1); }\n        }\n      `}</style>
 
-        {visibleAds.length > 1 && (
-          <>
-            <button
-              type="button"
-              onClick={goPrevious}
-              aria-label="Kwamamaza kwabanje"
-              className="
-                absolute
-                left-1
-                top-1/2
-                z-30
-                flex
-                h-8
-                w-8
-                -translate-y-1/2
-                items-center
-                justify-center
-                rounded-full
-                bg-black/50
-                text-xl
-                leading-none
-                text-white
-                shadow-md
-                transition
-                hover:bg-black/80
-              "
-            >
-              ‹
-            </button>
+      <section
+        aria-label="Advertisement"
+        dir="ltr"
+        className="relative w-full bg-white border-b-0 shadow-none mt-0 pt-0"
+      >
+        <div className="relative w-full overflow-hidden">
+          {renderAd(visibleAds[safeIndex], safeIndex)}
 
-            <button
-              type="button"
-              onClick={goNext}
-              aria-label="Kwamamaza gukurikira"
-              className="
-                absolute
-                right-1
-                top-1/2
-                z-30
-                flex
-                h-8
-                w-8
-                -translate-y-1/2
-                items-center
-                justify-center
-                rounded-full
-                bg-black/50
-                text-xl
-                leading-none
-                text-white
-                shadow-md
-                transition
-                hover:bg-black/80
-              "
-            >
-              ›
-            </button>
+          {visibleAds.length > 1 && (
+            <>
+              <button
+                type="button"
+                onClick={goPrevious}
+                aria-label="Marketing kwabanje"
+                className="
+                  absolute
+                  left-1
+                  top-1/2
+                  z-30
+                  flex
+                  h-8
+                  w-8
+                  -translate-y-1/2
+                  items-center
+                  justify-center
+                  rounded-full
+                  bg-black/50
+                  text-xl
+                  leading-none
+                  text-white
+                  shadow-md
+                  transition
+                  hover:bg-black/80
+                "
+              >
+                ‹
+              </button>
 
-            <div
-              className="
-                absolute
-                bottom-1
-                left-1/2
-                z-30
-                flex
-                -translate-x-1/2
-                gap-1.5
-                rounded-full
-                bg-black/30
-                px-2
-                py-1
-              "
-            >
-              {visibleAds.map((ad, index) => (
-                <button
-                  key={`dot-${ad.id ||
-                    ad._id ||
-                    index
-                    }`}
-                  type="button"
-                  onClick={() =>
-                    setCurrentIndex(index)
-                  }
-                  aria-label={`Kwamamaza ${index + 1
-                    }`}
-                  className={`
-                    rounded-full
-                    transition-all
-                    ${safeIndex === index
-                      ? "h-1.5 w-5 bg-white"
-                      : "h-1.5 w-1.5 bg-white/60"
-                    }
-                  `}
-                />
-              ))}
-            </div>
-          </>
-        )}
-      </div>
-    </section>
+              <button
+                type="button"
+                onClick={goNext}
+                aria-label="Marketing gukurikira"
+                className="
+                  absolute
+                  right-1
+                  top-1/2
+                  z-30
+                  flex
+                  h-8
+                  w-8
+                  -translate-y-1/2
+                  items-center
+                  justify-center
+                  rounded-full
+                  bg-black/50
+                  text-xl
+                  leading-none
+                  text-white
+                  shadow-md
+                  transition
+                  hover:bg-black/80
+                "
+              >
+                ›
+              </button>
+
+              <div
+                className="
+                  absolute
+                  bottom-1
+                  left-1/2
+                  z-30
+                  flex
+                  -translate-x-1/2
+                  gap-1.5
+                  rounded-full
+                  bg-black/30
+                  px-2
+                  py-1
+                "
+              >
+                {visibleAds.map((ad, index) => (
+                  <button
+                    key={`dot-${ad.id || ad._id || index}`}
+                    type="button"
+                    onClick={() => setCurrentIndex(index)}
+                    aria-label={`Marketing ${index + 1}`}
+                    className={`
+                      rounded-full
+                      transition-all
+                      ${safeIndex === index
+                        ? "h-1.5 w-5 bg-white"
+                        : "h-1.5 w-1.5 bg-white/60"
+                      }
+                    `}
+                  />
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      </section>
+    </>
   );
 };
-
-
-
-
 
 const SocialLinks = ({ compact = false }) => {
   const socials = [
@@ -651,7 +687,7 @@ const SmallPostCard = ({
             />
           ) : (
             <div className="flex h-full items-center justify-center text-2xl opacity-30">
-              📰
+              ðŸ“°
             </div>
           )}
         </div>
@@ -905,12 +941,12 @@ const TopFiveSlider = ({
                         />
                       ) : (
                         <div className="flex h-full items-center justify-center text-6xl opacity-30">
-                          📰
+                          ðŸ“°
                         </div>
                       )}
 
-                      <div className="absolute left-3 top-3 rounded-full bg-red-600 px-2.5 py-1 font-body text-[8px] font-bold uppercase tracking-wider text-white shadow-lg">
-                        #{index + 1}
+                      <div className="absolute left-3 top-3 rounded-full bg-red-600/0 px-2.5 py-1 font-body text-[8px] font-bold uppercase tracking-wider text-white shadow-lg opacity-0" aria-hidden="true">
+
                       </div>
                     </div>
 
@@ -1063,7 +1099,7 @@ const NewsPostsLayout = ({
                 />
               ) : (
                 <div className="flex h-full items-center justify-center text-7xl opacity-30">
-                  📰
+                  ðŸ“°
                 </div>
               )}
 
@@ -1099,7 +1135,7 @@ const NewsPostsLayout = ({
                   to={getArticleUrl(recentPost)}
                   className="font-body text-[9px] font-bold uppercase tracking-wider text-red-600 transition hover:text-red-800"
                 >
-                  Soma →
+                  Soma â†’
                 </Link>
               </div>
             </div>
@@ -1833,13 +1869,12 @@ const Navbar = ({ showHomeContent = true }) => {
       <div className="relative z-30 border-b border-slate-800 bg-slate-950 font-body text-slate-300">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-3 py-2 text-[9px] uppercase tracking-[0.1em] sm:px-6 sm:text-[11px]">
           <span className="truncate">
-            Rubavu Today —{" "}
-            {todayLabel}
+            Rubavu Today — {todayLabel}
           </span>
 
           <div className="ml-2 flex shrink-0 items-center gap-2">
             <span className="rounded border border-slate-700 bg-slate-900 px-2 py-0.5 font-mono text-yellow-400">
-              ⏱ {timeLabel}
+              • {timeLabel}
             </span>
 
             <span className="hidden font-semibold text-white md:inline">
@@ -1883,7 +1918,7 @@ const Navbar = ({ showHomeContent = true }) => {
                     className="mx-8 inline-flex items-center"
                   >
                     <span className="mr-2 text-yellow-300">
-                      ▪
+                      â–ª
                     </span>
 
                     {title}
@@ -1901,7 +1936,7 @@ const Navbar = ({ showHomeContent = true }) => {
                     className="mx-8 inline-flex items-center"
                   >
                     <span className="mr-2 text-yellow-300">
-                      ▪
+                      â–ª
                     </span>
 
                     {title}
@@ -2009,7 +2044,7 @@ const Navbar = ({ showHomeContent = true }) => {
             className="absolute right-2 flex h-9 items-center justify-center rounded-full border border-slate-700 bg-slate-900 px-2.5 font-body text-[10px] font-bold uppercase tracking-wider text-slate-200 transition hover:bg-slate-800 sm:hidden"
           >
             <span className="mr-1.5 text-sm">
-              ☰
+              â˜°
             </span>
           </button>
         </div>
