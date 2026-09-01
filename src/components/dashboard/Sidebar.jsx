@@ -34,8 +34,8 @@ function Sidebar({ navigationSections, roleLabel, collapsed: controlledCollapsed
 
   const profilePath =
     userRole === "admin" ? "/admin/profile" :
-    userRole === "chief_editor" ? "/chief-editor/profile" :
-    "/employee/profile";
+      userRole === "chief_editor" ? "/chief-editor/profile" :
+        "/employee/profile";
 
   const sidebarWidth = collapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED;
 
@@ -57,7 +57,7 @@ function Sidebar({ navigationSections, roleLabel, collapsed: controlledCollapsed
           <button
             onClick={toggleCollapse}
             className="hidden lg:flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-slate-400 transition hover:bg-white/10 hover:text-white"
-            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-label={collapsed ? "Gugura ibara ry'ibikorwa" : "Gufunga ibara ry'ibikorwa"}
           >
             <svg className={`h-4 w-4 transition-transform ${collapsed ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -68,7 +68,7 @@ function Sidebar({ navigationSections, roleLabel, collapsed: controlledCollapsed
           <button
             onClick={() => setMobileOpen(false)}
             className="rounded-md p-1.5 text-slate-400 transition hover:bg-white/10 hover:text-white"
-            aria-label="Close menu"
+            aria-label="Gufunga menu"
           >
             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -96,13 +96,11 @@ function Sidebar({ navigationSections, roleLabel, collapsed: controlledCollapsed
                   to={item.path}
                   onClick={() => { if (isMobile) setMobileOpen(false); if (item.onClick) item.onClick(); }}
                   title={collapsed && !isMobile ? item.label : undefined}
-                  className={`mb-0.5 flex items-center gap-2.5 rounded-lg text-sm font-medium transition ${
-                    collapsed && !isMobile ? "justify-center px-2 py-2.5" : "px-3 py-2.5"
-                  } ${
-                    isActive
+                  className={`mb-0.5 flex items-center gap-2.5 rounded-lg text-sm font-medium transition ${collapsed && !isMobile ? "justify-center px-2 py-2.5" : "px-3 py-2.5"
+                    } ${isActive
                       ? "bg-brand-600 text-white shadow-sm"
                       : "text-slate-400 hover:bg-white/5 hover:text-white"
-                  }`}
+                    }`}
                 >
                   <span className={`flex h-5 w-5 shrink-0 items-center justify-center ${isActive ? "text-white" : "text-slate-400"}`}>
                     {item.icon}
@@ -111,9 +109,8 @@ function Sidebar({ navigationSections, roleLabel, collapsed: controlledCollapsed
                     <span className="min-w-0 flex-1 truncate">{item.label}</span>
                   )}
                   {(!collapsed || isMobile) && item.badge !== undefined && item.badge !== null && (
-                    <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
-                      isActive ? "bg-white/20 text-white" : "bg-white/5 text-slate-400"
-                    }`}>
+                    <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-bold ${isActive ? "bg-white/20 text-white" : "bg-white/5 text-slate-400"
+                      }`}>
                       {item.badge}
                     </span>
                   )}
@@ -132,7 +129,7 @@ function Sidebar({ navigationSections, roleLabel, collapsed: controlledCollapsed
           to={profilePath}
           onClick={() => { if (isMobile) setMobileOpen(false); }}
           className={`flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-400 transition hover:bg-white/5 hover:text-white ${collapsed && !isMobile ? "justify-center px-2" : ""}`}
-          title={collapsed && !isMobile ? "Profile" : undefined}
+          title={collapsed && !isMobile ? "Ibyerekeye" : undefined}
         >
           <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-600 text-[10px] font-bold text-white">
             {userInitial}
@@ -180,9 +177,8 @@ function Sidebar({ navigationSections, roleLabel, collapsed: controlledCollapsed
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex flex-col transition-all duration-300 lg:translate-x-0 ${
-          mobileOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+        className={`fixed inset-y-0 left-0 z-50 flex flex-col transition-all duration-300 lg:translate-x-0 ${mobileOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
         style={{ width: window.innerWidth >= 1024 ? sidebarWidth : "min(280px, 85vw)" }}
       >
         <SidebarContent isMobile={mobileOpen && window.innerWidth < 1024} />

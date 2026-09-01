@@ -147,12 +147,22 @@ const Home = () => {
       }));
   }, [sortedPosts]);
 
+  const sidebarPosts = useMemo(() => {
+    const allRecent = [...sortedPosts].map((post) => ({
+      ...post,
+      articleHref: getArticleUrl(post),
+    }));
+
+    return allRecent.slice(0, 6);
+  }, [sortedPosts]);
+
   const filteredMediaPosts = useMemo(() => {
     const term = mediaSearch.trim().toLowerCase();
+    const sourcePosts = mediaPosts.length >= 3 ? mediaPosts : sidebarPosts;
 
-    if (!term) return mediaPosts;
+    if (!term) return sourcePosts;
 
-    return mediaPosts.filter((post) => {
+    return sourcePosts.filter((post) => {
       const combined = [
         post.title,
         post.summary,
@@ -165,7 +175,7 @@ const Home = () => {
 
       return combined.includes(term);
     });
-  }, [mediaPosts, mediaSearch]);
+  }, [mediaPosts, sidebarPosts, mediaSearch]);
 
   const isSearching = query.trim().length > 0;
   const visiblePosts = sortedPosts.slice(0, visibleCount);
@@ -183,10 +193,9 @@ const Home = () => {
 
     return (
       <Link to={articleHref} className="group block h-full">
-        <article className="flex h-full flex-col overflow-hidden rounded-xl sm:rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 sm:hover:-translate-y-1 hover:border-red-200 hover:shadow-lg sm:hover:shadow-xl">
-          {/* Image Container */}
+        <article className="flex h-full flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm ring-1 ring-slate-900/5 transition-all duration-300 hover:-translate-y-1 hover:border-red-200 hover:shadow-lg">
           <div className="relative overflow-hidden bg-slate-100">
-            <div className="aspect-[16/11] sm:aspect-[16/10] overflow-hidden">
+            <div className="aspect-[16/13] overflow-hidden">
               {post.image ? (
                 <img
                   src={imageUrl}
@@ -200,31 +209,31 @@ const Home = () => {
                 />
               ) : (
                 <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-200 via-slate-100 to-slate-300">
-                  <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">{language === "rw" ? "Nta ishusho" : ""}</span>
+                  <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-slate-500">{language === "rw" ? "Nta ishusho" : "News"}</span>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Content Container */}
-          <div className="flex flex-1 flex-col p-2.5 xs:p-3 sm:p-3.5 md:p-4">
-            {/* Date */}
-            <div className="mb-1 xs:mb-1.5 text-[8px] xs:text-[9px] font-medium uppercase tracking-[0.12em] text-slate-500">
+          <div className="flex flex-1 flex-col p-2 sm:p-2.5">
+            <div className="mb-1 flex items-center gap-1 text-[7.5px] font-medium uppercase tracking-[0.08em] text-slate-500 sm:text-[8px]">
               <span>{formatDate(post.createdDate, language)}</span>
             </div>
 
-            {/* Title */}
-            <h4 className="font-masthead text-xs xs:text-sm sm:text-[15px] font-extrabold leading-snug text-slate-900 transition-colors group-hover:text-red-600 line-clamp-2 xs:line-clamp-3">
+            <h4 className="font-masthead text-[12px] font-extrabold leading-snug text-slate-900 transition-colors group-hover:text-red-600 sm:text-[13px] md:text-[14px]">
               {post.title}
             </h4>
 
-            {/* Summary */}
-            <p className="mt-1 xs:mt-1.5 line-clamp-2 xs:line-clamp-3 text-[10px] xs:text-[11px] leading-relaxed text-slate-600">
-              {summarize(post.summary || post.content, 10)}
+            <p className="mt-1 line-clamp-2 text-[10px] leading-[1.35rem] text-slate-600 sm:text-[10.5px]">
+              {summarize(post.summary || post.content, 8)}
             </p>
 
-            {/* Spacer */}
-            <div className="mt-auto pt-1.5" />
+            <div className="mt-auto pt-2">
+              <span className="inline-flex items-center gap-1 text-[8.5px] font-black uppercase tracking-[0.08em] text-slate-900 transition-colors group-hover:text-red-600 sm:text-[9px]">
+                Soma inkuru
+                <span aria-hidden="true">→</span>
+              </span>
+            </div>
           </div>
         </article>
       </Link>
@@ -244,7 +253,7 @@ const Home = () => {
   };
 
   const MediaSidebar = () => {
-    if (!mediaPosts.length) return null;
+    const sourcePosts = filteredMediaPosts.length > 0 ? filteredMediaPosts : sidebarPosts;
 
     return (
       <aside className="lg:sticky lg:top-24 lg:self-start">
@@ -282,19 +291,21 @@ const Home = () => {
               </div>
 
               <div className="space-y-3">
-                {filteredMediaPosts.length > 0 ? (
-                  filteredMediaPosts.map((post) => (
+                {sourcePosts.length > 0 ? (
+                  sourcePosts.slice(0, 6).map((post) => (
                     <div
                       key={post.id || post._id || post.title}
-                      className="overflow-hidden rounded-lg border border-slate-200 bg-slate-50"
+                      className="overflow-hidden rounded-lg border border-slate-200 bg-slate-50 shadow-sm"
                     >
-                      <Link to={post.articleHref} className="block overflow-hidden">
-                        <img
-                          src={post.image || "https://images.unsplash.com/photo-1495020689067-958852a7765e?auto=format&fit=crop&w=900&q=80"}
-                          alt={post.title}
-                          className="h-20 w-full object-cover transition-transform duration-300 hover:scale-105"
-                          loading="lazy"
-                        />
+                      <Link to={post.articleHref} className="block overflow-hidden bg-slate-100">
+                        <div className="aspect-[4/3] overflow-hidden">
+                          <img
+                            src={post.image || "https://images.unsplash.com/photo-1495020689067-958852a7765e?auto=format&fit=crop&w=900&q=80"}
+                            alt={post.title}
+                            className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
+                            loading="lazy"
+                          />
+                        </div>
                       </Link>
 
                       <div className="p-2.5">
@@ -385,13 +396,13 @@ const Home = () => {
             </div>
           ) : sortedPosts.length > 0 ? (
 
-            <div className="space-y-0">
+            <div className="space-y-6">
 
               <SectionHeader
                 title={query.trim() ? (language === "rw" ? "Ibyavuye mu gushakisha" : t("search")) : ""}
               />
 
-              <div className="grid grid-cols-1 gap-5 lg:grid-cols-[280px_minmax(0,1fr)] lg:items-start">
+              <div className="grid grid-cols-1 gap-5 lg:grid-cols-[280px_minmax(0,1fr)] lg:items-start lg:gap-6">
                 <MediaSidebar />
 
                 <div className="min-w-0">
@@ -401,7 +412,7 @@ const Home = () => {
                     </div>
                   )}
 
-                  <div className="grid grid-cols-1 gap-3 xs:gap-4 sm:gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  <div className="grid grid-cols-1 gap-2.5 xs:gap-3 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3 lg:gap-4 xl:grid-cols-4 xl:gap-4">
                     {visiblePosts.map((post) => (
                       <PostCard key={post.id || post._id} post={post} />
                     ))}

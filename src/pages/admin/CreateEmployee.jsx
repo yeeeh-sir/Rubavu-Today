@@ -41,9 +41,9 @@ const adminNav = [
   {
     label: "Admin",
     items: [
-      { icon: <span>▦</span>, label: "Dashboard", path: "/admin/dashboard" },
-      { icon: <span>👤</span>, label: "New Employee", path: "/admin/create-employee" },
-      { icon: <span>🛡️</span>, label: "New Chief Editor", path: "/admin/create-chief-editor" },
+      { icon: <span>▦</span>, label: "Imbonerahamwe", path: "/admin/dashboard" },
+      { icon: <span>👤</span>, label: "Umukozi mushya", path: "/admin/create-employee" },
+      { icon: <span>🛡️</span>, label: "Umwanditsi mukuru mushya", path: "/admin/create-chief-editor" },
     ],
   },
 ];
@@ -100,13 +100,13 @@ export default function CreateEmployee({ onLogout }) {
       <div className="p-4 sm:p-6 lg:p-8 max-w-3xl mx-auto space-y-6">
 
         <button onClick={() => navigate("/admin/dashboard")} className="flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900 transition">
-          <ArrowLeft size={16} /> Back to Dashboard
+          <ArrowLeft size={16} /> Garuka ku mbonerahamwe
         </button>
 
         <div className="card overflow-hidden">
           <div className="border-b border-slate-100 p-5 sm:p-6">
-            <h1 className="text-xl font-bold text-slate-900">Create Employee Account</h1>
-            <p className="mt-1 text-sm text-slate-500">Add a new staff member to the Rubavu Today system.</p>
+            <h1 className="text-xl font-bold text-slate-900">Kurema konti y'umukozi</h1>
+            <p className="mt-1 text-sm text-slate-500">Ongeraho umukozi mushya mu sisitemu ya Rubavu Today.</p>
           </div>
 
           <div className="p-5 sm:p-6">
@@ -119,29 +119,29 @@ export default function CreateEmployee({ onLogout }) {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-5">
-              <FormField label="Full Name" required>
-                <input type="text" name="full_name" placeholder="Enter employee full name" value={form.full_name} onChange={handleChange} className="form-input" required disabled={loading} />
+              <FormField label="Izina ryuzuye" required>
+                <input type="text" name="full_name" placeholder="Andika izina ryuzuye" value={form.full_name} onChange={handleChange} className="form-input" required disabled={loading} />
               </FormField>
 
-              <FormField label="Email Address" required>
-                <input type="email" name="email" placeholder="employee@example.com" value={form.email} onChange={handleChange} className="form-input" required disabled={loading} />
+              <FormField label="Imeyili" required>
+                <input type="email" name="email" placeholder="umukozi@example.com" value={form.email} onChange={handleChange} className="form-input" required disabled={loading} />
               </FormField>
 
-              <FormField label="Phone Number" description="Optional">
-                <input type="text" name="phone" placeholder="Phone number" value={form.phone} onChange={handleChange} className="form-input" disabled={loading} />
+              <FormField label="Telefoni" description="Byibuze">
+                <input type="text" name="phone" placeholder="Numero ya telefoni" value={form.phone} onChange={handleChange} className="form-input" disabled={loading} />
               </FormField>
 
-              <FormField label="Password" required>
-                <input type="password" name="password" placeholder="Enter password" value={form.password} onChange={handleChange} className="form-input" required minLength={6} disabled={loading} />
-                <p className="mt-1.5 text-xs text-slate-400">Must contain at least 6 characters.</p>
+              <FormField label="Ijambobanga" required>
+                <input type="password" name="password" placeholder="Andika ijambobanga" value={form.password} onChange={handleChange} className="form-input" required minLength={6} disabled={loading} />
+                <p className="mt-1.5 text-xs text-slate-400">Igomba kuba minota 6 byibura.</p>
               </FormField>
 
               <div className="flex flex-col gap-3 border-t border-slate-100 pt-5 sm:flex-row">
                 <button type="submit" disabled={loading} className="btn-primary flex-1">
-                  {loading ? "Creating Employee..." : "Create Employee"}
+                  {loading ? "Kurema umukozi..." : "Kurema umukozi"}
                 </button>
                 <button type="button" onClick={() => navigate("/admin/dashboard")} disabled={loading} className="btn-secondary">
-                  Cancel
+                  Hagarika
                 </button>
               </div>
             </form>

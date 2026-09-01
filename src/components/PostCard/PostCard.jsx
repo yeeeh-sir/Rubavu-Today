@@ -90,7 +90,7 @@ const PostCard = ({ post }) => {
             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
           {post.category && (
-            <span className="absolute left-3 top-3 bg-[#B3261E] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white shadow">
+            <span className="absolute left-2.5 top-2.5 bg-[#B3261E] px-2 py-0.5 text-[8px] font-bold uppercase tracking-[0.12em] text-white shadow-sm">
               {post.category}
             </span>
           )}

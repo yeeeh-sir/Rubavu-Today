@@ -72,22 +72,22 @@ function Dashboard({ onLogout }) {
         <section className="rounded-3xl bg-gradient-to-r from-slate-900 via-sky-900 to-indigo-900 p-6 text-white shadow-lg">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <p className="mb-2 text-xs font-black uppercase tracking-[0.2em] text-sky-200">Employee workspace</p>
-              <h1 className="text-2xl font-black sm:text-3xl">Your newsroom overview</h1>
+              <p className="mb-2 text-xs font-black uppercase tracking-[0.2em] text-sky-200">Uwork place w'umukozi</p>
+              <h1 className="text-2xl font-black sm:text-3xl">Imbonerahamwe y'ubwanditsi bwawe</h1>
               <p className="mt-2 max-w-2xl text-sm text-sky-100">
-                Stay on top of stories, track article volume by department, and jump directly into the work that matters most.
+                Komeza gukurikirana inkuru, ugenzure ingano yinkuru ku byiciro, kandi ukomeze gukora ku kazi k'ingenzi.
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <button type="button" onClick={() => setSelectedDepartment("All")} className="rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-slate-900 shadow-md transition hover:bg-sky-50">All stories</button>
-              <button type="button" onClick={() => setSelectedDepartment("Amakuru")} className="rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-white/15">Quick focus</button>
+              <button type="button" onClick={() => setSelectedDepartment("All")} className="rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-slate-900 shadow-md transition hover:bg-sky-50">Inkuru zose</button>
+              <button type="button" onClick={() => setSelectedDepartment("Amakuru")} className="rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-white/15">Aho wibanda</button>
             </div>
           </div>
         </section>
 
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           <StatCard label="Inkuru zose" value={totalPosts} icon={<FileText size={18} />} color="blue" />
-          <StatCard label="Departments" value={departments.length} icon={<BarChart3 size={18} />} color="emerald" />
+          <StatCard label="Ibyiciro" value={departments.length} icon={<BarChart3 size={18} />} color="emerald" />
           <StatCard label="Inkuru iheruka" value={posts[0]?.title || "Nta nkuru"} icon={<Newspaper size={18} />} color="purple" />
         </div>
 

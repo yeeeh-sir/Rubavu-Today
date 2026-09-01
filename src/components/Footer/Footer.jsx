@@ -87,8 +87,6 @@ const Footer = () => {
     { label: t("aboutUs"), to: "/about" },
     { label: t("contactUs"), to: "/contact" },
     { label: t("advertiseWithUs"), to: "/contact" },
-    { label: t("privacyPolicy"), to: "/privacy-policy" },
-    { label: t("termsConditions"), to: "/terms" },
   ];
 
   return (
@@ -304,27 +302,9 @@ const Footer = () => {
       <div className="border-t border-slate-800">
         <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-5 text-[12px] text-slate-500 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-10">
           <p>
-            © 2026 Rubavu Today.{" "}
-            <span className="text-slate-400">{t("footerRights")}</span>
+            © 2026 Rubavu Today. <span className="text-slate-400">All rights reserved.</span>
           </p>
 
-          <nav
-            aria-label="Legal"
-            className="flex flex-wrap items-center gap-x-5 gap-y-2 font-medium"
-          >
-            <Link
-              to="/privacy-policy"
-              className="transition hover:text-white"
-            >
-              {t("privacyPolicy")}
-            </Link>
-            <Link
-              to="/terms"
-              className="transition hover:text-white"
-            >
-              {t("termsConditions")}
-            </Link>
-          </nav>
         </div>
       </div>
     </footer>

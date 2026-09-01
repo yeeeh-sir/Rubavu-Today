@@ -516,55 +516,21 @@ function Employee() {
 
 
 
-      <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-
-        <div className="flex gap-3">
-
-          <Lock className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
-
-          <div>
-
-            <p className="text-sm font-semibold text-amber-900">
-              Uburenganzira bw'umukozi
-            </p>
-
-            <p className="mt-1 text-xs leading-5 text-amber-700 sm:text-sm">
-              Ushobora gushyiraho inkuru nshya no
-              gusoma iziri mu biro by'amakuru. Inkuru
-              zisanzwe ntizihindurirwa kuri konti
-              y'umukozi.
-            </p>
-
-          </div>
-
-        </div>
-
-      </div>
-
-
-
       <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 sm:p-4">
 
         <div className="flex gap-3">
 
           <User className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
 
-          <div>
+          <div className="flex-1">
 
             <p className="text-sm font-semibold text-emerald-900">
               Izina ryawe ryishyirwaho ubwaryo
             </p>
 
             <p className="mt-1 text-xs leading-5 text-emerald-700 sm:text-sm">
-              Inkuru ushyizeho zihita zigaragaza
-              izina rya konti yawe:
-
-              <strong className="ml-1">
-                {getCurrentUserName()}
-              </strong>
-
-              . Ntushobora guhindura izina ry'umwanditsi
-              kuri uru rupapuro.
+              Inkuru zashyizweho zigaragaza izina rya konti yawe:
+              <strong className="ml-1">{getCurrentUserName()}</strong>.
             </p>
 
           </div>
@@ -762,7 +728,7 @@ function Employee() {
 
 
 
-                    <span className="absolute left-3 top-3 rounded-full bg-red-600 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow">
+                    <span className="absolute left-2.5 top-2.5 rounded-full bg-red-600 px-2 py-0.5 text-[8px] font-bold uppercase tracking-[0.12em] text-white shadow-sm">
 
                       {post.category ||
                         "General"}

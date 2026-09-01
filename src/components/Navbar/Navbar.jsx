@@ -2445,7 +2445,7 @@ const Navbar = ({ showHomeContent = true }) => {
 
 
           <div className="mx-auto hidden max-w-7xl items-center justify-center lg:flex">
-            <div className="flex divide-x divide-slate-800 border-x border-slate-800">
+            <div className="flex items-center gap-1 rounded-none border-x border-slate-800 bg-slate-950">
               <Link
                 to="/media"
                 className="flex items-center gap-1.5 bg-slate-950 px-4 py-3 font-body text-[11px] font-black uppercase tracking-[0.1em] text-white transition hover:bg-red-600"
@@ -2500,7 +2500,7 @@ const Navbar = ({ showHomeContent = true }) => {
 
 
           <div className="hidden justify-center md:flex lg:hidden">
-            <div className="flex max-w-full overflow-x-auto">
+            <div className="flex max-w-full items-center gap-1 overflow-x-auto px-2">
               <Link
                 to="/media"
                 className="flex shrink-0 items-center gap-1 bg-slate-950 px-4 py-3 font-body text-[10px] font-black uppercase tracking-[0.1em] text-white transition hover:bg-red-600"

@@ -8,9 +8,9 @@ const adminNav = [
   {
     label: "Admin",
     items: [
-      { icon: <span>▦</span>, label: "Dashboard", path: "/admin/dashboard" },
-      { icon: <span>👤</span>, label: "New Employee", path: "/admin/create-employee" },
-      { icon: <span>🛡️</span>, label: "New Chief Editor", path: "/admin/create-chief-editor" },
+      { icon: <span>▦</span>, label: "Imbonerahamwe", path: "/admin/dashboard" },
+      { icon: <span>👤</span>, label: "Umukozi mushya", path: "/admin/create-employee" },
+      { icon: <span>🛡️</span>, label: "Umwanditsi mukuru mushya", path: "/admin/create-chief-editor" },
     ],
   },
 ];
@@ -66,13 +66,13 @@ export default function CreateChiefEditor({ onLogout }) {
       <div className="p-4 sm:p-6 lg:p-8 max-w-3xl mx-auto space-y-6">
 
         <button onClick={() => navigate("/admin/dashboard")} className="flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900 transition">
-          <ArrowLeft size={16} /> Back to Dashboard
+          <ArrowLeft size={16} /> Garuka ku mbonerahamwe
         </button>
 
         <div className="card overflow-hidden">
           <div className="border-b border-slate-100 p-5 sm:p-6">
-            <h1 className="text-xl font-bold text-slate-900">Create Chief Editor Account</h1>
-            <p className="mt-1 text-sm text-slate-500">Add a new Chief Editor to manage newsroom and publication workflows.</p>
+            <h1 className="text-xl font-bold text-slate-900">Kurema konti y'umwanditsi mukuru</h1>
+            <p className="mt-1 text-sm text-slate-500">Ongeraho umwanditsi mukuru mushya wo gucunga ubwanditsi n'itangazamakuru.</p>
           </div>
 
           <div className="p-5 sm:p-6">
@@ -85,28 +85,28 @@ export default function CreateChiefEditor({ onLogout }) {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-5">
-              <FormField label="Full Name" required>
-                <input type="text" name="full_name" placeholder="Enter full name" value={form.full_name} onChange={handleChange} disabled={loading} className="form-input" required />
+              <FormField label="Izina ryuzuye" required>
+                <input type="text" name="full_name" placeholder="Andika izina ryuzuye" value={form.full_name} onChange={handleChange} disabled={loading} className="form-input" required />
               </FormField>
 
-              <FormField label="Email Address" required>
-                <input type="email" name="email" placeholder="Enter email address" value={form.email} onChange={handleChange} disabled={loading} className="form-input" required />
+              <FormField label="Imeyili" required>
+                <input type="email" name="email" placeholder="Andika imeyili" value={form.email} onChange={handleChange} disabled={loading} className="form-input" required />
               </FormField>
 
-              <FormField label="Phone Number" description="Optional">
-                <input type="text" name="phone" placeholder="Enter phone number" value={form.phone} onChange={handleChange} disabled={loading} className="form-input" />
+              <FormField label="Telefoni" description="Byibuze">
+                <input type="text" name="phone" placeholder="Andika numero ya telefoni" value={form.phone} onChange={handleChange} disabled={loading} className="form-input" />
               </FormField>
 
-              <FormField label="Password" required>
-                <input type="password" name="password" placeholder="Enter password" value={form.password} onChange={handleChange} disabled={loading} minLength={6} className="form-input" required />
+              <FormField label="Ijambobanga" required>
+                <input type="password" name="password" placeholder="Andika ijambobanga" value={form.password} onChange={handleChange} disabled={loading} minLength={6} className="form-input" required />
               </FormField>
 
               <div className="flex flex-col gap-3 border-t border-slate-100 pt-5 sm:flex-row">
                 <button type="submit" disabled={loading} className="btn-primary flex-1">
-                  {loading ? "Creating..." : "Create Chief Editor"}
+                  {loading ? "Kurema..." : "Kurema umwanditsi mukuru"}
                 </button>
                 <button type="button" onClick={() => navigate("/admin/dashboard")} disabled={loading} className="btn-secondary">
-                  Cancel
+                  Hagarika
                 </button>
               </div>
             </form>
