@@ -92,10 +92,9 @@ const AdminDashboard = ({
     const [loadingComments, setLoadingComments] = useState(true);
     const [commentsError, setCommentsError] = useState("");
 
-    const [editingPost, setEditingPost] = useState(null);
-    const [editTitle, setEditTitle] = useState("");
-    const [editCategory, setEditCategory] = useState(DEPARTMENTS[0].name);
-    const [editDescription, setEditDescription] = useState("");
+    const [editingPostId, setEditingPostId] = useState(null);
+    const [editInitial, setEditInitial] = useState(null);
+    const [editSaving, setEditSaving] = useState(false);
 
     const previousRef = useRef([]);
 
@@ -338,7 +337,7 @@ const AdminDashboard = ({
         showEditEmployee ||
         showEditChief ||
         showEditAd ||
-        Boolean(editingPost);
+        Boolean(editingPostId);
 
     useEffect(() => {
         if (!modalOpen) return;
@@ -532,42 +531,41 @@ const AdminDashboard = ({
 
 
     const openEdit = (post) => {
-        setEditingPost(post);
-        setEditTitle(post.title || "");
-        setEditCategory(post.category || DEPARTMENTS[0].name);
-        setEditDescription(post.description || "");
+        setEditingPostId(post.id);
+        setEditInitial({
+            title: post.title || "",
+            description: post.description || post.content || "",
+            youtube_url: post.youtube_url || "",
+            image: post.image || null,
+            category: post.category || DEPARTMENTS[0].name,
+            content_blocks: post.content_blocks || null,
+        });
     };
 
     const closeEdit = () => {
-        setEditingPost(null);
-        setEditTitle("");
-        setEditCategory(DEPARTMENTS[0].name);
-        setEditDescription("");
+        setEditingPostId(null);
+        setEditInitial(null);
     };
 
-    const handleSaveEdit = async () => {
-        if (!editingPost) return;
-
-        if (!editTitle.trim()) {
-            setStatusMessage("Title is required.");
-            return;
-        }
+    const handleSubmitEdit = async (formData) => {
+        if (!editingPostId) return;
 
         try {
-            setStatusMessage("Saving post...");
+            setStatusMessage("Updating post...");
+            setEditSaving(true);
 
-            await updatePost(editingPost.id, {
-                title: editTitle,
-                category: editCategory,
-                description: editDescription,
-            });
+            await updatePost(editingPostId, formData);
 
             setStatusMessage("Post updated successfully.");
             closeEdit();
             await loadPosts();
         } catch (error) {
-            console.error(error);
-            setStatusMessage("Failed to update post.");
+            console.error("Update post error:", error);
+            setErrorMessage(
+                error?.message || "Failed to update post."
+            );
+        } finally {
+            setEditSaving(false);
         }
     };
 
@@ -2568,73 +2566,15 @@ const AdminDashboard = ({
 
 
 
-            {editingPost && (
-                <ModalShell
-                    onClose={closeEdit}
-                    maxWidth="max-w-2xl"
-                >
-                    <ModalHeader
-                        title="Edit Story"
-                        description="Update editorial information."
-                        onClose={closeEdit}
-                    />
-
-                    <form
-                        onSubmit={(e) => { e.preventDefault(); handleSaveEdit(); }}
-                        className="flex min-h-0 flex-1 flex-col"
-                    >
-                        <div className="min-h-0 flex-1 space-y-5 overflow-y-auto p-4 sm:p-6">
-                            <FormField label="Story Title">
-                                <input
-                                    value={editTitle}
-                                    onChange={(e) =>
-                                        setEditTitle(e.target.value)
-                                    }
-                                    className="form-input"
-                                    placeholder="Enter story title"
-                                />
-                            </FormField>
-
-                            <FormField label="Department">
-                                <select
-                                    value={editCategory}
-                                    onChange={(e) =>
-                                        setEditCategory(e.target.value)
-                                    }
-                                    className="form-input"
-                                >
-                                    {DEPARTMENTS.map((department) => (
-                                        <option
-                                            key={department.name}
-                                            value={department.name}
-                                        >
-                                            {department.icon}{" "}
-                                            {department.name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </FormField>
-
-                            <FormField label="Description">
-                                <textarea
-                                    value={editDescription}
-                                    onChange={(e) =>
-                                        setEditDescription(e.target.value)
-                                    }
-                                    rows={8}
-                                    className="form-input resize-none"
-                                    placeholder="Write the story description..."
-                                />
-                            </FormField>
-                        </div>
-
-                        <ModalFooter
-                            onCancel={closeEdit}
-                            confirmText="Save Changes"
-                            confirmType="submit"
-                        />
-                    </form>
-                </ModalShell>
+            {editingPostId && editInitial && (
+                <ArticleEditor
+                    initial={editInitial}
+                    categories={DEPARTMENTS}
+                    submitLabel="Vugurura inkuru"
+                    saving={editSaving}
+                    onSubmit={handleSubmitEdit}
+                    onCancel={closeEdit}
+                />
             )}
 
             {showChangePassword && (
