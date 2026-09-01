@@ -1,7 +1,6 @@
 import React, {
   useState,
   useEffect,
-  useRef,
   useCallback,
 } from "react";
 
@@ -20,6 +19,7 @@ import {
 
 import api, { API_ROOT } from "../../services/api";
 import rubavuLogo from "../../Rubavu.jpeg";
+import ArticleEditor from "../../components/article/ArticleEditor";
 
 function Employee() {
 
@@ -41,16 +41,6 @@ function Employee() {
   const [selectedPost, setSelectedPost] = useState(null);
 
   const [actionLoading, setActionLoading] = useState(false);
-
-  const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    youtube_url: "",
-    category: "Amakuru",
-    image: null,
-  });
-
-  const fileInputRef = useRef(null);
 
 
 
@@ -228,34 +218,8 @@ function Employee() {
 
 
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-
-    setFormData((previous) => ({
-      ...previous,
-      [name]: value,
-    }));
-  };
-
-
-
-
-
   const handleOpenUploadModal = () => {
-    setFormData({
-      title: "",
-      description: "",
-      youtube_url: "",
-      category: "Amakuru",
-      image: null,
-    });
-
     setError("");
-
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-
     setIsUploadModalOpen(true);
   };
 
@@ -270,18 +234,6 @@ function Employee() {
 
     setIsUploadModalOpen(false);
     setError("");
-
-    setFormData({
-      title: "",
-      description: "",
-      youtube_url: "",
-      category: "Amakuru",
-      image: null,
-    });
-
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
   };
 
 
@@ -431,9 +383,7 @@ function Employee() {
 
 
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
+  const handleSubmit = async (formData) => {
     setActionLoading(true);
     setError("");
 
@@ -451,115 +401,18 @@ function Employee() {
         return;
       }
 
-
-
-
-
-      if (!formData.title.trim()) {
-        setError(
-          "Please enter the post title."
-        );
-
-        return;
-      }
-
-      if (!formData.description.trim()) {
-        setError(
-          "Please enter the news content."
-        );
-
-        return;
-      }
-
-
-
-
-
-      const data = new FormData();
-
-      data.append(
-        "title",
-        formData.title.trim()
-      );
-
-      data.append(
-        "description",
-        formData.description.trim()
-      );
-
-      data.append(
-        "youtube_url",
-        formData.youtube_url.trim()
-      );
-
-      data.append(
-        "category",
-        formData.category
-      );
-
-
-      data.append(
-        "author",
-        authorName
-      );
-
-      if (
-        currentUser.id ||
-        currentUser.user_id
-      ) {
-        data.append(
-          "author_id",
-          String(
-            currentUser.id ||
-            currentUser.user_id
-          )
-        );
-      }
-
-      if (currentUser.role) {
-        data.append(
-          "author_role",
-          currentUser.role
-        );
-      }
-
-      if (currentUser.role_type) {
-        data.append(
-          "author_role",
-          currentUser.role_type
-        );
-      }
-
-      if (formData.image) {
-        data.append(
-          "image",
-          formData.image
-        );
-      }
-
-
-
-
-
-
-
-
       if (api.addPost) {
-        await api.addPost(data);
+        await api.addPost(formData);
       } else if (api.post) {
         await api.post(
           "/posts",
-          data
+          formData
         );
       } else {
         throw new Error(
           "addPost API function is not available."
         );
       }
-
-
-
-
 
       handleCloseUploadModal();
 
@@ -1291,231 +1144,15 @@ function Employee() {
 
               )}
 
-              <form
+              <ArticleEditor
+                initial={null}
+                categories={departments}
+                authorText={getCurrentUserName()}
+                submitLabel="Publish Post"
+                saving={actionLoading}
                 onSubmit={handleSubmit}
-                className="space-y-5"
-              >
-
-
-
-                <div>
-
-                  <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-700">
-                    Post Title
-                  </label>
-
-                  <input
-                    type="text"
-                    name="title"
-                    value={formData.title}
-                    onChange={
-                      handleInputChange
-                    }
-                    required
-                    placeholder="Catchy headline..."
-                    className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                  />
-
-                </div>
-
-
-
-                <div>
-
-                  <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-700">
-                    Published By
-                  </label>
-
-                  <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white">
-
-                      {getCurrentUserName()
-                        .charAt(0)
-                        .toUpperCase()}
-
-                    </div>
-
-                    <div className="min-w-0">
-
-                      <p className="truncate text-sm font-bold text-slate-800">
-
-                        {getCurrentUserName()}
-
-                      </p>
-
-                      <p className="text-[10px] text-slate-400">
-
-                        Automatically taken from
-                        your account
-
-                      </p>
-
-                    </div>
-
-                    <Lock className="ml-auto h-4 w-4 text-slate-400" />
-
-                  </div>
-
-                </div>
-
-
-
-                <div>
-
-                  <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-700">
-                    Category
-                  </label>
-
-                  <select
-                    name="category"
-                    value={
-                      formData.category
-                    }
-                    onChange={
-                      handleInputChange
-                    }
-                    className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                  >
-
-                    {departments.map(
-                      (dept) => (
-
-                        <option
-                          key={dept.name}
-                          value={dept.name}
-                        >
-
-                          {dept.icon}{" "}
-                          {dept.name}
-
-                        </option>
-
-                      )
-                    )}
-
-                  </select>
-
-                </div>
-
-
-
-                <div>
-
-                  <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-700">
-                    Description / Content
-                  </label>
-
-                  <textarea
-                    name="description"
-                    rows={8}
-                    value={
-                      formData.description
-                    }
-                    onChange={
-                      handleInputChange
-                    }
-                    required
-                    placeholder="Write the full news story here..."
-                    className="w-full resize-y rounded-xl border border-slate-300 px-4 py-3 text-sm leading-6 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                  />
-
-                </div>
-
-
-
-                <div>
-
-                  <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-700">
-
-                    YouTube URL
-
-                    <span className="ml-1 font-normal normal-case text-slate-400">
-                      Optional
-                    </span>
-
-                  </label>
-
-                  <input
-                    type="url"
-                    name="youtube_url"
-                    value={
-                      formData.youtube_url
-                    }
-                    onChange={
-                      handleInputChange
-                    }
-                    placeholder="https://www.youtube.com/watch?v=..."
-                    className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                  />
-
-                </div>
-
-
-
-                <div>
-
-                  <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-700">
-                    Featured Image
-                  </label>
-
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) =>
-                      setFormData(
-                        (previous) => ({
-                          ...previous,
-                          image:
-                            e.target
-                              .files?.[0] ||
-                            null,
-                        })
-                      )
-                    }
-                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-xs text-slate-500 file:mr-4 file:rounded-lg file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:text-xs file:font-semibold file:text-blue-700"
-                  />
-
-                  <p className="mt-1.5 text-[10px] text-slate-400">
-                    Recommended: JPG, PNG or
-                    WEBP.
-                  </p>
-
-                </div>
-
-
-
-                <div className="flex flex-col-reverse gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:justify-end">
-
-                  <button
-                    type="button"
-                    onClick={
-                      handleCloseUploadModal
-                    }
-                    disabled={actionLoading}
-                    className="w-full rounded-xl border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50 sm:w-auto"
-                  >
-                    Cancel
-                  </button>
-
-                  <button
-                    type="submit"
-                    disabled={actionLoading}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
-                  >
-
-                    {actionLoading && (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    )}
-
-                    Publish Post
-
-                  </button>
-
-                </div>
-
-              </form>
+                onCancel={handleCloseUploadModal}
+              />
 
             </div>
 

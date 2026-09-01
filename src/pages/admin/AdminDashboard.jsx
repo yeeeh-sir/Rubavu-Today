@@ -34,6 +34,7 @@ import {
 } from "../../services/api";
 
 import { DashboardLayout } from "../../components/dashboard";
+import ArticleEditor from "../../components/article/ArticleEditor";
 
 const API_URL = API_ROOT;
 
@@ -103,12 +104,7 @@ const AdminDashboard = ({
 
 
     const [showCreatePost, setShowCreatePost] = useState(false);
-    const [newPostTitle, setNewPostTitle] = useState("");
-    const [newPostCategory, setNewPostCategory] = useState(
-        DEPARTMENTS[0].name
-    );
-    const [newPostDescription, setNewPostDescription] = useState("");
-    const [newPostImage, setNewPostImage] = useState(null);
+    const [postEditorKey, setPostEditorKey] = useState(0);
 
 
 
@@ -734,35 +730,15 @@ const AdminDashboard = ({
 
 
 
-    const handleCreatePost = async () => {
-        if (
-            !newPostTitle.trim() ||
-            !newPostCategory ||
-            !newPostDescription.trim()
-        ) {
-            setStatusMessage(
-                "Title, category and description are required."
-            );
-            return;
-        }
-
+    const handleCreatePost = async (formData) => {
         try {
             setStatusMessage("Creating post...");
 
-            await addPost({
-                title: newPostTitle,
-                category: newPostCategory,
-                description: newPostDescription,
-                image: newPostImage || null,
-            });
+            await addPost(formData);
 
             setStatusMessage("Post created.");
             setShowCreatePost(false);
-
-            setNewPostTitle("");
-            setNewPostCategory(DEPARTMENTS[0].name);
-            setNewPostDescription("");
-            setNewPostImage(null);
+            setPostEditorKey((k) => k + 1);
 
             await loadPosts();
         } catch (err) {
@@ -2285,73 +2261,14 @@ const AdminDashboard = ({
                         onClose={() => setShowCreatePost(false)}
                     />
 
-                    <form
-                        onSubmit={(e) => { e.preventDefault(); handleCreatePost(); }}
-                        className="flex min-h-0 flex-1 flex-col"
-                    >
-                        <div className="min-h-0 flex-1 space-y-5 overflow-y-auto p-4 sm:p-6">
-                            <FormField label="Umutwe w'inkuru">
-                                <input
-                                    value={newPostTitle}
-                                    onChange={(e) =>
-                                        setNewPostTitle(e.target.value)
-                                    }
-                                    className="form-input"
-                                    placeholder="Andika umutwe w'inkuru"
-                                />
-                            </FormField>
-
-                            <FormField label="Ibyiciro">
-                                <select
-                                    value={newPostCategory}
-                                    onChange={(e) =>
-                                        setNewPostCategory(e.target.value)
-                                    }
-                                    className="form-input"
-                                >
-                                    {DEPARTMENTS.map((d) => (
-                                        <option
-                                            key={d.name}
-                                            value={d.name}
-                                        >
-                                            {d.icon} {d.name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </FormField>
-
-                            <FormField label="Description">
-                                <textarea
-                                    value={newPostDescription}
-                                    onChange={(e) =>
-                                        setNewPostDescription(e.target.value)
-                                    }
-                                    rows={6}
-                                    className="form-input resize-none"
-                                    placeholder="Write the story description..."
-                                />
-                            </FormField>
-
-                            <FormField label="Image (optional)">
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={(e) =>
-                                        setNewPostImage(
-                                            e.target.files?.[0] || null
-                                        )
-                                    }
-                                    className="block w-full text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-blue-50 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-blue-700"
-                                />
-                            </FormField>
-                        </div>
-
-                        <ModalFooter
-                            onCancel={() => setShowCreatePost(false)}
-                            confirmText="Create Post"
-                            confirmType="submit"
-                        />
-                    </form>
+                    <ArticleEditor
+                        key={postEditorKey}
+                        initial={null}
+                        categories={DEPARTMENTS}
+                        submitLabel="Create Post"
+                        onSubmit={handleCreatePost}
+                        onCancel={() => setShowCreatePost(false)}
+                    />
                 </ModalShell>
             )}
 

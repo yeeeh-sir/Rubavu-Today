@@ -1,4 +1,4 @@
-﻿import React from "react";
+import React from "react";
 
 const SIZE_CLASSES = {
     "728x250": "aspect-[728/250] w-full",
@@ -32,20 +32,6 @@ const normalizeAdUrl = (ad) => {
     return "";
 };
 
-const normalizeCtaText = (ad) => {
-    if (!ad) return "";
-
-    return (
-        ad.ctaText ||
-        ad.cta_text ||
-        ad.buttonText ||
-        ad.callToAction ||
-        ad.cta ||
-        ad.linkText ||
-        ""
-    );
-};
-
 const getHighQualityAdImage = (image) => {
     if (typeof image !== "string" || !image.includes("res.cloudinary.com")) {
         return image;
@@ -73,9 +59,7 @@ const AdBanner = ({
     const sizeClass = SIZE_CLASSES[size] || SIZE_CLASSES["leaderboard"];
     const hasAdImage = Boolean(ad?.image);
     const targetUrl = normalizeAdUrl(ad);
-    const ctaText = normalizeCtaText(ad);
     const title = ad?.title || ad?.name || label || "Rubavu Today";
-    const description = ad?.description || ad?.subtitle || "";
     const reducedMotion = prefersReducedMotion();
 
     const content = hasAdImage ? (

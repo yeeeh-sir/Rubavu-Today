@@ -1,13 +1,26 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useMemo } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import rubavuLogo from "../Rubavu.jpeg";
 import { API_ROOT as API_URL, getPostById, getPostBySlug, getPosts, commitCommentReaction } from "../services/api";
 import { ArticleSEO } from "../components/SEO/SEO";
-import SocialShare from "../components/SocialShare/SocialShare";
+import ArticleRenderer from "../components/article/ArticleRenderer";
 import { getPostSlug, getArticleUrl } from "../utils/slug";
-import { useLanguage, translatePostsBatch } from "../context/LanguageContext";
+import { formatRelativeTime } from "../utils/time";
+import { useLanguage, translateCategory, translatePostsBatch } from "../context/LanguageContext";
 
+const TimeLabel = ({ date, className = "" }) => {
+  const { language, t } = useLanguage();
 
+  const text = formatRelativeTime(date, language, t);
+
+  if (!text) return null;
+
+  return (
+    <time className={className} dateTime={date ? String(date) : undefined}>
+      {text}
+    </time>
+  );
+};
 
 export default function PostDetails() {
   const { id, slug } = useParams();
@@ -147,8 +160,6 @@ export default function PostDetails() {
   };
 
 
-  const [sliderIndex, setSliderIndex] = useState(0);
-
   const imageContainerRef = useRef(null);
 
 
@@ -275,11 +286,6 @@ export default function PostDetails() {
 
 
   useEffect(() => {
-    setSliderIndex(0);
-  }, [id]);
-
-
-  useEffect(() => {
     let cancelled = false;
 
     const translate = async () => {
@@ -331,42 +337,22 @@ export default function PostDetails() {
 
 
 
-
-
-
-  useEffect(() => {
-    const otherPosts = allPosts.filter(
-      (p) => (p._id || p.id)?.toString() !== id?.toString()
-    );
-
-    if (otherPosts.length <= 3) {
-      return;
-    }
-
-    const timer = setInterval(() => {
-      setSliderIndex((current) => {
-        if (current >= otherPosts.length - 3) {
-          return 0;
-        }
-
-        return current + 1;
-      });
-    }, 4000);
-
-    return () => clearInterval(timer);
-  }, [allPosts, id]);
-
-
-
-
-
   const getImageUrl = (image) => {
     if (!image) return null;
 
     const value = String(image).trim();
 
     if (/^https?:\/\//i.test(value)) {
-      return value.replace(/^http:\/\//i, "https://");
+      const https = value.replace(/^http:\/\//i, "https://");
+
+      if (/res\.cloudinary\.com/i.test(https) && https.includes("/upload/")) {
+        return https.replace(
+          "/upload/",
+          "/upload/f_auto,q_auto:best,w_1920,c_limit/"
+        );
+      }
+
+      return https;
     }
 
     if (value.startsWith("/")) {
@@ -382,12 +368,99 @@ export default function PostDetails() {
 
 
 
+  const parsePostImages = (value) => {
+    if (!value) return [];
+
+    if (Array.isArray(value)) {
+      return value.filter(Boolean);
+    }
+
+    if (typeof value === "string") {
+      try {
+        const parsed = JSON.parse(value);
+        return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
+      } catch {
+        return [];
+      }
+    }
+
+    return [];
+  };
 
 
-  const triggerWatermarkedDownload = () => {
-    if (!post?.image) return;
 
-    const imgUrl = getImageUrl(post.image);
+  const galleryImages = useMemo(() => {
+    const list = parsePostImages(post?.images);
+
+    return list.filter(
+      (url) => String(url).trim() !== String(post?.image || "").trim()
+    );
+  }, [post]);
+
+
+
+  const inlineParagraphs = useMemo(() => {
+    return String(post?.description || "")
+      .split(/\n{2,}/)
+      .map((part) => part.replace(/\s+/g, " ").trim())
+      .filter(Boolean);
+  }, [post]);
+
+
+
+  const contentBlocks = useMemo(() => {
+    if (!post?.content_blocks) return [];
+
+    try {
+      const parsed = JSON.parse(post.content_blocks);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }, [post]);
+
+
+
+  const articleBlocks = useMemo(() => {
+    const count = inlineParagraphs.length;
+    const galleryCount = galleryImages.length;
+
+    if (galleryCount === 0) {
+      return inlineParagraphs.map((text) => ({ type: "p", text }));
+    }
+
+    const blocks = [];
+    let inserted = 0;
+
+    inlineParagraphs.forEach((text, index) => {
+      blocks.push({ type: "p", text });
+
+      const target = Math.floor(((index + 1) * galleryCount) / count);
+
+      while (inserted < target) {
+        blocks.push({ type: "image", url: galleryImages[inserted], num: inserted + 1 });
+        inserted += 1;
+      }
+    });
+
+    while (inserted < galleryCount) {
+      blocks.push({ type: "image", url: galleryImages[inserted], num: inserted + 1 });
+      inserted += 1;
+    }
+
+    return blocks;
+  }, [galleryImages, inlineParagraphs]);
+
+
+
+
+
+  const triggerWatermarkedDownload = (imageUrl) => {
+    const source = imageUrl || post?.image;
+
+    if (!source) return;
+
+    const imgUrl = getImageUrl(source);
 
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
@@ -437,6 +510,13 @@ export default function PostDetails() {
   const handleImageContextMenu = (e) => {
     e.preventDefault();
     triggerWatermarkedDownload();
+  };
+
+
+
+  const handleGalleryContextMenu = (url) => (e) => {
+    e.preventDefault();
+    triggerWatermarkedDownload(url);
   };
 
 
@@ -618,40 +698,49 @@ export default function PostDetails() {
 
 
 
-  const otherPosts = allPosts.filter(
-    (p) =>
-      (p._id || p.id)?.toString() !==
-      id?.toString()
-  ).slice(0, 16);
+  const sortedOthers = useMemo(() => {
+    const currentId = String(post?._id || post?.id || "");
+    const others = allPosts.filter(
+      (p) => String(p._id || p.id || "") !== currentId
+    );
 
-  const maxSliderIndex = Math.max(
-    otherPosts.length - 3,
-    0
-  );
+    return [...others].sort((a, b) => {
+      const timeA = new Date(
+        a.createdDate || a.created_at || a.createdAt || a.date || 0
+      ).getTime();
+      const timeB = new Date(
+        b.createdDate || b.created_at || b.createdAt || b.date || 0
+      ).getTime();
 
-  const nextSlide = () => {
-    setSliderIndex((current) => {
-      if (current >= maxSliderIndex) {
-        return 0;
-      }
-
-      return current + 1;
+      return timeB - timeA;
     });
-  };
+  }, [allPosts, post]);
 
-  const previousSlide = () => {
-    setSliderIndex((current) => {
-      if (current <= 0) {
-        return maxSliderIndex;
-      }
+  const relatedPosts = useMemo(() => {
+    const currentCategory = String(post?.category || "").toLowerCase();
+    const sameCategory = sortedOthers.filter(
+      (p) =>
+        String(p.category || "").toLowerCase() === currentCategory
+    );
 
-      return current - 1;
-    });
-  };
+    const source = sameCategory.length >= 2 ? sameCategory : sortedOthers;
 
+    return source.slice(0, 4);
+  }, [sortedOthers, post]);
 
+  const moreNews = (() => {
+    const relatedIds = new Set(
+      relatedPosts.map((p) => String(p._id || p.id))
+    );
 
+    return sortedOthers
+      .filter((p) => !relatedIds.has(String(p._id || p.id)))
+      .slice(0, 12);
+  })();
 
+  const rightSidePosts = moreNews.length
+    ? moreNews
+    : sortedOthers.slice(0, 6);
 
   if (loading) {
     return null;
@@ -679,7 +768,7 @@ export default function PostDetails() {
             to="/"
             className="rounded border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-100"
           >
-            {language === "rw" ? "← Subira ku Ahabanza" : t("backHome")}
+            {language === "rw" ? "Subira ku Ahabanza" : t("backHome")}
           </Link>
         </div>
       </div>
@@ -741,268 +830,56 @@ export default function PostDetails() {
 
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-slate-50 text-slate-900">
+      <style>{`
+        .rt-article-content {
+          font-family: 'Source Sans 3', system-ui, sans-serif;
+        }
+
+        .rt-article-content p {
+          margin-bottom: 1.25rem;
+        }
+      `}</style>
 
       <ArticleSEO post={post} />
 
-      {otherPosts.length > 0 && (
-        <section className="w-full bg-white border-b border-gray-200 print:hidden">
+      <div id="printable-article" className="mx-auto w-full max-w-7xl px-3 pb-12 sm:px-6">
+        <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12">
+          <div className="min-w-0 lg:col-span-8">
+            <div className="mx-auto max-w-[820px]">
 
-          <div className="max-w-7xl mx-auto px-3 sm:px-4 py-3">
+              {/* HEADLINE — the strongest element on the page */}
+              <h1 className="font-post-title text-xl font-black leading-[1.12] tracking-tight text-slate-950 sm:text-2xl lg:text-3xl">
+                {post.title}
+              </h1>
 
-            <div className="flex items-center justify-end mb-2.5">
-
-              {otherPosts.length > 3 && (
-                <div className="flex gap-1.5">
-
-                  <button
-                    type="button"
-                    onClick={previousSlide}
-                    className="w-6 h-6 rounded-full bg-gray-900 text-white flex items-center justify-center hover:bg-red-600 transition text-xs"
-                    aria-label="Previous posts"
-                  >
-                    ←
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={nextSlide}
-                    className="w-6 h-6 rounded-full bg-gray-900 text-white flex items-center justify-center hover:bg-red-600 transition text-xs"
-                    aria-label="Next posts"
-                  >
-                    →
-                  </button>
-
-                </div>
+              {/* STANDFIRST */}
+              {post.summary && post.summary !== post.description && (
+                <p className="mt-5 border-l-4 border-red-600 pl-4 font-post-title text-base font-medium leading-relaxed text-slate-600 sm:text-lg">
+                  {post.summary}
+                </p>
               )}
 
-            </div>
-
-
-
-            <div className="overflow-hidden">
-
-              <div
-                className="flex transition-transform duration-700 ease-in-out"
-                style={{
-                  transform: `translateX(-${sliderIndex * (100 / 3)
-                    }%)`,
-                }}
-              >
-
-                {otherPosts.map((p) => {
-
-                  const pId =
-                    p._id || p.id;
-
-                  return (
-                    <div
-                      key={pId}
-                      className="flex-shrink-0 w-full sm:w-1/2 lg:w-1/3 px-1.5"
-                    >
-
-                      <Link
-                        to={getArticleUrl(p)}
-                        onClick={openPostFull(p)}
-                        className="block bg-white border border-gray-200 rounded overflow-hidden shadow-sm hover:shadow-md transition p-2 sm:p-3"
-                      >
-
-                        <span className="inline-block bg-red-600 text-white text-[7px] sm:text-[8px] uppercase font-bold px-1 py-0.5 rounded mb-1">
-                          {p.category ||
-                            "Inkuru"}
-                        </span>
-
-                        <h3 className="font-bold text-gray-900 text-xs sm:text-sm leading-tight line-clamp-2">
-                          {p.title}
-                        </h3>
-
-                        <p className="text-[8px] text-gray-500 mt-2">
-                          {language === "rw" ? "Soma →" : t("readStory")} →
-                        </p>
-
-                      </Link>
-
-                    </div>
-                  );
-                })}
-
-              </div>
-
-            </div >
-
-
-
-            {
-              otherPosts.length > 3 && (
-                <div className="flex justify-center gap-1 mt-2">
-
-                  {Array.from({
-                    length:
-                      maxSliderIndex + 1,
-                  }).map((_, index) => (
-                    <button
-                      key={index}
-                      type="button"
-                      onClick={() =>
-                        setSliderIndex(index)
-                      }
-                      className={`h-1 rounded-full transition-all ${index === sliderIndex
-                        ? "w-6 bg-red-600"
-                        : "w-1 bg-gray-300"
-                        }`}
-                      aria-label={`Go to slide ${index + 1
-                        }`}
-                    />
-                  ))}
-
-                </div>
-              )
-            }
-
-          </div >
-
-        </section >
-      )
-      }
-
-
-
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 py-6">
-
-        <div className="grid grid-cols-1 gap-5 lg:grid-cols-6 lg:gap-6">
-
-
-
-          <aside className="print:hidden order-2 lg:order-1 lg:col-span-1">
-
-            <div className="lg:sticky lg:top-6 lg:max-w-[220px] lg:mx-auto">
-
-              <div className="space-y-2">
-
-                {otherPosts
-                  .slice(0, 6)
-                  .map((p) => {
-
-                    const pId =
-                      p._id || p.id;
-
-                    return (
-                      <Link
-                        key={pId}
-                        to={getArticleUrl(p)}
-                        onClick={openPostFull(p)}
-                        className="flex flex-col gap-1 rounded border border-gray-200 bg-white p-2 transition hover:shadow-sm"
-                      >
-
-                        <span className="text-[7px] uppercase text-red-600 font-bold">
-                          {p.category ||
-                            "Inkuru"}
-                        </span>
-
-                        <h4 className="font-bold text-[10px] text-gray-900 line-clamp-3">
-                          {p.title}
-                        </h4>
-
-                      </Link>
-                    );
-                  })}
-
-              </div>
-
-            </div>
-
-          </aside>
-
-
-
-          <main
-            id="printable-article"
-            className="order-1 rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6 lg:order-2 lg:col-span-4 lg:p-8"
-          >
-
-
-
-            <Link
-              to="/"
-              className="print:hidden inline-flex text-blue-600 hover:text-blue-800 font-semibold text-sm mb-6"
-            >
-              {language === "rw" ? "← Subira ku Ahabanza" : t("backHome")}
-            </Link>
-
-
-
-            <div className="mb-5">
-              <span className="bg-red-600 text-white text-xs uppercase font-bold px-3 py-1 rounded">
-                {post.category ||
-                  "Inkuru"}
-              </span>
-            </div>
-
-
-
-            <div className="mb-5 bg-gray-50 border rounded-lg p-4">
-
-              <div className="flex items-center gap-3">
-
-                {adminPost ? (
-                  <div className="relative flex-shrink-0">
-
-                    <img
-                      src={rubavuLogo}
-                      alt="RubavuToday"
-                      className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-md"
-                    />
-
-
-
-                    <span
-                      className="absolute -right-1 -bottom-1 w-5 h-5 bg-blue-600 rounded-full border-2 border-white shadow-md flex items-center justify-center"
-                      title="Verified RubavuToday"
-                      aria-label="Verified RubavuToday"
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        className="w-3.5 h-3.5 text-white fill-none stroke-current"
-                        strokeWidth="3"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M5 12.5l4 4L19 7.5" />
-                      </svg>
-                    </span>
-
-                  </div>
-                ) : (
-                  <div className="w-12 h-12 rounded-full bg-red-600 text-white flex items-center justify-center font-bold text-lg">
-                    {employeeInitial || "E"}
-                  </div>
-                )}
-
-                <div>
-
-                  <div className="flex items-center gap-2">
-
-                    <span className="text-sm font-bold text-red-600">
-                      {language === "rw" ? "Yanditswe Na:" : t("writtenBy")}
-                    </span>
-
-                    <span className="text-sm font-bold text-gray-900">
-                      {authorName}
-                    </span>
-
-
-
-                    {adminPost && (
+              {/* BYLINE */}
+              <div className="mt-7 border-y border-slate-200 bg-white px-4 py-4 sm:px-5">
+                <div className="flex flex-wrap items-center gap-3">
+
+                  {adminPost ? (
+                    <div className="relative shrink-0">
+                      <img
+                        src={rubavuLogo}
+                        alt="RubavuToday"
+                        className="h-11 w-11 rounded-full border-2 border-white object-cover shadow-md"
+                      />
                       <span
-                        className="inline-flex items-center justify-center w-5 h-5 bg-blue-600 rounded-full shadow-sm"
+                        className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-blue-600 shadow-md"
                         title="Verified RubavuToday"
                         aria-label="Verified RubavuToday"
                       >
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
                           viewBox="0 0 24 24"
-                          className="w-3.5 h-3.5 text-white fill-none stroke-current"
+                          className="h-3 w-3 text-white fill-none stroke-current"
                           strokeWidth="3"
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -1010,552 +887,611 @@ export default function PostDetails() {
                           <path d="M5 12.5l4 4L19 7.5" />
                         </svg>
                       </span>
-                    )}
+                    </div>
+                  ) : (
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-red-600 font-post-title text-lg font-black text-white">
+                      {employeeInitial || "E"}
+                    </div>
+                  )}
 
-                  </div>
-
-                  <div className="text-xs text-gray-500 mt-1">
-                    {language === "rw" ? "Yanditswe ku wa" : t("publishedOn")}{" "}
-                    <strong>
-                      {formattedDate}
-                    </strong>
-                  </div>
-
-                </div>
-
-              </div>
-
-            </div>
-
-
-
-            <div className="print:hidden flex justify-end mb-4">
-
-              <SocialShare post={post} />
-
-            </div>
-
-
-
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-black leading-tight mb-6">
-              {post.title}
-            </h1>
-
-
-
-            {post.image && (
-              <div className="mb-8">
-
-                <div
-                  ref={imageContainerRef}
-                  onContextMenu={
-                    handleImageContextMenu
-                  }
-                  className="relative overflow-hidden rounded-lg border border-gray-200 bg-gray-50 shadow-sm"
-                >
-
-                  <img
-                    src={getImageUrl(post.image)}
-                    alt={post.title || "Rubavu Today article image"}
-                    className="block h-auto w-full select-none object-contain"
-                    draggable="false"
-                    loading="eager"
-                    fetchPriority="high"
-                    decoding="async"
-                    width="1200"
-                    height="675"
-                    onError={(e) => {
-                      e.currentTarget.onerror = null;
-                      e.currentTarget.src = rubavuLogo;
-                    }}
-                  />
-
-                  <div className="absolute bottom-3 left-3 bg-black/75 text-white text-xs px-2 py-1 rounded">
-                    © Rubavu Today
-                  </div>
-
-                </div>
-
-                <div className="print:hidden flex justify-end mt-2">
-
-                  <button
-                    onClick={
-                      triggerWatermarkedDownload
-                    }
-                    className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1.5 rounded"
-                  >
-                    ↓ Download Image
-                  </button>
-
-                </div>
-
-              </div>
-            )}
-
-
-
-            <div className="text-gray-900 text-base sm:text-lg leading-relaxed whitespace-pre-line mb-10 border-b pb-8">
-              {post.description}
-            </div>
-
-
-
-            {embedUrl && (
-              <div className="mb-10 print:hidden">
-
-                <div className="relative w-full aspect-video bg-black rounded overflow-hidden">
-
-                  <iframe
-                    src={embedUrl}
-                    title="YouTube video player"
-                    className="absolute inset-0 w-full h-full"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                  />
-
-                </div>
-
-              </div>
-            )}
-
-
-
-            <section className="mt-8 print:hidden">
-
-              <h3 className="text-xl font-bold mb-6 border-b pb-3">
-                {language === "rw" ? "Ibitekerezo" : t("comments")} ({comments.length})
-              </h3>
-
-
-
-              <form
-                onSubmit={handleCommentSubmit}
-                className="bg-gray-50 p-4 rounded border mb-8"
-              >
-
-                <h4 className="font-bold mb-3 text-sm">
-                  {language === "rw" ? "Tanga igitekerezo cyawe" : t("leaveComment")}
-                </h4>
-
-                <input
-                  type="text"
-                  placeholder={language === "rw" ? "Amazina yawe" : t("yourName")}
-                  value={name}
-                  onChange={(e) =>
-                    setName(e.target.value)
-                  }
-                  className="w-full sm:w-1/2 p-2 border rounded mb-3"
-                  required
-                />
-
-                <textarea
-                  placeholder={language === "rw" ? "Andika igitekerezo cyawe hano..." : t("commentPlaceholder")}
-                  value={commentText}
-                  onChange={(e) =>
-                    setCommentText(
-                      e.target.value
-                    )
-                  }
-                  rows="3"
-                  className="w-full p-2 border rounded mb-3"
-                  required
-                />
-
-                <button
-                  type="submit"
-                  className="rounded bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {language === "rw" ? "Ohereza Igitekerezo" : t("sendComment")}
-                </button>
-
-                {commentStatus && (
-                  <p className="mt-2 text-xs font-medium text-slate-600" role="status">
-                    {commentStatus}
-                  </p>
-                )}
-
-              </form>
-
-
-
-              <div className="space-y-4">
-
-                {topLevelComments.length === 0 ? (
-                  <p className="text-gray-500 italic text-sm">
-                    {language === "rw" ? "Nta bitekerezo birabaho." : t("noComments")}
-                  </p>
-                ) : (
-                  topLevelComments.map(
-                    (comment) => {
-
-                      const replies =
-                        comments.filter(
-                          (c) =>
-                            c.parent_id ===
-                            comment.id
-                        );
-
-                      return (
-                        <div
-                          key={comment.id}
-                          className="bg-white border rounded p-4"
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-body text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                        {language === "rw" ? "Yanditswe Na:" : t("writtenBy")}
+                      </span>
+                      <span className="truncate font-body text-sm font-bold text-slate-950">
+                        {authorName}
+                      </span>
+                      {adminPost && (
+                        <span
+                          className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 shadow-sm"
+                          title="Verified RubavuToday"
+                          aria-label="Verified RubavuToday"
                         >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            className="h-3 w-3 text-white fill-none stroke-current"
+                            strokeWidth="3"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M5 12.5l4 4L19 7.5" />
+                          </svg>
+                        </span>
+                      )}
+                    </div>
 
-                          <div className="flex justify-between mb-2">
+                    <p className="mt-1 font-body text-xs text-slate-500">
+                      <time dateTime={postDate ? String(postDate) : undefined}>
+                        {formattedDate}
+                      </time>
+                    </p>
+                  </div>
+                </div>
+              </div>
 
-                            <span className="font-bold text-sm">
-                              {comment.name}
-                            </span>
+              {/* SOCIAL SHARE */}
+              <div className="print:hidden mt-2 flex items-center gap-1.5">
+                <span className="text-[8px] font-bold uppercase tracking-wider text-slate-500">
+                  Share:
+                </span>
+                <div className="flex items-center gap-1">
+                  {/* Facebook */}
+                  <a
+                    href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Share on Facebook"
+                    className="inline-flex h-6 w-6 items-center justify-center rounded bg-blue-600 text-white transition hover:bg-blue-700"
+                  >
+                    <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                    </svg>
+                  </a>
 
-                            <span className="text-xs text-gray-400">
-                              {new Date(
-                                comment.created_at
-                              ).toLocaleDateString()}
-                            </span>
+                  {/* Instagram */}
+                  <a
+                    href="https://www.instagram.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Share on Instagram"
+                    className="inline-flex h-6 w-6 items-center justify-center rounded bg-gradient-to-br from-purple-500 via-pink-500 to-red-500 text-white transition hover:shadow-lg"
+                  >
+                    <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
+                    </svg>
+                  </a>
 
+                  {/* Twitter/X */}
+                  <a
+                    href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(post.title)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Share on Twitter"
+                    className="inline-flex h-6 w-6 items-center justify-center rounded bg-black text-white transition hover:bg-slate-800"
+                  >
+                    <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24h-6.514l-5.106-6.671-5.848 6.671h-3.308l7.742-8.835L2.461 2.25h6.675l4.872 6.237 5.236-6.237zM17.364 20.033h1.828L6.817 3.995H4.881l12.483 16.038z" />
+                    </svg>
+                  </a>
+
+                  {/* WhatsApp */}
+                  <a
+                    href={`https://wa.me/?text=${encodeURIComponent(post.title + " " + window.location.href)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Share on WhatsApp"
+                    className="inline-flex h-6 w-6 items-center justify-center rounded bg-green-500 text-white transition hover:bg-green-600"
+                  >
+                    <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z" />
+                    </svg>
+                  </a>
+                </div>
+              </div>
+
+              {/* FEATURED IMAGE */}
+              {post.image && (
+                <figure className="mt-7">
+                  <div
+                    ref={imageContainerRef}
+                    onContextMenu={handleImageContextMenu}
+                    className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
+                  >
+                    <img
+                      src={getImageUrl(post.image)}
+                      alt={post.title || "Rubavu Today article image"}
+                      className="block h-auto w-full max-w-full select-none object-contain"
+                      draggable="false"
+                      loading="eager"
+                      fetchPriority="high"
+                      decoding="async"
+                      width="1200"
+                      height="675"
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 900px"
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = rubavuLogo;
+                      }}
+                    />
+
+                    <div className="absolute bottom-3 left-3 rounded bg-black/75 px-2 py-1 font-body text-[10px] font-semibold text-white">
+                      © Rubavu Today
+                    </div>
+                  </div>
+
+                  <figcaption className="mt-2 flex items-center justify-between gap-3">
+                    <span className="font-body text-[10px] font-medium uppercase tracking-wider text-slate-400">
+                      {translateCategory(post.category, language)}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={triggerWatermarkedDownload}
+                      className="print:hidden inline-flex items-center gap-1.5 rounded border border-slate-200 bg-white px-3 py-1.5 font-body text-[10px] font-semibold text-slate-600 transition hover:border-red-200 hover:text-red-600"
+                    >
+                      {t("downloadImage")}
+                    </button>
+                  </figcaption>
+                </figure>
+              )}
+
+              {/* CONTENT */}
+              {contentBlocks.length > 0 ? (
+                <ArticleRenderer
+                  blocks={contentBlocks}
+                  showHero={false}
+                  heroUrl={post?.image}
+                  post={post}
+                  onImageDownload={triggerWatermarkedDownload}
+                />
+              ) : (
+                articleBlocks.length > 0 && (
+                  <div className="rt-article-content mt-8 text-base leading-[1.8] text-slate-800 sm:text-[17px]">
+                    {articleBlocks.map((block, index) =>
+                      block.type === "p" ? (
+                        <p key={`p-${index}`}>{block.text}</p>
+                      ) : (
+                        <figure
+                          key={`img-${index}`}
+                          className="my-10 print:break-inside-avoid"
+                        >
+                          <div
+                            onContextMenu={handleGalleryContextMenu(block.url)}
+                            className="relative mx-auto max-w-[720px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
+                          >
+                            <img
+                              src={getImageUrl(block.url)}
+                              alt={post?.title || "Rubavu Today article photo"}
+                              className="block h-auto w-full max-w-full select-none object-contain"
+                              draggable="false"
+                              loading="lazy"
+                              decoding="async"
+                              onError={(e) => {
+                                e.currentTarget.onerror = null;
+                                e.currentTarget.src = rubavuLogo;
+                              }}
+                            />
+
+                            <div className="absolute bottom-3 left-3 rounded bg-black/75 px-2 py-1 font-body text-[10px] font-semibold text-white">
+                              © Rubavu Today
+                            </div>
                           </div>
 
-                          <p className="text-sm mb-3 whitespace-pre-line">
+                          <figcaption className="mt-2 flex items-center justify-between gap-3">
+                            <span className="font-body text-[10px] font-medium uppercase tracking-wider text-slate-400">
+                              Photo {block.num} of {galleryImages.length}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => triggerWatermarkedDownload(block.url)}
+                              className="print:hidden inline-flex items-center gap-1.5 rounded border border-slate-200 bg-white px-3 py-1.5 font-body text-[10px] font-semibold text-slate-600 transition hover:border-red-200 hover:text-red-600"
+                            >
+                              {t("downloadImage")}
+                            </button>
+                          </figcaption>
+                        </figure>
+                      )
+                    )}
+                  </div>
+                )
+              )}
+
+              {/* VIDEO */}
+              {embedUrl && (
+                <div className="mt-10 print:hidden">
+                  <div className="relative aspect-video w-full overflow-hidden rounded-2xl bg-black shadow-sm">
+                    <iframe
+                      src={embedUrl}
+                      title="YouTube video player"
+                      className="absolute inset-0 h-full w-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* COMMENTS */}
+              <section className="mt-12 rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 print:hidden">
+                <h3 className="mb-6 border-b border-slate-200 pb-3 font-post-title text-xl font-black text-slate-950">
+                  {language === "rw" ? "Ibitekerezo" : t("comments")} ({comments.length})
+                </h3>
+
+                <form
+                  onSubmit={handleCommentSubmit}
+                  className="mb-8 rounded-xl bg-slate-50 p-4"
+                >
+                  <h4 className="mb-3 text-sm font-bold text-slate-900">
+                    {language === "rw" ? "Tanga igitekerezo cyawe" : t("leaveComment")}
+                  </h4>
+
+                  <input
+                    type="text"
+                    placeholder={language === "rw" ? "Amazina yawe" : t("yourName")}
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="w-full rounded-lg border border-slate-300 p-2.5 font-body text-sm text-slate-900 focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-100 sm:w-1/2"
+                    required
+                  />
+
+                  <textarea
+                    placeholder={language === "rw" ? "Andika igitekerezo cyawe hano..." : t("commentPlaceholder")}
+                    value={commentText}
+                    onChange={(e) => setCommentText(e.target.value)}
+                    rows="3"
+                    className="mt-3 w-full rounded-lg border border-slate-300 p-2.5 font-body text-sm text-slate-900 focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-100"
+                    required
+                  />
+
+                  <button
+                    type="submit"
+                    className="mt-3 rounded-lg bg-red-600 px-4 py-2 font-body text-sm font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {language === "rw" ? "Ohereza Igitekerezo" : t("sendComment")}
+                  </button>
+
+                  {commentStatus && (
+                    <p className="mt-2 text-xs font-medium text-slate-600" role="status">
+                      {commentStatus}
+                    </p>
+                  )}
+                </form>
+
+                <div className="space-y-4">
+                  {topLevelComments.length === 0 ? (
+                    <p className="text-sm italic text-slate-500">
+                      {language === "rw" ? "Nta bitekerezo birabaho." : t("noComments")}
+                    </p>
+                  ) : (
+                    topLevelComments.map((comment) => {
+                      const replies = comments.filter(
+                        (c) => c.parent_id === comment.id
+                      );
+
+                      return (
+                        <div key={comment.id} className="rounded-xl border border-slate-200 p-4">
+                          <div className="mb-2 flex items-center justify-between">
+                            <span className="text-sm font-bold text-slate-900">
+                              {comment.name}
+                            </span>
+                            <span className="text-xs text-slate-400">
+                              {new Date(comment.created_at).toLocaleDateString()}
+                            </span>
+                          </div>
+
+                          <p className="mb-3 whitespace-pre-line text-sm leading-relaxed text-slate-700">
                             {comment.comment}
                           </p>
 
-                          <button
-                            onClick={() =>
-                              setReplyingTo(
-                                replyingTo ===
-                                  comment.id
-                                  ? null
-                                  : comment.id
-                              )
-                            }
-                            className="text-blue-600 text-xs font-semibold"
-                          >
-                            {replyingTo ===
-                              comment.id
-                              ? (language === "rw" ? "Hagarika" : t("cancel"))
-                              : (language === "rw" ? "Subiza" : t("reply"))}
-                          </button>
+                          <div className="flex items-center">
+                            <button
+                              onClick={() =>
+                                setReplyingTo(
+                                  replyingTo === comment.id ? null : comment.id
+                                )
+                              }
+                              className="text-xs font-semibold text-slate-500 transition hover:text-red-600"
+                            >
+                              {replyingTo === comment.id
+                                ? language === "rw"
+                                  ? "Hagarika"
+                                  : t("cancel")
+                                : language === "rw"
+                                  ? "Subiza"
+                                  : t("reply")}
+                            </button>
 
-                          <button
-                            onClick={(e) =>
-                              handleCommentReaction(
-                                comment.id,
-                                "like",
-                                e
-                              )
-                            }
-                            className={`ml-2 text-xs font-semibold ${reactions[comment.id] ===
-                              "like"
-                              ? "text-red-600"
-                              : "text-gray-500 hover:text-red-600"
-                              }`}
-                            aria-label="Kunda ibitekerezo"
-                            title="Kunda"
-                          >
-                            👍{" "}
-                            {comment.likes ||
-                              0}
-                          </button>
+                            <button
+                              onClick={(e) =>
+                                handleCommentReaction(comment.id, "like", e)
+                              }
+                              className={`ml-auto text-xs font-semibold transition ${reactions[comment.id] === "like"
+                                ? "text-red-600"
+                                : "text-slate-500 hover:text-red-600"
+                                }`}
+                              aria-label="Kunda ibitekerezo"
+                              title="Kunda"
+                            >
+                              ðŸ‘{" "}
+                              {comment.likes || 0}
+                            </button>
 
-                          <button
-                            onClick={(e) =>
-                              handleCommentReaction(
-                                comment.id,
-                                "dislike",
-                                e
-                              )
-                            }
-                            className={`ml-2 text-xs font-semibold ${reactions[comment.id] ===
-                              "dislike"
-                              ? "text-blue-600"
-                              : "text-gray-500 hover:text-blue-600"
-                              }`}
-                            aria-label="Utanze ibitekerezo"
-                            title="Ntanze"
-                          >
-                            👎{" "}
-                            {comment.dislikes ||
-                              0}
-                          </button>
+                            <button
+                              onClick={(e) =>
+                                handleCommentReaction(comment.id, "dislike", e)
+                              }
+                              className={`ml-2 text-xs font-semibold transition ${reactions[comment.id] === "dislike"
+                                ? "text-blue-600"
+                                : "text-slate-500 hover:text-blue-600"
+                                }`}
+                              aria-label="Utanze ibitekerezo"
+                              title="Ntanze"
+                            >
+                              ðŸ‘Ž{" "}
+                              {comment.dislikes || 0}
+                            </button>
+                          </div>
 
-                          {replyingTo ===
-                            comment.id && (
-                              <form
-                                onSubmit={(e) =>
-                                  handleCommentSubmit(
-                                    e,
-                                    comment.id
-                                  )
-                                }
-                                className="mt-3 bg-gray-50 p-3 border-l-2 border-blue-600"
+                          {replyingTo === comment.id && (
+                            <form
+                              onSubmit={(e) => handleCommentSubmit(e, comment.id)}
+                              className="mt-3 rounded-lg border-l-2 border-red-600 bg-slate-50 p-3"
+                            >
+                              <input
+                                type="text"
+                                placeholder={language === "rw" ? "Amazina yawe" : t("yourName")}
+                                value={replyName}
+                                onChange={(e) => setReplyName(e.target.value)}
+                                className="mb-2 w-full rounded-lg border border-slate-300 p-2 text-xs focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-100"
+                                required
+                              />
+
+                              <textarea
+                                placeholder={language === "rw" ? "Subiza..." : t("replyPlaceholder")}
+                                value={replyText}
+                                onChange={(e) => setReplyText(e.target.value)}
+                                rows="2"
+                                className="mb-2 w-full rounded-lg border border-slate-300 p-2 text-xs focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-100"
+                                required
+                              />
+
+                              <button
+                                type="submit"
+                                className="rounded-lg bg-black px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-800"
                               >
+                                {language === "rw" ? "Ohereza" : t("send")}
+                              </button>
+                            </form>
+                          )}
 
-                                <input
-                                  type="text"
-                                  placeholder={language === "rw" ? "Amazina yawe" : t("yourName")}
-                                  value={
-                                    replyName
-                                  }
-                                  onChange={(e) =>
-                                    setReplyName(
-                                      e.target.value
-                                    )
-                                  }
-                                  className="w-full p-2 border rounded mb-2 text-xs"
-                                  required
-                                />
+                          {replies.length > 0 && (
+                            <div className="ml-4 mt-3 space-y-2 border-l-2 border-slate-200 pl-3">
+                              {replies.map((reply) => (
+                                <div key={reply.id} className="rounded-lg bg-slate-50 p-3">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-xs font-bold text-slate-900">
+                                      {reply.name}
+                                    </span>
+                                    <span className="text-[10px] text-slate-400">
+                                      {new Date(reply.created_at).toLocaleDateString()}
+                                    </span>
+                                  </div>
 
-                                <textarea
-                                  placeholder={language === "rw" ? "Subiza..." : t("replyPlaceholder")}
-                                  value={
-                                    replyText
-                                  }
-                                  onChange={(e) =>
-                                    setReplyText(
-                                      e.target.value
-                                    )
-                                  }
-                                  rows="2"
-                                  className="w-full p-2 border rounded mb-2 text-xs"
-                                  required
-                                />
+                                  <p className="mt-1 text-xs text-slate-700">
+                                    {reply.comment}
+                                  </p>
 
-                                <button
-                                  type="submit"
-                                  className="bg-black text-white text-xs px-3 py-1 rounded"
-                                >
-                                  {language === "rw" ? "Ohereza" : t("send")}
-                                </button>
-
-                              </form>
-                            )}
-
-                          {replies.length >
-                            0 && (
-                              <div className="mt-3 ml-4 pl-3 border-l-2 border-gray-200 space-y-2">
-
-                                {replies.map(
-                                  (reply) => (
-                                    <div
-                                      key={
-                                        reply.id
+                                  <div className="mt-1 flex items-center gap-2">
+                                    <button
+                                      onClick={(e) =>
+                                        handleCommentReaction(reply.id, "like", e)
                                       }
-                                      className="bg-gray-50 p-3 rounded"
+                                      className={`text-[10px] font-semibold transition ${reactions[reply.id] === "like"
+                                        ? "text-red-600"
+                                        : "text-slate-500 hover:text-red-600"
+                                        }`}
+                                      aria-label="Kunda igisubizo"
+                                      title="Kunda"
                                     >
+                                      ðŸ‘{" "}
+                                      {reply.likes || 0}
+                                    </button>
 
-                                      <div className="flex justify-between">
-
-                                        <span className="font-bold text-xs">
-                                          {
-                                            reply.name
-                                          }
-                                        </span>
-
-                                        <span className="text-[10px] text-gray-400">
-                                          {new Date(
-                                            reply.created_at
-                                          ).toLocaleDateString()}
-                                        </span>
-
-                                      </div>
-
-                                      <p className="text-xs mt-1">
-                                        {
-                                          reply.comment
-                                        }
-                                      </p>
-
-                                      <div className="mt-1 flex items-center gap-2">                                        <button
-                                        onClick={(e) =>
-                                          handleCommentReaction(
-                                            reply.id,
-                                            "like",
-                                            e
-                                          )
-                                        }
-                                        className={`text-[10px] font-semibold ${reactions[reply.id] ===
-                                          "like"
-                                          ? "text-red-600"
-                                          : "text-gray-500 hover:text-red-600"
-                                          }`}
-                                        aria-label="Kunda igisubizo"
-                                        title="Kunda"
-                                      >
-                                        👍{" "}
-                                        {reply.likes ||
-                                          0}
-                                      </button>
-
-                                        <button
-                                          onClick={(e) =>
-                                            handleCommentReaction(
-                                              reply.id,
-                                              "dislike",
-                                              e
-                                            )
-                                          }
-                                          className={`text-[10px] font-semibold ${reactions[reply.id] ===
-                                            "dislike"
-                                            ? "text-blue-600"
-                                            : "text-gray-500 hover:text-blue-600"
-                                            }`}
-                                          aria-label="Utanze igisubizo"
-                                          title="Ntanze"
-                                        >
-                                          👎{" "}
-                                          {reply.dislikes ||
-                                            0}
-                                        </button>
-                                      </div>
-
-                                    </div>
-                                  )
-                                )}
-
-                              </div>
-                            )}
-
+                                    <button
+                                      onClick={(e) =>
+                                        handleCommentReaction(reply.id, "dislike", e)
+                                      }
+                                      className={`text-[10px] font-semibold transition ${reactions[reply.id] === "dislike"
+                                        ? "text-blue-600"
+                                        : "text-slate-500 hover:text-blue-600"
+                                        }`}
+                                      aria-label="Utanze igisubizo"
+                                      title="Ntanze"
+                                    >
+                                      ðŸ‘Ž{" "}
+                                      {reply.dislikes || 0}
+                                    </button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       );
-                    }
-                  )
-                )}
+                    })
+                  )}
+                </div>
+              </section>
 
-              </div>
+              {/* RELATED ARTICLES */}
+              {relatedPosts.length > 0 && (
+                <section className="mt-14">
+                  <div className="mb-5 flex items-center gap-2 border-b-2 border-slate-900 pb-2">
+                    <span className="h-4 w-1.5 rounded-sm bg-red-600" />
+                    <h2 className="font-post-title text-lg font-black uppercase tracking-tight text-slate-950 sm:text-xl">
+                      {t("relatedArticles")}
+                    </h2>
+                  </div>
 
-            </section>
-
-          </main>
-
-
-
-          <aside className="print:hidden order-3 lg:col-span-1">
-
-            <div className="lg:sticky lg:top-6 lg:max-w-[240px] lg:mx-auto">
-
-              <h3 className="mb-3 border-l-4 border-red-600 pl-2 text-sm font-black uppercase">
-                {language === "rw" ? "Izindi Nkuru" : t("otherStories")}
-              </h3>
-
-              <div className="space-y-3">
-
-                {otherPosts
-                  .slice(6, 12)
-                  .map((p) => {
-
-                    const pId =
-                      p._id || p.id;
-
-                    return (
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                    {relatedPosts.slice(0, 3).map((p) => (
                       <Link
-                        key={pId}
+                        key={p._id || p.id}
                         to={getArticleUrl(p)}
                         onClick={openPostFull(p)}
-                        className="block rounded-md border border-gray-200 bg-white p-2 transition hover:shadow-sm"
+                        className="group flex flex-row items-center gap-4 rounded-xl border border-slate-200 bg-white p-3 shadow-sm transition hover:border-red-200 hover:shadow-md"
                       >
-
-                        {p.image && (
-                          <img
-                            src={getImageUrl(
-                              p.image
-                            )}
-                            alt={p.title}
-                            className="mb-2 h-24 w-full rounded object-cover"
-                          />
-                        )}
-
-                        <span className="text-[9px] uppercase font-bold text-red-600">
-                          {p.category ||
-                            "Inkuru"}
-                        </span>
-
-                        <h4 className="font-bold text-xs text-gray-900 line-clamp-3">
-                          {p.title}
-                        </h4>
-
-                      </Link>
-                    );
-                  })}
-
-              </div>
-
-            </div>
-
-          </aside>
-
-        </div>
-
-
-
-        {otherPosts.length > 0 && (
-          <section className="print:hidden mt-10 sm:mt-12 bg-gradient-to-br from-slate-50 to-white rounded-2xl border border-slate-200 p-4 sm:p-8">
-
-            <div className="mb-6 sm:mb-8">
-              <div className="border-l-4 border-red-600 pl-4">
-                <h2 className="text-2xl sm:text-3xl font-black text-slate-900">
-                  {language === "rw" ? "Soma n'izindi nkuru" : t("readMoreStories")}
-                </h2>
-                <p className="text-sm sm:text-base text-slate-500 mt-2">
-                  {language === "rw" ? "Izindi nkuru zose ziboneka hano hepfo." : t("allStoriesBelow")}
-                </p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
-
-              {otherPosts.map((p) => {
-
-                const pId = p._id || p.id;
-
-                return (
-                  <Link
-                    key={pId}
-                    to={getArticleUrl(p)}
-                    onClick={openPostFull(p)}
-                    className="group flex flex-col bg-white rounded-xl border border-slate-200 overflow-hidden hover:border-red-300 transition-all duration-300 hover:shadow-md hover:-translate-y-1"
-                  >
-
-                    <div className="relative overflow-hidden bg-slate-100 aspect-square">
-                      {p.image ? (
-                        <img
-                          src={getImageUrl(p.image)}
-                          alt={p.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-slate-200 to-slate-100 flex items-center justify-center">
-                          <span className="text-xs text-slate-400 font-medium">📷</span>
+                        <div className="h-20 w-24 shrink-0 overflow-hidden rounded-lg bg-slate-100 sm:h-24 sm:w-28">
+                          {p.image ? (
+                            <img
+                              src={getImageUrl(p.image)}
+                              alt={p.title}
+                              loading="lazy"
+                              decoding="async"
+                              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-200 to-slate-100 text-2xl opacity-30">
+                              ðŸ“°
+                            </div>
+                          )}
                         </div>
-                      )}
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-300" />
-                    </div>
 
-                    <div className="flex flex-col flex-1 p-2 sm:p-3">
+                        <div className="min-w-0 flex-1">
+                          <span className="font-body text-[8px] font-bold uppercase tracking-wider text-red-600">
+                            {translateCategory(p.category, language)}
+                          </span>
+                          <h3 className="mt-1 line-clamp-3 font-post-title text-[13px] font-bold leading-snug text-slate-950 transition-colors group-hover:text-red-600 sm:text-sm">
+                            {p.title}
+                          </h3>
+                          <p className="mt-1.5">
+                            <TimeLabel
+                              date={p.createdDate || p.created_at || p.createdAt || p.date}
+                              className="font-body text-[9px] font-medium text-slate-400"
+                            />
+                          </p>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </section>
+              )}
 
-                      <span className="text-[8px] sm:text-[9px] uppercase font-bold text-red-600 tracking-wide">
-                        {p.category || "Inkuru"}
-                      </span>
+              {/* MORE NEWS */}
+              {moreNews.length > 0 && (
+                <section className="mt-14">
+                  <div className="mb-5 flex items-center gap-2 border-b-2 border-slate-900 pb-2">
+                    <span className="h-4 w-1.5 rounded-sm bg-red-600" />
+                    <h2 className="font-post-title text-lg font-black uppercase tracking-tight text-slate-950 sm:text-xl">
+                      {language === "rw" ? "Soma n'izindi nkuru" : t("readMoreStories")}
+                    </h2>
+                  </div>
 
-                      <h3 className="font-bold text-xs sm:text-sm text-slate-900 line-clamp-2 mt-1.5 leading-tight flex-1">
-                        {p.title}
-                      </h3>
+                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
+                    {moreNews.map((p) => (
+                      <Link
+                        key={p._id || p.id}
+                        to={getArticleUrl(p)}
+                        onClick={openPostFull(p)}
+                        className="group flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:border-red-200 hover:shadow-md"
+                      >
+                        <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
+                          {p.image ? (
+                            <img
+                              src={getImageUrl(p.image)}
+                              alt={p.title}
+                              loading="lazy"
+                              decoding="async"
+                              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-200 to-slate-100 text-2xl opacity-30">
+                              ðŸ“°
+                            </div>
+                          )}
+                        </div>
 
-                      <p className="text-[10px] sm:text-xs text-red-600 font-semibold mt-2 group-hover:text-red-700 transition">
-                        Soma →
-                      </p>
-
-                    </div>
-
-                  </Link>
-                );
-              })}
-
+                        <div className="flex flex-1 flex-col p-3">
+                          <span className="font-body text-[8px] font-bold uppercase tracking-wider text-red-600">
+                            {translateCategory(p.category, language)}
+                          </span>
+                          <h3 className="mt-1 line-clamp-3 font-post-title text-[13px] font-bold leading-snug text-slate-950 transition-colors group-hover:text-red-600">
+                            {p.title}
+                          </h3>
+                          <p className="pt-2">
+                            <TimeLabel
+                              date={p.createdDate || p.created_at || p.createdAt || p.date}
+                              className="font-body text-[9px] font-medium text-slate-400"
+                            />
+                          </p>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </section>
+              )}
             </div>
+          </div>
 
-          </section>
-        )}
+          <aside className="print:hidden min-w-0 lg:col-span-4">
+            <div className="space-y-6 lg:sticky lg:top-6">
+              {rightSidePosts.length > 0 && (
+                <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                  <div className="flex items-center gap-2 border-b-2 border-slate-900 px-4 py-3">
+                    <span className="h-4 w-1.5 rounded-sm bg-red-600" />
+                    <h2 className="font-post-title text-sm font-black uppercase tracking-tight text-slate-950">
+                      {language === "rw" ? "Izindi Nkuru" : t("otherStories")}
+                    </h2>
+                  </div>
 
+                  <div className="divide-y divide-slate-100">
+                    {rightSidePosts.slice(0, 6).map((p) => (
+                      <Link
+                        key={p._id || p.id}
+                        to={getArticleUrl(p)}
+                        onClick={openPostFull(p)}
+                        className="group flex items-start gap-3 p-3 transition hover:bg-slate-50"
+                      >
+                        <div className="h-16 w-24 shrink-0 overflow-hidden rounded-md bg-slate-100">
+                          {p.image ? (
+                            <img
+                              src={getImageUrl(p.image)}
+                              alt={p.title}
+                              loading="lazy"
+                              decoding="async"
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center text-lg opacity-30">
+                              📰
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="min-w-0 flex-1">
+                          <span className="font-body text-[8px] font-bold uppercase tracking-wider text-red-600">
+                            {translateCategory(p.category, language)}
+                          </span>
+                          <h3 className="mt-1 line-clamp-3 font-post-title text-[12px] font-bold leading-snug text-slate-950 transition-colors group-hover:text-red-600">
+                            {p.title}
+                          </h3>
+                          <p className="mt-1">
+                            <TimeLabel
+                              date={p.createdDate || p.created_at || p.createdAt || p.date}
+                              className="font-body text-[9px] font-medium text-slate-400"
+                            />
+                          </p>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </aside>
+        </div>
       </div>
-    </div >
+    </div>
   );
 }

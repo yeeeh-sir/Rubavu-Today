@@ -850,6 +850,14 @@ const buildPostFormData = (postData) => {
     formData.append("image", postData.image);
   }
 
+  if (Array.isArray(postData.images)) {
+    postData.images.forEach((file) => {
+      if (file) {
+        formData.append("images", file);
+      }
+    });
+  }
+
   return formData;
 };
 

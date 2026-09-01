@@ -19,6 +19,7 @@ import {
 import { API_ROOT as SERVER_URL } from "../../services/api";
 import LoadingScreen from "../../components/common/LoadingScreen";
 import { DashboardLayout, StatusBadge as SharedStatusBadge } from "../../components/dashboard";
+import ArticleEditor from "../../components/article/ArticleEditor";
 
 export default function ChiefDashboard({ onLogout }) {
 
@@ -30,6 +31,7 @@ export default function ChiefDashboard({ onLogout }) {
   const [saving, setSaving] = useState(false);
 
   const [editingPostId, setEditingPostId] = useState(null);
+  const [editInitial, setEditInitial] = useState(null);
   const [selectedPost, setSelectedPost] = useState(null);
 
 
@@ -74,18 +76,6 @@ export default function ChiefDashboard({ onLogout }) {
     "Imyidagaduro",
     "Uburezi",
   ];
-
-
-
-
-
-  const [form, setForm] = useState({
-    title: "",
-    description: "",
-    youtube_url: "",
-    image: null,
-    category: "Amakuru",
-  });
 
 
 
@@ -187,102 +177,19 @@ export default function ChiefDashboard({ onLogout }) {
 
 
   const resetForm = () => {
-    setForm({
-      title: "",
-      description: "",
-      youtube_url: "",
-      image: null,
-      category: "Amakuru",
-    });
-
     setEditingPostId(null);
+    setEditInitial(null);
   };
 
 
 
 
-
-  const handleChange = (e) => {
-    const {
-      name,
-      value,
-    } = e.target;
-
-    setForm((previous) => ({
-      ...previous,
-      [name]: value,
-    }));
-  };
-
-
-
-
-
-  const handleImageChange = (e) => {
-    const file =
-      e.target.files?.[0] || null;
-
-    setForm((previous) => ({
-      ...previous,
-      image: file,
-    }));
-  };
-
-
-
-
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
+  const handleSubmit = async (formData) => {
     setMessage("");
     setError("");
 
-    if (!form.title.trim()) {
-      setError(
-        "Please enter the post title."
-      );
-      return;
-    }
-
-    if (!form.description.trim()) {
-      setError(
-        "Please enter the post description."
-      );
-      return;
-    }
-
     try {
       setSaving(true);
-
-      const formData = new FormData();
-
-      formData.append(
-        "title",
-        form.title.trim()
-      );
-
-      formData.append(
-        "description",
-        form.description.trim()
-      );
-
-      formData.append(
-        "youtube_url",
-        form.youtube_url.trim()
-      );
-
-      formData.append(
-        "category",
-        form.category || "Amakuru"
-      );
-
-      if (form.image) {
-        formData.append(
-          "image",
-          form.image
-        );
-      }
 
       if (editingPostId) {
         await updatePost(
@@ -303,7 +210,8 @@ export default function ChiefDashboard({ onLogout }) {
 
       await loadPosts();
 
-      resetForm();
+      setEditingPostId(null);
+      setEditInitial(null);
 
       window.scrollTo({
         top: 0,
@@ -327,7 +235,6 @@ export default function ChiefDashboard({ onLogout }) {
 
 
 
-
   const handleEdit = (post) => {
     const postId = getPostId(post);
 
@@ -340,24 +247,13 @@ export default function ChiefDashboard({ onLogout }) {
 
     setEditingPostId(postId);
 
-    setForm({
+    setEditInitial({
       title: post.title || "",
-
-      description:
-        post.description ||
-        post.content ||
-        "",
-
-      youtube_url:
-        post.youtube_url ||
-        post.youtubeUrl ||
-        "",
-
-      image: null,
-
-      category:
-        post.category ||
-        "Amakuru",
+      description: post.description || post.content || "",
+      youtube_url: post.youtube_url || post.youtubeUrl || "",
+      image: post.image || post.image_url || post.imageUrl || null,
+      category: post.category || "Amakuru",
+      content_blocks: post.content_blocks || null,
     });
 
     setMessage(
@@ -1217,136 +1113,14 @@ export default function ChiefDashboard({ onLogout }) {
 
           </div>
 
-          <form
+          <ArticleEditor
+            initial={editInitial}
+            categories={categories.map((c) => ({ name: c }))}
+            submitLabel={editingPostId ? "Vugurura inkuru" : "Kora inkuru"}
+            saving={saving}
             onSubmit={handleSubmit}
-            className="space-y-5"
-          >
-
-            <div className="grid gap-5 lg:grid-cols-[1fr_240px]">
-
-              <div>
-
-                <label className="mb-2 block text-xs font-black uppercase tracking-wide text-slate-500">
-                  Umutwe w'inkuru
-                </label>
-
-                <input
-                  type="text"
-                  name="title"
-                  value={form.title}
-                  onChange={handleChange}
-                  placeholder="Andika umutwe w'inkuru..."
-                  className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
-                />
-
-              </div>
-
-              <div>
-
-                <label className="mb-2 block text-xs font-black uppercase tracking-wide text-slate-500">
-                  Category
-                </label>
-
-                <select
-                  name="category"
-                  value={form.category}
-                  onChange={handleChange}
-                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
-                >
-                  {categories.map(
-                    (category) => (
-                      <option
-                        key={category}
-                        value={category}
-                      >
-                        {category}
-                      </option>
-                    )
-                  )}
-                </select>
-
-              </div>
-
-            </div>
-
-            <div>
-
-              <label className="mb-2 block text-xs font-black uppercase tracking-wide text-slate-500">
-                Ibisobanuro
-              </label>
-
-              <textarea
-                name="description"
-                value={form.description}
-                onChange={handleChange}
-                rows={6}
-                placeholder="Andika inkuru..."
-                className="w-full resize-y rounded-xl border border-slate-300 px-4 py-3 text-sm leading-6 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
-              />
-
-            </div>
-
-            <div className="grid gap-5 md:grid-cols-2">
-
-              <div>
-
-                <label className="mb-2 block text-xs font-black uppercase tracking-wide text-slate-500">
-                  YouTube URL
-                </label>
-
-                <input
-                  type="url"
-                  name="youtube_url"
-                  value={form.youtube_url}
-                  onChange={handleChange}
-                  placeholder="https://youtube.com/..."
-                  className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
-                />
-
-              </div>
-
-              <div>
-
-                <label className="mb-2 block text-xs font-black uppercase tracking-wide text-slate-500">
-                  Ifoto y'inkuru
-                </label>
-
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm"
-                />
-
-              </div>
-
-            </div>
-
-            <div className="flex flex-col gap-3 sm:flex-row">
-
-              <button
-                type="submit"
-                disabled={saving}
-                className="rounded-xl bg-blue-700 px-6 py-3 text-sm font-black text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {saving
-                  ? "Birimo kubikwa..."
-                  : editingPostId
-                    ? "Vugurura inkuru"
-                    : "Kora inkuru"}
-              </button>
-
-              <button
-                type="button"
-                onClick={resetForm}
-                className="rounded-xl border border-slate-300 px-6 py-3 text-sm font-black text-slate-700 hover:bg-slate-100"
-              >
-                Siba
-              </button>
-
-            </div>
-
-          </form>
+            onCancel={resetForm}
+          />
 
         </section>
 

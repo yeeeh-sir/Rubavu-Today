@@ -26,7 +26,9 @@ import {
 
 import SearchBar from "../SearchBar/SearchBar";
 import LanguageSelector from "../LanguageSelector/LanguageSelector";
+import AdBanner from "../common/AdBanner";
 import { getArticleUrl } from "../../utils/slug";
+import { formatRelativeTime } from "../../utils/time";
 import { useLanguage, translateCategory, translatePostsBatch } from "../../context/LanguageContext";
 
 
@@ -128,33 +130,6 @@ export const buildMixedPosts = (posts = []) => {
   }
 
   return result.slice(0, MAX_MIXED_POSTS);
-};
-
-const formatDate = (date, short = false, language = "rw") => {
-  if (!date) return "";
-
-  const parsed = new Date(date);
-
-  if (Number.isNaN(parsed.getTime())) {
-    return "";
-  }
-
-  const locale = language === "fr" ? "fr-FR" : language === "sw" ? "sw-KE" : language === "en" ? "en-US" : "rw-RW";
-
-  return parsed.toLocaleDateString(
-    locale,
-    short
-      ? {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-      }
-      : {
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-      }
-  );
 };
 
 const preloadAdImages = (ads = []) => {
@@ -628,119 +603,441 @@ const SearchIcon = () => (
 
 
 
-const SmallPostCard = ({
-  post,
-  index,
-  matchedPostId,
-  postRefs,
-}) => {
-  const postId = getPostId(post, index);
-  const articleHref = getArticleUrl(post);
+const PORTAL_FALLBACK_IMAGE =
+  "https://images.unsplash.com/photo-1495020689067-958852a7765e?auto=format&fit=crop&w=900&q=80";
+
+const NewsSectionHeading = ({ title }) => (
+  <div className="mb-4">
+    <h2 className="font-post-title text-lg font-black uppercase tracking-tight text-slate-950 sm:text-xl">
+      {title}
+    </h2>
+  </div>
+);
+
+const TimeText = ({ date, className = "" }) => {
+  const { language, t } = useLanguage();
+
+  const text = formatRelativeTime(date, language, t);
+
+  if (!text) return null;
+
+  return (
+    <time className={className} dateTime={String(date || "").trim() || undefined}>
+      {text}
+    </time>
+  );
+};
+
+const FeaturedStory = ({ post, matchedPostId, postRefs }) => {
+  if (!post) return null;
+
+  const postId = getPostId(post);
+
+  const animation =
+    prefersReducedMotion() ? "none" : "portal-rise 0.5s ease-out both";
 
   return (
     <article
       ref={(element) => {
         if (postRefs && postId) {
-          postRefs.current[postId] =
-            element;
+          postRefs.current[postId] = element;
         }
       }}
-      className={`
-        group
-        w-full
-        overflow-hidden
-        rounded-lg
-        border
-        border-slate-200
-        bg-white
-        shadow-sm
-        transition-all
-        duration-300
-        hover:-translate-y-0.5
-        hover:shadow-md
-        ${matchedPostId === postId
-          ? "bg-yellow-50 ring-2 ring-yellow-300"
-          : ""
-        }
-      `}
+      className={`group overflow-hidden rounded-xl bg-slate-950 shadow-lg ring-1 ring-slate-200 transition-shadow duration-300 hover:shadow-2xl ${matchedPostId === postId
+        ? "ring-4 ring-yellow-300"
+        : "ring-1 ring-slate-200"
+        }`}
+      style={{ animation }}
     >
-      <Link
-        to={articleHref}
-        className="block"
-      >
-        <div className="relative h-[85px] w-full overflow-hidden bg-slate-100 sm:h-[95px]">
+      <div className="h-1.5 w-full bg-red-600" />
+
+      <Link to={getArticleUrl(post)} className="block">
+        <div className="relative aspect-[16/11] overflow-hidden bg-slate-100 sm:aspect-[16/9]">
           {post.image ? (
             <img
               src={post.image}
-              alt={
-                post.title || "Inkuru"
-              }
-              className="
-                h-full
-                w-full
-                object-cover
-                transition-transform
-                duration-500
-                group-hover:scale-105
-              "
-              loading="lazy"
+              alt={post.title || "Inkuru"}
+              className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
+              loading="eager"
+              fetchPriority="high"
+              decoding="async"
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = PORTAL_FALLBACK_IMAGE;
+              }}
             />
           ) : (
-            <div className="flex h-full items-center justify-center text-2xl opacity-30">
-              ðŸ“°
+            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-200 via-slate-100 to-slate-300">
+              <span className="text-3xl opacity-40">📰</span>
             </div>
           )}
-        </div>
 
-        <div className="p-2">
-          <h3 className="line-clamp-3 font-post-title text-[10px] font-bold leading-[1.3] text-slate-900 transition-colors group-hover:text-red-600 sm:text-[11px]">
-            {post.title}
-          </h3>
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/40 to-slate-950/5" />
 
-          <p className="mt-1.5 font-body text-[7px] font-medium text-slate-400 sm:text-[8px]">
-            {formatDate(
-              getPostDate(post),
-              true
-            )}
-          </p>
+          <div className="absolute inset-x-0 bottom-0 p-5 sm:p-7">
+            <h2 className="line-clamp-3 font-post-title text-[22px] font-black leading-tight text-white transition-colors group-hover:text-red-300 sm:text-3xl">
+              {post.title}
+            </h2>
+          </div>
         </div>
       </Link>
     </article>
   );
 };
 
+const ImportantStory = ({ post, matchedPostId, postRefs }) => {
+  if (!post) return null;
 
+  const postId = getPostId(post);
 
+  return (
+    <article
+      ref={(element) => {
+        if (postRefs && postId) {
+          postRefs.current[postId] = element;
+        }
+      }}
+      className={`group flex flex-col overflow-hidden rounded-lg sm:rounded-xl border bg-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 sm:hover:-translate-y-1 hover:shadow-lg sm:hover:shadow-xl ${matchedPostId === postId
+        ? "border-yellow-300 bg-yellow-50 ring-2 ring-yellow-300"
+        : "border-slate-200"
+        }`}
+    >
+      {/* Image Section */}
+      <Link
+        to={getArticleUrl(post)}
+        className="relative block overflow-hidden bg-slate-100"
+      >
+        <div className="aspect-video sm:aspect-square overflow-hidden">
+          {post.image ? (
+            <img
+              src={post.image}
+              alt={post.title || "Inkuru"}
+              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+              loading="lazy"
+              decoding="async"
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = PORTAL_FALLBACK_IMAGE;
+              }}
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center text-2xl xs:text-3xl sm:text-4xl opacity-30">
+              📰
+            </div>
+          )}
+        </div>
+      </Link>
 
+      {/* Content Section */}
+      <div className="flex min-w-0 flex-1 flex-col p-2 xs:p-2.5 sm:p-3">
+        {/* Category Badge */}
+        {post.category && (
+          <span className="mb-0.5 xs:mb-1 text-[7px] xs:text-[8px] font-bold uppercase tracking-wider text-red-600">
+            {post.category}
+          </span>
+        )}
 
-const MixedPosts = ({
-  posts = [],
+        {/* Title */}
+        <Link to={getArticleUrl(post)}>
+          <h3 className="line-clamp-2 xs:line-clamp-3 font-post-title text-xs xs:text-sm sm:text-[15px] font-bold leading-tight xs:leading-snug text-slate-950 transition-colors group-hover:text-red-600">
+            {post.title}
+          </h3>
+        </Link>
+
+        {/* Date */}
+        <p className="mt-auto pt-1 xs:pt-1.5">
+          <TimeText date={getPostDate(post)} className="font-body text-[7px] xs:text-[8px] sm:text-[9px] font-medium text-slate-400" />
+        </p>
+      </div>
+    </article>
+  );
+};
+
+const CompactCard = ({ post, matchedPostId, postRefs, variant = "default" }) => {
+  if (!post) return null;
+
+  const postId = getPostId(post);
+  const isLarge = variant === "large";
+
+  return (
+    <article
+      ref={(element) => {
+        if (postRefs && postId) {
+          postRefs.current[postId] = element;
+        }
+      }}
+      className={`group flex flex-col overflow-hidden rounded-xl border bg-white shadow-sm transition-shadow duration-300 hover:shadow-md ${matchedPostId === postId
+        ? "border-yellow-300 bg-yellow-50 ring-2 ring-yellow-300"
+        : "border-slate-200"
+        }`}
+    >
+      <Link
+        to={getArticleUrl(post)}
+        className={`relative block overflow-hidden bg-slate-100 ${isLarge ? "aspect-[16/9] sm:aspect-[16/8]" : "aspect-[16/10]"
+          }`}
+      >
+        {post.image ? (
+          <img
+            src={post.image}
+            alt={post.title || "Inkuru"}
+            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            loading="lazy"
+            decoding="async"
+            onError={(e) => {
+              e.currentTarget.onerror = null;
+              e.currentTarget.src = PORTAL_FALLBACK_IMAGE;
+            }}
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-200 via-slate-100 to-slate-300">
+            <span className="text-2xl opacity-30">📰</span>
+          </div>
+        )}
+      </Link>
+
+      <div className={`flex flex-1 flex-col ${isLarge ? "p-4" : "p-3"}`}>
+        <TimeText date={getPostDate(post)} className="font-body text-[9px] font-medium uppercase tracking-wider text-slate-400" />
+
+        <Link to={getArticleUrl(post)}>
+          <h3 className={`mt-1 line-clamp-3 font-post-title font-bold leading-snug text-slate-950 transition-colors group-hover:text-red-600 ${isLarge ? "text-base sm:text-lg" : "text-sm"
+            }`}>
+            {post.title}
+          </h3>
+        </Link>
+      </div>
+    </article>
+  );
+};
+
+const TrendingWidget = ({ posts = [] }) => {
+  const { t } = useLanguage();
+
+  const trending = useMemo(
+    () =>
+      [...posts]
+        .sort((a, b) => (b.views || 0) - (a.views || 0))
+        .slice(0, 5),
+    [posts]
+  );
+
+  if (!trending.length) return null;
+
+  return (
+    <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+      <div className="flex items-center gap-2 border-b-2 border-slate-900 px-4 py-3">
+        <span className="h-4 w-1.5 rounded-sm bg-red-600" />
+        <h3 className="font-post-title text-sm font-black uppercase tracking-tight text-slate-950">
+          {t("trending")}
+        </h3>
+      </div>
+
+      <ol className="divide-y divide-slate-100">
+        {trending.map((post, index) => (
+          <li key={getPostId(post)}>
+            <Link
+              to={getArticleUrl(post)}
+              className="group flex items-start gap-3 p-3 transition hover:bg-slate-50"
+            >
+              <span
+                className={`shrink-0 font-post-title text-xl font-black ${index < 3 ? "text-red-600" : "text-slate-300"
+                  }`}
+              >
+                {index + 1}
+              </span>
+
+              <div className="min-w-0">
+                <h4 className="line-clamp-2 text-[13px] font-bold leading-snug text-slate-950 transition-colors group-hover:text-red-600">
+                  {post.title}
+                </h4>
+                <p className="mt-0.5">
+                  <TimeText date={getPostDate(post)} className="font-body text-[9px] font-medium text-slate-400" />
+                </p>
+              </div>
+            </Link>
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+};
+
+const LatestWidget = ({ posts = [], matchedPostId, postRefs }) => {
+  const { t } = useLanguage();
+
+  const latest = useMemo(
+    () =>
+      [...posts]
+        .sort((a, b) => getTime(b) - getTime(a))
+        .slice(0, 6),
+    [posts]
+  );
+
+  if (!latest.length) return null;
+
+  return (
+    <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+      <div className="flex items-center gap-2 border-b-2 border-slate-900 px-4 py-3">
+        <span className="h-4 w-1.5 rounded-sm bg-red-600" />
+        <h3 className="font-post-title text-sm font-black uppercase tracking-tight text-slate-950">
+          {t("latestNews")}
+        </h3>
+      </div>
+
+      <div className="divide-y divide-slate-100">
+        {latest.map((post) => {
+          const postId = getPostId(post);
+
+          return (
+            <Link
+              key={postId}
+              to={getArticleUrl(post)}
+              ref={(element) => {
+                if (postRefs && postId) {
+                  postRefs.current[postId] = element;
+                }
+              }}
+              className="group flex items-center gap-3 p-3 transition hover:bg-slate-50"
+            >
+              <div className="h-14 w-20 shrink-0 overflow-hidden rounded-md bg-slate-100">
+                {post.image ? (
+                  <img
+                    src={post.image}
+                    alt={post.title || "Inkuru"}
+                    className="h-full w-full object-cover"
+                    loading="lazy"
+                    decoding="async"
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = PORTAL_FALLBACK_IMAGE;
+                    }}
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-lg opacity-30">
+                    📰
+                  </div>
+                )}
+              </div>
+
+              <div className="min-w-0">
+                <h4 className="line-clamp-2 text-[12px] font-bold leading-snug text-slate-950 transition-colors group-hover:text-red-600">
+                  {post.title}
+                </h4>
+                <p className="mt-1">
+                  <TimeText date={getPostDate(post)} className="font-body text-[9px] font-medium text-slate-400" />
+                </p>
+              </div>
+            </Link>
+          );
+        })}
+      </div>
+    </section>
+  );
+};
+
+const CategorySection = ({
+  title,
+  categoryName,
+  posts,
   matchedPostId,
   postRefs,
 }) => {
-  const mixedPosts = useMemo(() => buildMixedPosts(posts), [posts]);
+  const { language } = useLanguage();
 
-  if (!mixedPosts.length) {
-    return null;
+  if (!posts.length) return null;
+
+  const isEntertainment = categoryName === "Imyidagaduro";
+  const isBusiness = categoryName === "Ubukungu";
+
+  const heading = <NewsSectionHeading title={title} />;
+
+  // Business: structured editorial list (numbered rows, no heavy cards).
+  if (isBusiness) {
+    return (
+      <section>
+        {heading}
+
+        <div className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+          {posts.slice(0, 5).map((post, index) => (
+            <Link
+              key={getPostId(post)}
+              to={getArticleUrl(post)}
+              className="group flex items-center gap-4 px-4 py-3.5 transition hover:bg-slate-50"
+            >
+              <span
+                className={`shrink-0 font-post-title text-lg font-black ${index < 3 ? "text-red-600" : "text-slate-300"
+                  }`}
+              >
+                {String(index + 1).padStart(2, "0")}
+              </span>
+
+              <div className="min-w-0 flex-1">
+                <h4 className="line-clamp-2 text-sm font-bold leading-snug text-slate-950 transition-colors group-hover:text-red-600">
+                  {post.title}
+                </h4>
+                <p className="mt-1 font-body text-[9px] font-medium text-slate-400">
+                  {translateCategory(post.category, language)}
+                </p>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </section>
+    );
+  }
+
+  // Entertainment: image-driven, first story gets a large feature card.
+  if (isEntertainment) {
+    return (
+      <section>
+        {heading}
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {posts.slice(0, 4).map((post, index) => (
+            <div
+              key={getPostId(post)}
+              className={index === 0 ? "sm:col-span-2" : ""}
+            >
+              <CompactCard
+                post={post}
+                variant={index === 0 ? "large" : "default"}
+                matchedPostId={matchedPostId}
+                postRefs={postRefs}
+              />
+            </div>
+          ))}
+        </div>
+      </section>
+    );
   }
 
   return (
-    <section className="w-full">
-      <div className="grid grid-cols-2 gap-2 sm:gap-2.5 lg:grid-cols-3 lg:gap-2.5">
-        {mixedPosts.map((post, index) => (
-          <React.Fragment key={`${getPostId(post, index)}-mixed-${index}`}>
-            <SmallPostCard
-              post={post}
-              index={index}
-              matchedPostId={matchedPostId}
-              postRefs={postRefs}
-            />
-          </React.Fragment>
+    <section>
+      {heading}
+
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        {posts.slice(0, 3).map((post) => (
+          <CompactCard
+            key={getPostId(post)}
+            post={post}
+            matchedPostId={matchedPostId}
+            postRefs={postRefs}
+          />
         ))}
       </div>
     </section>
   );
 };
+
+const AdSlot = ({ ad, size = "728x90", className = "" }) => {
+  if (!ad || !ad.image) return null;
+
+  return (
+    <div className={`print:hidden ${className}`}>
+      <AdBanner ad={ad} size={size} />
+    </div>
+  );
+};
+
 /* =========================================================
    TOP FIVE SLIDER
 ========================================================= */
@@ -961,13 +1258,11 @@ const TopFiveSlider = ({
                         {post.title}
                       </h3>
 
-                      <p className="mt-3 font-body text-[9px] font-medium text-slate-400 sm:text-[10px]">
-                        {formatDate(
-                          getPostDate(
-                            post
-                          ),
-                          false
-                        )}
+                      <p className="mt-3">
+                        <TimeText
+                          date={getPostDate(post)}
+                          className="font-body text-[9px] font-medium text-slate-400 sm:text-[10px]"
+                        />
                       </p>
                     </div>
                   </Link>
@@ -1024,144 +1319,133 @@ const NewsPostsLayout = ({
   posts = [],
   matchedPostId,
   postRefs,
+  advertisements = [],
+  activeCategory = "All",
 }) => {
-  if (!posts.length) {
-    return null;
+  const { language, t } = useLanguage();
+
+  const sortedNewest = useMemo(
+    () => [...posts].sort((a, b) => getTime(b) - getTime(a)),
+    [posts]
+  );
+
+  if (!sortedNewest.length) return null;
+
+  const featured = sortedNewest[0];
+  const isFilteredView = activeCategory !== "All";
+
+  const categorySections = isFilteredView
+    ? []
+    : DEPARTMENTS.map(({ name }) => ({
+      name,
+      title: translateCategory(name, language),
+      posts: sortedNewest.filter((p) => p.category === name),
+    })).filter((section) => section.posts.length > 0);
+
+  const renderSidebar = () => (
+    <aside className="min-w-0 lg:col-span-4">
+      <div className="space-y-6 lg:sticky lg:top-36">
+        <AdSlot ad={advertisements[3]} size="rectangle" />
+        <TrendingWidget posts={sortedNewest} />
+        <LatestWidget
+          posts={sortedNewest}
+          matchedPostId={matchedPostId}
+          postRefs={postRefs}
+        />
+        <AdSlot ad={advertisements[4]} size="rectangle" />
+      </div>
+    </aside>
+  );
+
+  /* Filtered category view (a nav link was clicked) — compact grid + sidebar. */
+  if (isFilteredView) {
+    return (
+      <div className="grid grid-cols-1 gap-7 lg:grid-cols-12">
+        <main className="min-w-0 lg:col-span-8">
+          <NewsSectionHeading
+            title={translateCategory(activeCategory, language)}
+          />
+
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+            {sortedNewest.map((post) => (
+              <CompactCard
+                key={getPostId(post)}
+                post={post}
+                matchedPostId={matchedPostId}
+                postRefs={postRefs}
+              />
+            ))}
+          </div>
+
+          <AdSlot ad={advertisements[0]} size="728x90" className="mt-7" />
+        </main>
+
+        {renderSidebar()}
+      </div>
+    );
   }
 
-  const sortedNewest = [...posts].sort(
-    (a, b) =>
-      getTime(b) - getTime(a)
-  );
-
-  const recentPost =
-    sortedNewest[0];
-
-  const recentId =
-    getPostId(recentPost);
-
-  const mixedPosts = posts.filter(
-    (post) =>
-      getPostId(post) !== recentId
-  );
-
   return (
-    <section className="w-full">
-      <div className="mb-0 mt-0 flex items-end justify-between border-b-0 pb-0">
-        <div />
-      </div>
+    <div className="grid grid-cols-1 gap-7 lg:grid-cols-12">
+      <main className="min-w-0 space-y-7 lg:col-span-8">
+        {/* FEATURED NEWS */}
+        <section>
+          <NewsSectionHeading title={t("featuredNews")} />
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-7">
-        <div className="order-1 min-w-0 lg:col-span-7">
-          <article
-            ref={(element) => {
-              if (
-                postRefs &&
-                recentId
-              ) {
-                postRefs.current[
-                  recentId
-                ] = element;
-              }
-            }}
-            className={`
-              group
-              overflow-hidden
-              rounded-2xl
-              border
-              border-slate-200
-              bg-white
-              shadow-md
-              transition-all
-              duration-300
-              hover:shadow-xl
-              ${matchedPostId ===
-                recentId
-                ? "bg-yellow-50 ring-4 ring-yellow-300"
-                : ""
-              }
-            `}
-          >
-            <Link
-              to={getArticleUrl(recentPost)}
-              className="relative block h-[230px] overflow-hidden bg-slate-100 sm:h-[320px] md:h-[380px] lg:h-[390px]"
-            >
-              {recentPost.image ? (
-                <img
-                  src={
-                    recentPost.image
-                  }
-                  alt={
-                    recentPost.title ||
-                    "Inkuru nshya"
-                  }
-                  className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
-                />
-              ) : (
-                <div className="flex h-full items-center justify-center text-7xl opacity-30">
-                  ðŸ“°
-                </div>
-              )}
-
-              <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/70 to-transparent" />
-            </Link>
-
-            <div className="p-4 sm:p-5 md:p-6">
-              {recentPost.category && (
-                <span className="mb-3 inline-block rounded bg-red-600 px-2.5 py-1 font-body text-[8px] font-bold uppercase tracking-wider text-white">
-                  {recentPost.category}
-                </span>
-              )}
-
-              <Link
-                to={getArticleUrl(recentPost)}
-              >
-                <h2 className="font-post-title text-xl font-black leading-[1.18] text-slate-950 transition-colors group-hover:text-red-600 sm:text-2xl md:text-3xl">
-                  {recentPost.title}
-                </h2>
-              </Link>
-
-              <div className="mt-3 flex items-center justify-between gap-3">
-                <p className="font-body text-[9px] font-medium text-slate-400 sm:text-[10px]">
-                  {formatDate(
-                    getPostDate(
-                      recentPost
-                    ),
-                    false
-                  )}
-                </p>
-
-                <Link
-                  to={getArticleUrl(recentPost)}
-                  className="font-body text-[9px] font-bold uppercase tracking-wider text-red-600 transition hover:text-red-800"
-                >
-                  Soma
-                </Link>
-              </div>
-            </div>
-          </article>
-
-          <TopFiveSlider
-            posts={posts}
-            matchedPostId={
-              matchedPostId
-            }
+          <FeaturedStory
+            post={featured}
+            matchedPostId={matchedPostId}
             postRefs={postRefs}
           />
+        </section>
 
+        {/* OTHER RECENT STORIES */}
+        <section>
+          <div className="grid grid-cols-1 gap-2 xs:gap-2.5 sm:gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {sortedNewest.slice(1, 5).map((post) => (
+              <ImportantStory
+                key={getPostId(post)}
+                post={post}
+                matchedPostId={matchedPostId}
+                postRefs={postRefs}
+              />
+            ))}
+          </div>
+        </section>
+
+        {/* IN-CONTENT AD */}
+        <AdSlot ad={advertisements[0]} size="728x90" />
+
+        {/* LATEST NEWS */}
+        <TopFiveSlider
+          posts={sortedNewest.slice(5)}
+          matchedPostId={matchedPostId}
+          postRefs={postRefs}
+        />
+
+        {/* IN-CONTENT AD */}
+        <AdSlot ad={advertisements[1]} size="728x90" />
+
+        {/* CATEGORY SECTIONS */}
+        <div className="space-y-8">
+          {categorySections.map((section) => (
+            <CategorySection
+              key={section.name}
+              title={section.title}
+              categoryName={section.name}
+              posts={section.posts}
+              matchedPostId={matchedPostId}
+              postRefs={postRefs}
+            />
+          ))}
         </div>
 
-        <aside className="order-2 min-w-0 lg:col-span-5">
-          <MixedPosts
-            posts={mixedPosts}
-            matchedPostId={
-              matchedPostId
-            }
-            postRefs={postRefs}
-          />
-        </aside>
-      </div>
-    </section>
+        {/* PRE-FOOTER AD */}
+        <AdSlot ad={advertisements[2]} size="728x90" />
+      </main>
+
+      {renderSidebar()}
+    </div>
   );
 };
 
@@ -1230,6 +1514,30 @@ const Navbar = ({ showHomeContent = true }) => {
       ),
     [location.search]
   );
+
+  /* Apply active news category coming from the URL (e.g. footer category links). */
+  useEffect(() => {
+    const category = params.get(
+      "category"
+    );
+
+    if (
+      category &&
+      DEPARTMENTS.some(
+        (department) =>
+          department.name ===
+          category
+      )
+    ) {
+      setActiveCategory(
+        category
+      );
+    } else {
+      setActiveCategory(
+        "All"
+      );
+    }
+  }, [params]);
 
   const [
     searchValue,
@@ -1774,6 +2082,43 @@ const Navbar = ({ showHomeContent = true }) => {
         false
       );
 
+      const next =
+        new URLSearchParams(
+          location.search
+        );
+
+      if (category === "All") {
+        next.delete("category");
+      } else {
+        next.set(
+          "category",
+          category
+        );
+      }
+
+      const nextSearch =
+        next.toString();
+
+      const currentSearch =
+        location.search.replace(
+          /^\?/,
+          ""
+        );
+
+      if (
+        nextSearch !==
+        currentSearch
+      ) {
+        navigate(
+          {
+            search: nextSearch,
+          },
+          {
+            replace: true,
+          }
+        );
+      }
+
       window.scrollTo({
         top: 0,
         behavior: "smooth",
@@ -1833,6 +2178,18 @@ const Navbar = ({ showHomeContent = true }) => {
 
         .font-body {
           font-family: 'Source Sans 3', system-ui, sans-serif;
+        }
+
+        @keyframes portal-rise {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
         }
 
         
@@ -2089,6 +2446,15 @@ const Navbar = ({ showHomeContent = true }) => {
 
           <div className="mx-auto hidden max-w-7xl items-center justify-center lg:flex">
             <div className="flex divide-x divide-slate-800 border-x border-slate-800">
+              <Link
+                to="/media"
+                className="flex items-center gap-1.5 bg-slate-950 px-4 py-3 font-body text-[11px] font-black uppercase tracking-[0.1em] text-white transition hover:bg-red-600"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-3.5 w-3.5" aria-hidden="true">
+                  <path d="M4.5 4.5a3 3 0 0 0-3 3v9a3 3 0 0 0 3 3h8.25a3 3 0 0 0 3-3v-9a3 3 0 0 0-3-3H4.5ZM19.94 18.75l-2.44-2.44V7.69l2.44-2.44a1.5 1.5 0 0 1 2.56 1.06v11.38a1.5 1.5 0 0 1-2.56 1.06Z" />
+                </svg>
+                {language === "rw" ? "AMAFOTO & VIDEOS" : "PHOTOS & VIDEOS"}
+              </Link>
               {links.map(
                 (link) => {
                   const active =
@@ -2135,6 +2501,15 @@ const Navbar = ({ showHomeContent = true }) => {
 
           <div className="hidden justify-center md:flex lg:hidden">
             <div className="flex max-w-full overflow-x-auto">
+              <Link
+                to="/media"
+                className="flex shrink-0 items-center gap-1 bg-slate-950 px-4 py-3 font-body text-[10px] font-black uppercase tracking-[0.1em] text-white transition hover:bg-red-600"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-3.5 w-3.5" aria-hidden="true">
+                  <path d="M4.5 4.5a3 3 0 0 0-3 3v9a3 3 0 0 0 3 3h8.25a3 3 0 0 0 3-3v-9a3 3 0 0 0-3-3H4.5ZM19.94 18.75l-2.44-2.44V7.69l2.44-2.44a1.5 1.5 0 0 1 2.56 1.06v11.38a1.5 1.5 0 0 1-2.56 1.06Z" />
+                </svg>
+                {language === "rw" ? "AMAFOTO & VIDEOS" : "PHOTOS & VIDEOS"}
+              </Link>
               {links.map(
                 (link) => {
                   const active =
@@ -2192,6 +2567,16 @@ const Navbar = ({ showHomeContent = true }) => {
                 </p>
 
                 <div className="grid grid-cols-2 gap-2">
+                  <Link
+                    to="/media"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="flex items-center justify-center gap-1 rounded-lg border border-red-600 bg-red-600 px-3 py-3 text-left font-body text-xs font-black uppercase tracking-wide text-white transition hover:bg-red-700"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4" aria-hidden="true">
+                      <path d="M4.5 4.5a3 3 0 0 0-3 3v9a3 3 0 0 0 3 3h8.25a3 3 0 0 0 3-3v-9a3 3 0 0 0-3-3H4.5ZM19.94 18.75l-2.44-2.44V7.69l2.44-2.44a1.5 1.5 0 0 1 2.56 1.06v11.38a1.5 1.5 0 0 1-2.56 1.06Z" />
+                    </svg>
+                    {language === "rw" ? "AMAFOTO & VIDEOS" : "PHOTOS & VIDEOS"}
+                  </Link>
                   {links.map(
                     (link) => {
                       const active =
@@ -2277,12 +2662,19 @@ const Navbar = ({ showHomeContent = true }) => {
                   postRefs={
                     postRefs
                   }
+                  advertisements={
+                    advertisements
+                  }
+                  activeCategory={
+                    activeCategory
+                  }
                 />
               )}
             </div>
           </main>
         </>
       )}
+
 
     </div>
   );

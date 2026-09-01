@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, Link } from "react-router-dom";
-import { getPosts } from "../services/api";
+import { getPosts, getAdvertisements } from "../services/api";
 import { SiteSEO } from "../components/SEO/SEO";
 import { getArticleUrl } from "../utils/slug";
 import { useLanguage, translatePostsBatch } from "../context/LanguageContext";
+import AdBanner from "../components/common/AdBanner";
 
 
 const summarize = (text, maxWords = 10) => {
@@ -30,12 +31,15 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [visibleCount, setVisibleCount] = useState(16);
+  const [showMedia, setShowMedia] = useState(true);
+  const [mediaSearch, setMediaSearch] = useState("");
   const location = useLocation();
   const { language, t, setTranslating, setTranslationUnavailable } = useLanguage();
 
 
 
   const [originalPosts, setOriginalPosts] = useState([]);
+  const [advertisements, setAdvertisements] = useState([]);
 
   useEffect(() => {
     const loadPosts = async () => {
@@ -49,6 +53,16 @@ const Home = () => {
       }
     };
     loadPosts();
+
+    const loadAds = async () => {
+      try {
+        const ads = await getAdvertisements();
+        setAdvertisements(Array.isArray(ads) ? ads : []);
+      } catch {
+        setAdvertisements([]);
+      }
+    };
+    loadAds();
   }, []);
 
   useEffect(() => {
@@ -91,9 +105,19 @@ const Home = () => {
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    setQuery(params.get("q") || "");
+    const nextQuery = params.get("q") || "";
+    const nextCategory = params.get("category") || "";
+    const isMediaPage = location.pathname === "/media" || location.pathname.includes("/media");
+
+    setQuery(nextQuery);
     setVisibleCount(16);
-  }, [location.search]);
+
+    if (isMediaPage || nextCategory || nextQuery) {
+      setShowMedia(false);
+    } else if (!nextCategory && !nextQuery && !location.pathname.includes("/post/")) {
+      setShowMedia(true);
+    }
+  }, [location.search, location.pathname]);
 
 
   const filteredPosts = useMemo(() => {
@@ -113,6 +137,36 @@ const Home = () => {
     );
   }, [filteredPosts]);
 
+  const mediaPosts = useMemo(() => {
+    return [...sortedPosts]
+      .filter((post) => post.image || post.youtube_url)
+      .slice(0, 6)
+      .map((post) => ({
+        ...post,
+        articleHref: getArticleUrl(post),
+      }));
+  }, [sortedPosts]);
+
+  const filteredMediaPosts = useMemo(() => {
+    const term = mediaSearch.trim().toLowerCase();
+
+    if (!term) return mediaPosts;
+
+    return mediaPosts.filter((post) => {
+      const combined = [
+        post.title,
+        post.summary,
+        post.category,
+        post.youtube_url,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+      return combined.includes(term);
+    });
+  }, [mediaPosts, mediaSearch]);
+
   const isSearching = query.trim().length > 0;
   const visiblePosts = sortedPosts.slice(0, visibleCount);
   const hasMore = sortedPosts.length > visibleCount;
@@ -129,9 +183,10 @@ const Home = () => {
 
     return (
       <Link to={articleHref} className="group block h-full">
-        <article className="flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-red-200 hover:shadow-xl">
+        <article className="flex h-full flex-col overflow-hidden rounded-xl sm:rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 sm:hover:-translate-y-1 hover:border-red-200 hover:shadow-lg sm:hover:shadow-xl">
+          {/* Image Container */}
           <div className="relative overflow-hidden bg-slate-100">
-            <div className="aspect-[16/11] overflow-hidden">
+            <div className="aspect-[16/11] sm:aspect-[16/10] overflow-hidden">
               {post.image ? (
                 <img
                   src={imageUrl}
@@ -145,27 +200,31 @@ const Home = () => {
                 />
               ) : (
                 <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-200 via-slate-100 to-slate-300">
-                  <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">{language === "rw" ? "Nta ishusho" : ""}</span>
+                  <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">{language === "rw" ? "Nta ishusho" : ""}</span>
                 </div>
               )}
             </div>
-
           </div>
 
-          <div className="flex flex-1 flex-col p-3 sm:p-3.5">
-            <div className="mb-1.5 text-[9px] font-medium uppercase tracking-[0.12em] text-slate-500">
+          {/* Content Container */}
+          <div className="flex flex-1 flex-col p-2.5 xs:p-3 sm:p-3.5 md:p-4">
+            {/* Date */}
+            <div className="mb-1 xs:mb-1.5 text-[8px] xs:text-[9px] font-medium uppercase tracking-[0.12em] text-slate-500">
               <span>{formatDate(post.createdDate, language)}</span>
             </div>
 
-            <h4 className="font-masthead text-sm font-extrabold leading-snug text-slate-900 transition-colors group-hover:text-red-600 sm:text-[15px]">
+            {/* Title */}
+            <h4 className="font-masthead text-xs xs:text-sm sm:text-[15px] font-extrabold leading-snug text-slate-900 transition-colors group-hover:text-red-600 line-clamp-2 xs:line-clamp-3">
               {post.title}
             </h4>
 
-            <p className="mt-1.5 line-clamp-2 text-[11px] leading-relaxed text-slate-600">
+            {/* Summary */}
+            <p className="mt-1 xs:mt-1.5 line-clamp-2 xs:line-clamp-3 text-[10px] xs:text-[11px] leading-relaxed text-slate-600">
               {summarize(post.summary || post.content, 10)}
             </p>
 
-            <div className="mt-auto pt-2" />
+            {/* Spacer */}
+            <div className="mt-auto pt-1.5" />
           </div>
         </article>
       </Link>
@@ -184,12 +243,101 @@ const Home = () => {
     );
   };
 
+  const MediaSidebar = () => {
+    if (!mediaPosts.length) return null;
+
+    return (
+      <aside className="lg:sticky lg:top-24 lg:self-start">
+        <div className="rounded-xl border border-slate-200 bg-white p-2.5 shadow-sm sm:p-3">
+          <button
+            type="button"
+            onClick={() => setShowMedia((prev) => !prev)}
+            className="flex w-full items-center justify-between gap-2 rounded-md border border-slate-900 bg-slate-950 px-2.5 py-1.5 sm:px-3 sm:py-2 font-body text-[8px] xs:text-[9px] sm:text-[10px] font-black uppercase tracking-[0.14em] sm:tracking-[0.16em] text-white shadow-sm transition hover:border-red-600 hover:bg-red-600"
+          >
+            <span className="truncate">AMAFOTO &amp; VIDEOS</span>
+            <span className="flex shrink-0 items-center gap-1 text-[10px] sm:text-[12px] leading-none">
+              <span aria-hidden="true">{showMedia ? "−" : "+"}</span>
+              {showMedia ? (
+                <span aria-label="Leave media panel" className="text-[9px] sm:text-[10px]">X</span>
+              ) : (
+                <span aria-label="Return to media panel" className="text-[9px] sm:text-[10px]">↺</span>
+              )}
+            </span>
+          </button>
+
+          {showMedia && (
+            <div className="mt-3">
+              <div className="mb-3 flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 sm:px-2.5 sm:py-2">
+                <svg viewBox="0 0 24 24" aria-hidden="true" className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-slate-500 fill-none stroke-current stroke-2">
+                  <circle cx="11" cy="11" r="6"></circle>
+                  <path d="M16 16l5 5"></path>
+                </svg>
+                <input
+                  type="text"
+                  value={mediaSearch}
+                  onChange={(e) => setMediaSearch(e.target.value)}
+                  placeholder="Shakisha amafoto / video..."
+                  className="w-full border-0 bg-transparent text-[9px] xs:text-[10px] text-slate-700 placeholder:text-slate-400 focus:outline-none"
+                />
+              </div>
+
+              <div className="space-y-3">
+                {filteredMediaPosts.length > 0 ? (
+                  filteredMediaPosts.map((post) => (
+                    <div
+                      key={post.id || post._id || post.title}
+                      className="overflow-hidden rounded-lg border border-slate-200 bg-slate-50"
+                    >
+                      <Link to={post.articleHref} className="block overflow-hidden">
+                        <img
+                          src={post.image || "https://images.unsplash.com/photo-1495020689067-958852a7765e?auto=format&fit=crop&w=900&q=80"}
+                          alt={post.title}
+                          className="h-20 w-full object-cover transition-transform duration-300 hover:scale-105"
+                          loading="lazy"
+                        />
+                      </Link>
+
+                      <div className="p-2.5">
+                        <Link
+                          to={post.articleHref}
+                          className="block font-body text-[10px] font-bold leading-snug text-slate-900 transition-colors hover:text-red-600"
+                        >
+                          {post.title}
+                        </Link>
+
+                        {post.youtube_url && (
+                          <a
+                            href={post.youtube_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-2 inline-flex items-center gap-1 rounded bg-red-600 px-2 py-1 font-body text-[8px] font-bold uppercase tracking-[0.12em] text-white transition hover:bg-red-700"
+                          >
+                            Video
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 px-3 py-4 text-center">
+                    <p className="font-body text-[10px] font-semibold text-slate-500">
+                      Nta mafoto cyangwa video bihuye n'ibisubizo.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </aside>
+    );
+  };
+
   return (
     <div className="min-h-screen emotional-gradient-bg text-black flex flex-col font-body selection:bg-red-600 selection:text-white">
       <SiteSEO />
       <main className="flex-grow">
-
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 pt-0 pb-2">
+        <section className="max-w-7xl mx-auto px-3 xs:px-4 sm:px-6 pt-2 pb-2">
           {loading ? null : error ? (
             /* Error State */
             <div className="bg-red-50 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] p-6 max-w-lg mx-auto text-center my-12">
@@ -219,7 +367,7 @@ const Home = () => {
               </div>
 
               {sortedPosts.length > 0 ? (
-                <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                <div className="grid grid-cols-1 gap-3 xs:gap-4 sm:gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   {sortedPosts.map((post) => (
                     <PostCard key={post.id || post._id} post={post} />
                   ))}
@@ -243,24 +391,40 @@ const Home = () => {
                 title={query.trim() ? (language === "rw" ? "Ibyavuye mu gushakisha" : t("search")) : ""}
               />
 
+              <div className="grid grid-cols-1 gap-5 lg:grid-cols-[280px_minmax(0,1fr)] lg:items-start">
+                <MediaSidebar />
 
-              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {visiblePosts.map((post) => (
-                  <PostCard key={post.id || post._id} post={post} />
-                ))}
-              </div>
+                <div className="min-w-0">
+                  {advertisements[0] && advertisements[0].image && (
+                    <div className="my-4 xs:my-5 sm:my-6 flex justify-center print:hidden">
+                      <AdBanner ad={advertisements[0]} size="728x90" />
+                    </div>
+                  )}
 
+                  <div className="grid grid-cols-1 gap-3 xs:gap-4 sm:gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    {visiblePosts.map((post) => (
+                      <PostCard key={post.id || post._id} post={post} />
+                    ))}
+                  </div>
 
-              {hasMore && (
-                <div className="pt-8 pb-4 flex justify-center">
-                  <button
-                    onClick={handleLoadMore}
-                    className="inline-flex items-center gap-2 rounded border border-slate-900 bg-slate-950 px-4 py-2 font-body text-[10px] font-bold uppercase tracking-[0.14em] text-white shadow-sm transition hover:border-red-600 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-200"
-                  >
-                    {language === "rw" ? "Soma Andi Makuru" : t("loadMore")} <span aria-hidden="true">→</span>
-                  </button>
+                  {advertisements[1] && advertisements[1].image && hasMore && (
+                    <div className="my-6 xs:my-7 sm:my-8 flex justify-center print:hidden">
+                      <AdBanner ad={advertisements[1]} size="728x90" />
+                    </div>
+                  )}
+
+                  {hasMore && (
+                    <div className="pt-6 xs:pt-7 sm:pt-8 pb-3 xs:pb-4 flex justify-center">
+                      <button
+                        onClick={handleLoadMore}
+                        className="inline-flex items-center gap-2 rounded sm:rounded-md border border-slate-900 bg-slate-950 px-3 xs:px-4 py-1.5 xs:py-2 font-body text-[9px] xs:text-[10px] font-bold uppercase tracking-[0.14em] text-white shadow-sm transition hover:border-red-600 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-200"
+                      >
+                        {language === "rw" ? "Soma Andi Makuru" : t("loadMore")} <span aria-hidden="true">→</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
           ) : (
 

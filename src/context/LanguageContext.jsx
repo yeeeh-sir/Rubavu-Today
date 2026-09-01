@@ -33,6 +33,9 @@ const TRANSLATIONS = {
 
         // Navbar
         latestNews: "Latest News",
+        featuredNews: "Featured News",
+        trending: "Trending",
+        viewAll: "View All",
         previousPost: "Previous post",
         nextPost: "Next post",
         loading: "Loading...",
@@ -51,6 +54,13 @@ const TRANSLATIONS = {
         // Post related
         publishedOn: "Published on",
         readMore: "Read more",
+        relatedArticles: "Related Articles",
+        justNow: "Just now",
+        minutesAgo: "{count} min ago",
+        hoursAgo: "{count} hr ago",
+        yesterday: "Yesterday",
+        daysAgo: "{count} days ago",
+        newPost: "New",
         noPostsFound: "No posts found",
         loadMore: "Load More",
         result: "result",
@@ -83,6 +93,7 @@ const TRANSLATIONS = {
         about: "About",
         contact: "Contact",
         sharePost: "Share post",
+        downloadImage: "Download image",
         translationUnavailable: "Automatic translation is temporarily unavailable. Showing the original Kinyarwanda content.",
 
         // PostCard
@@ -104,6 +115,17 @@ const TRANSLATIONS = {
 
         // Footer
         footerRights: "All rights reserved.",
+        footerDescription: "Rubavu Today is a modern digital news platform delivering trusted news, stories, entertainment, sports, business and community updates from Rubavu and beyond.",
+        quickLinks: "Quick Links",
+        newsCategories: "News Categories",
+        footerContact: "Contact",
+        ourLocation: "Find Us",
+        openInGoogleMaps: "Open in Google Maps",
+        aboutUs: "About Us",
+        contactUs: "Contact Us",
+        advertiseWithUs: "Advertise With Us",
+        privacyPolicy: "Privacy Policy",
+        termsConditions: "Terms & Conditions",
 
         // NotFound
         pageNotFound: "Page Not Found",
@@ -136,6 +158,9 @@ const TRANSLATIONS = {
 
         // Navbar
         latestNews: "Dernières actualités",
+        featuredNews: "À la une",
+        trending: "Tendances",
+        viewAll: "Voir tout",
         previousPost: "Article précédent",
         nextPost: "Article suivant",
         loading: "Chargement...",
@@ -154,6 +179,13 @@ const TRANSLATIONS = {
         // Post related
         publishedOn: "Publié le",
         readMore: "Lire la suite",
+        relatedArticles: "Articles connexes",
+        justNow: "À l'instant",
+        minutesAgo: "il y a {count} min",
+        hoursAgo: "il y a {count} h",
+        yesterday: "Hier",
+        daysAgo: "il y a {count} jours",
+        newPost: "Nouveau",
         noPostsFound: "Aucun article trouvé",
         loadMore: "Charger plus",
         result: "résultat",
@@ -186,6 +218,7 @@ const TRANSLATIONS = {
         about: "À propos",
         contact: "Contact",
         sharePost: "Partager l'article",
+        downloadImage: "Télécharger l'image",
         translationUnavailable: "La traduction automatique est temporairement indisponible. Affichage du contenu original en kinyarwanda.",
 
         // PostCard
@@ -207,6 +240,17 @@ const TRANSLATIONS = {
 
         // Footer
         footerRights: "Tous droits réservés.",
+        footerDescription: "Rubavu Today est une plateforme d'information numérique moderne qui vous propose des nouvelles fiables, des articles, du divertissement, du sport, des affaires et des actualités communautaires de Rubavu et d'ailleurs.",
+        quickLinks: "Liens rapides",
+        newsCategories: "Rubriques",
+        footerContact: "Contact",
+        ourLocation: "Nous trouver",
+        openInGoogleMaps: "Ouvrir dans Google Maps",
+        aboutUs: "À propos",
+        contactUs: "Nous contacter",
+        advertiseWithUs: "Publicité",
+        privacyPolicy: "Politique de confidentialité",
+        termsConditions: "Conditions générales",
 
         // NotFound
         pageNotFound: "Page introuvable",
@@ -239,6 +283,9 @@ const TRANSLATIONS = {
 
         // Navbar
         latestNews: "Habari za Sasa",
+        featuredNews: "Habari Kuu",
+        trending: "Tahadhari",
+        viewAll: "Ona Zote",
         previousPost: "Makala ya Awali",
         nextPost: "Makala Inayofuata",
         loading: "Inakamatia...",
@@ -257,6 +304,13 @@ const TRANSLATIONS = {
         // Post related
         publishedOn: "Imechapishwa tarehe",
         readMore: "Soma Zaidi",
+        relatedArticles: "Makala Zinazohusiana",
+        justNow: "Sasa hivi",
+        minutesAgo: "dakika {count} zilizopita",
+        hoursAgo: "masaa {count} yaliyopita",
+        yesterday: "Jana",
+        daysAgo: "siku {count} zilizopita",
+        newPost: "Mpya",
         noPostsFound: "Hakuna Makala Iliyopatikana",
         loadMore: "Pakia zaidi",
         result: "matokeo",
@@ -289,6 +343,7 @@ const TRANSLATIONS = {
         about: "Kuhusu",
         contact: "Wasiliana",
         sharePost: "Sambaza Makala",
+        downloadImage: "Pakua Picha",
         translationUnavailable: "Tafsiri otomatiki haipatikani kwa sasa. Inaonyesha maudhui asili ya Kinyarwanda.",
 
         // PostCard
@@ -310,6 +365,17 @@ const TRANSLATIONS = {
 
         // Footer
         footerRights: "Haki zote zimehifadhiwa.",
+        footerDescription: "Rubavu Today ni jukwaa la kisasa la habari za kidijitali linalokuletea habari za kuaminika, makala, burudani, michezo, biashara na taarifa za jamii kutoka Rubavu na nje yake.",
+        quickLinks: "Viungo vya Haraka",
+        newsCategories: "Kategoria za Habari",
+        footerContact: "Wasiliana",
+        ourLocation: "Tutafute",
+        openInGoogleMaps: "Fungua kwenye Google Maps",
+        aboutUs: "Kuhusu Sisi",
+        contactUs: "Wasiliana Nasi",
+        advertiseWithUs: "Tangaza Nasi",
+        privacyPolicy: "Sera ya Faragha",
+        termsConditions: "Sheria na Masharti",
 
         // NotFound
         pageNotFound: "Ukurasa Haupatikani",
@@ -342,11 +408,17 @@ const TRANSLATIONS = {
 
         // Navbar
         latestNews: "Amakuru mashya",
+        featuredNews: "Amakuru y'ibanze",
+        trending: "Amakuru Mashya",
+        viewAll: "Reba byose",
         previousPost: "Inkuru ibanza",
         nextPost: "Inkuru ikurikira",
         loading: "Rubavu Today irafungura...",
+        home: "Ahabanza",
+        about: "Abo turi bo",
         contact: "Guhumana",
         sharePost: "Sangiza inkuru",
+        downloadImage: "Simbura ishusho",
         translationUnavailable: "Ihindurwa ry'amakuru ntiriboneka kuri ubu. Reba amakuru y'umwimerere y'Ikinyarwanda.",
 
         // PostCard
@@ -356,6 +428,13 @@ const TRANSLATIONS = {
         views: "abayirebye",
         copied: "Byakoporowe!",
         shareCode: "Sangiza",
+        relatedArticles: "Inkuru zifitanye isano",
+        justNow: "Ubu",
+        minutesAgo: "iminota {count} ishize",
+        hoursAgo: "amasaha {count} ashize",
+        yesterday: "Ejo hashize",
+        daysAgo: "iminsi {count} ishize",
+        newPost: "Nshya",
 
         // SearchBar
         searchPlaceholder: "Shakisha inkuru...",
@@ -368,6 +447,17 @@ const TRANSLATIONS = {
 
         // Footer
         footerRights: "Uburenganzira bwose burabitswe.",
+        footerDescription: "Rubavu Today ni urubuga rw'amakuru rwa kijyambere ruguha amakuru yizerwa, inkuru, imyidagaduro, imikino, ubukungu n'amakuru y'abaturage bo muri Rubavu n'ahandi.",
+        quickLinks: "Ihuza ryihuse",
+        newsCategories: "Ibyiciro by'amakuru",
+        footerContact: "Guhamagara",
+        ourLocation: "Aho Duherereye",
+        openInGoogleMaps: "Reba muri Google Maps",
+        aboutUs: "Abo turi bo",
+        contactUs: "Twandikire",
+        advertiseWithUs: "Kwamamaza na Rubavu Today",
+        privacyPolicy: "Politiki y'ibanga",
+        termsConditions: "Amabwiriza n'Amasezerano",
 
         // NotFound
         pageNotFound: "Ipapuro Ritarabonetse",

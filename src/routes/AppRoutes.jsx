@@ -18,7 +18,12 @@ import WebsiteChat from "../components/WebsiteChat/WebsiteChat";
 
 const Home = lazy(() => import("../pages/Home"));
 const PostDetails = lazy(() => import("../pages/PostDetails"));
+const Media = lazy(() => import("../pages/Media"));
 const NotFound = lazy(() => import("../pages/NotFound"));
+const About = lazy(() => import("../pages/About"));
+const Contact = lazy(() => import("../pages/Contact"));
+const PrivacyPolicy = lazy(() => import("../pages/PrivacyPolicy"));
+const Terms = lazy(() => import("../pages/Terms"));
 const AdminLogin = lazy(() => import("../pages/admin/AdminLogin"));
 const AdminDashboard = lazy(() => import("../pages/admin/AdminDashboard"));
 const CreateEmployee = lazy(() => import("../pages/admin/CreateEmployee"));
@@ -31,7 +36,12 @@ const EmployeeWorkspace = lazy(() => import("../pages/employee/EmployeeWorkspace
 const Profile = lazy(() => import("../pages/employee/Profile"));
 
 const PublicLayout = ({ children, showHomeContent = true }) => (
-    <><Navbar showHomeContent={showHomeContent} />{children}<Footer /><WebsiteChat /></>
+    <>
+        <Navbar showHomeContent={showHomeContent} />
+        {children}
+        <Footer />
+        <WebsiteChat />
+    </>
 );
 
 const EmployeeLayout = ({ children }) => (
@@ -158,7 +168,14 @@ function AppRoutes() {
         <Suspense fallback={<LoadingScreen message="Loading..." />}>
             <Routes>
                 <Route path="/" element={<PublicLayout><Home /></PublicLayout>} />
+                <Route path="/media" element={<PublicLayout showHomeContent={false}><Media /></PublicLayout>} />
                 <Route path="/post/:id/*" element={<PublicLayout showHomeContent={false}><PostDetails /></PublicLayout>} />
+
+                <Route path="/about" element={<PublicLayout showHomeContent={false}><About /></PublicLayout>} />
+                <Route path="/contact" element={<PublicLayout showHomeContent={false}><Contact /></PublicLayout>} />
+                <Route path="/privacy-policy" element={<PublicLayout showHomeContent={false}><PrivacyPolicy /></PublicLayout>} />
+                <Route path="/terms" element={<PublicLayout showHomeContent={false}><Terms /></PublicLayout>} />
+
                 <Route path="/:slug.html" element={<PublicLayout showHomeContent={false}><PostDetails /></PublicLayout>} />
                 <Route path="/:slug" element={<PublicLayout showHomeContent={false}><PostDetails /></PublicLayout>} />
 
