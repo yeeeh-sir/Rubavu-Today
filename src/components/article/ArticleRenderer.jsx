@@ -212,9 +212,13 @@ const ArticleRenderer = ({
     prevFloated = false;
 
     if (type === "paragraph") {
+      const formatted = String(block.text || "").replace(/\n{2,}/g, "\n\n");
       return elements.push(
-        <p key={`p-${index}`} className={`${clearClass} mb-5`}>
-          {block.text}
+        <p
+          key={`p-${index}`}
+          className={`${clearClass} mb-6 whitespace-pre-line text-[1.0625rem] leading-[1.85] text-slate-700 sm:text-[1.125rem]`}
+        >
+          {formatted}
         </p>
       );
     }

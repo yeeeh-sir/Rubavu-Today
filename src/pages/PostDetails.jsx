@@ -828,7 +828,22 @@ export default function PostDetails() {
         }
 
         .rt-article-content p {
-          margin-bottom: 1.25rem;
+          margin-bottom: 1.5rem;
+          color: #334155;
+          font-size: 1.0625rem;
+          line-height: 1.85;
+          letter-spacing: -0.003em;
+        }
+
+        @media (min-width: 640px) {
+          .rt-article-content p {
+            font-size: 1.125rem;
+          }
+        }
+
+        .rt-article-content p::first-letter {
+          -webkit-user-select: text;
+          user-select: text;
         }
       `}</style>
 

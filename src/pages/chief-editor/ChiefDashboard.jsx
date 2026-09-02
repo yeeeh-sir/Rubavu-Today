@@ -254,6 +254,7 @@ export default function ChiefDashboard({ onLogout }) {
       youtube_url: post.youtube_url || post.youtubeUrl || "",
       image: post.image || post.image_url || post.imageUrl || null,
       category: post.category || "Amakuru",
+      status: post.status || post.Status || "",
       content_blocks: post.content_blocks || null,
     });
 
@@ -1115,6 +1116,7 @@ export default function ChiefDashboard({ onLogout }) {
           </div>
 
           <ArticleEditor
+            key={editingPostId ? `edit-${editingPostId}` : "create-new-form"}
             initial={editInitial}
             categories={categories.map((c) => ({ name: c }))}
             submitLabel={editingPostId ? "Vugurura inkuru" : "Kora inkuru"}

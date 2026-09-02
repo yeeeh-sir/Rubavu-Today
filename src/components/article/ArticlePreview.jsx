@@ -21,7 +21,7 @@ const ArticlePreview = ({
         <div className="sticky top-0 z-10 flex items-center justify-between rounded-t-2xl border-b border-slate-200 bg-white px-5 py-3">
           <div className="flex items-center gap-2 text-sm font-bold text-slate-800">
             <Eye className="h-4 w-4 text-blue-600" />
-            Article Preview
+            Reba Inkuru
           </div>
           <button
             type="button"

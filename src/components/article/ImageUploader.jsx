@@ -13,14 +13,14 @@ export const formatFileSize = (bytes) => {
 };
 
 export const validateImageFile = (file) => {
-  if (!file) return "No file selected.";
+  if (!file) return "Nta file wahisemo.";
 
   if (!ALLOWED_TYPES.includes(file.type)) {
-    return "Unsupported image format. Only JPG, PNG, WEBP, and GIF are allowed.";
+    return "Ubwoko bw'ifoto ntibushyigikiwe. Emerera JPG, PNG, WEBP, cyangwa GIF gusa.";
   }
 
   if (file.size > MAX_FILE_SIZE_BYTES) {
-    return "Image is too large. Maximum allowed size is 15 MB.";
+    return "Ifoto ni nini cyane. Ubunini bwasabwe ntiburenge 15 MB.";
   }
 
   return "";
@@ -29,8 +29,8 @@ export const validateImageFile = (file) => {
 const ImageUploader = ({
   onAdd,
   multiple = false,
-  label = "Drag images here",
-  hint = "PNG, JPG, WEBP or GIF (max 15 MB)",
+  label = "Shyira amafoto hano",
+  hint = "PNG, JPG, WEBP cyangwa GIF (max 15 MB)",
 }) => {
   const [dragging, setDragging] = useState(false);
   const [error, setError] = useState("");
@@ -45,7 +45,7 @@ const ImageUploader = ({
       );
 
       if (files.length === 0) {
-        setError("Please select an image file.");
+        setError("Hitamo ifoto.");
         return;
       }
 
@@ -102,7 +102,7 @@ const ImageUploader = ({
         </div>
         <p className="text-sm font-semibold text-slate-700">{label}</p>
         <p className="text-xs text-slate-400">
-          Click to browse or drag {multiple ? "images" : "an image"} here
+          Kanda kugira uhitemo cyangwa ushye amafoto {multiple ? "" : ""} hano
         </p>
         <span className="text-[10px] text-slate-400">{hint}</span>
       </div>

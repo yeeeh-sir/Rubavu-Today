@@ -539,6 +539,7 @@ const AdminDashboard = ({
             youtube_url: post.youtube_url || "",
             image: post.image || null,
             category: post.category || DEPARTMENTS[0].name,
+            status: post.status || "",
             content_blocks: post.content_blocks || null,
         });
     };
@@ -2267,7 +2268,7 @@ const AdminDashboard = ({
                         key={postEditorKey}
                         initial={null}
                         categories={DEPARTMENTS}
-                        submitLabel="Create Post"
+                        submitLabel="Kora inkuru"
                         saving={createPostSaving}
                         onSubmit={handleCreatePost}
                         onCancel={() => setShowCreatePost(false)}
@@ -2574,6 +2575,7 @@ const AdminDashboard = ({
 
             {editingPostId && editInitial && (
                 <ArticleEditor
+                    key={`edit-${editingPostId}`}
                     initial={editInitial}
                     categories={DEPARTMENTS}
                     submitLabel="Vugurura inkuru"

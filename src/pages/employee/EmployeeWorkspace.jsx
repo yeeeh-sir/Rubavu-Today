@@ -1115,7 +1115,7 @@ function Employee() {
                 initial={null}
                 categories={departments}
                 authorText={getCurrentUserName()}
-                submitLabel="Publish Post"
+                submitLabel="Tangaza Inkuru"
                 saving={actionLoading}
                 onSubmit={handleSubmit}
                 onCancel={handleCloseUploadModal}

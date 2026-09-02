@@ -1,57 +1,78 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
-  AlignLeft,
   ArrowDown,
   ArrowUp,
   Eye,
-  FileText,
-  GripVertical,
-  Heading2,
   Image as ImageIcon,
   Loader2,
-  Minus,
-  Quote,
+  Plus,
   Trash2,
-  Video,
+  ClipboardPaste,
+  Wand2,
+  ImagePlus,
+  X,
 } from "lucide-react";
-import ImageUploader, { formatFileSize, validateImageFile } from "./ImageUploader";
+import { validateImageFile } from "./ImageUploader";
 import ArticlePreview from "./ArticlePreview";
 
-const IMAGE_POSITIONS = [
-  { value: "full", label: "Full Width" },
-  { value: "center", label: "Center" },
-  { value: "left", label: "Left (wrap text)" },
-  { value: "right", label: "Right (wrap text)" },
-  { value: "inline", label: "Inline with Text" },
-  { value: "gallery", label: "Gallery" },
-];
+let itemIdCounter = 0;
+const nextId = () => `item-${Date.now()}-${itemIdCounter++}`;
+const nextImgId = () => `img-${Date.now()}-${itemIdCounter++}`;
 
-const BLOCK_TYPES = [
-  { value: "paragraph", label: "Paragraph", icon: AlignLeft },
-  { value: "heading", label: "Heading", icon: Heading2 },
-  { value: "image", label: "Image", icon: ImageIcon },
-  { value: "quote", label: "Quote", icon: Quote },
-  { value: "divider", label: "Divider", icon: Minus },
-  { value: "video", label: "Video", icon: Video },
-];
-
-const parseBlocks = (initial) => {
-  if (!initial?.content_blocks) return [];
-
+const parseInitial = (initial) => {
+  let blocks = [];
+  const raw = initial?.content_blocks;
   try {
-    const parsed = JSON.parse(initial.content_blocks);
-    return Array.isArray(parsed) ? parsed : [];
+    const parsed = JSON.parse(raw || "");
+    blocks = Array.isArray(parsed) ? parsed : [];
   } catch {
-    return [];
+    blocks = [];
   }
+
+  const sections = blocks.map((block) => {
+    if (block.type === "paragraph") {
+      return { type: "paragraph", id: nextId(), text: block.text || "" };
+    }
+    if (block.type === "image") {
+      return {
+        type: "image",
+        id: nextId(),
+        imgId: nextImgId(),
+        url: block.url || "",
+        position: block.position || "center",
+        caption: block.caption || "",
+        file: null,
+        error: "",
+      };
+    }
+    return null;
+  });
+
+  const filtered = sections.filter(Boolean);
+
+  if (filtered.length === 0) {
+    const rawDescription = String(initial?.description || "")
+      .split(/\n{2,}/)
+      .map((part) => part.replace(/\s+/g, " ").trim())
+      .filter(Boolean);
+
+    return rawDescription.map((text) => ({
+      type: "paragraph",
+      id: nextId(),
+      text,
+    }));
+  }
+
+  return filtered;
 };
 
-const resolvePreviewUrl = (block) => {
-  if (block.file) {
-    return URL.createObjectURL(block.file);
-  }
-  return block.url || "";
-};
+const previewUrl = (section) =>
+  section.file
+    ? URL.createObjectURL(section.file)
+    : section.url || "";
+
+const headerImageUrl = (header) =>
+  header?.file ? URL.createObjectURL(header.file) : header?.url || "";
 
 const ArticleEditor = ({
   initial = null,
@@ -63,200 +84,263 @@ const ArticleEditor = ({
   onCancel = () => { },
 }) => {
   const [title, setTitle] = useState(initial?.title || "");
-  const [subtitle, setSubtitle] = useState(
-    initial?.description || initial?.summary || initial?.content || ""
-  );
   const [category, setCategory] = useState(
     initial?.category || categories[0]?.name || "Amakuru"
   );
   const [youtubeUrl, setYoutubeUrl] = useState(
     initial?.youtube_url || initial?.youtubeUrl || ""
   );
-  const [headerFile, setHeaderFile] = useState(null);
-  const [headerError, setHeaderError] = useState("");
-  const [blocks, setBlocks] = useState(() => parseBlocks(initial));
+  const [sections, setSections] = useState(() => parseInitial(initial));
+  const [headerImage, setHeaderImage] = useState(() => {
+    const existing = initial?.image || initial?.image_url || initial?.imageUrl || null;
+    if (!existing) return null;
+    return { file: null, url: existing, error: "" };
+  });
+  const [status, setStatus] = useState(
+    (initial?.status && String(initial.status).toLowerCase()) || ""
+  );
+  const [pasteText, setPasteText] = useState("");
+  const [formError, setFormError] = useState("");
   const [previewOpen, setPreviewOpen] = useState(false);
-  const [dragIndex, setDragIndex] = useState(null);
+
+  const headerInputRef = useRef(null);
+  const dirtyRef = useRef(false);
+
+  const markDirty = () => {
+    dirtyRef.current = true;
+  };
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (dirtyRef.current) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, []);
+
+  const handleCancel = () => {
+    if (dirtyRef.current) {
+      const leave = window.confirm(
+        "Ufite impinduka zitabitswe. Ushaka kureka?"
+      );
+      if (!leave) return;
+    }
+    onCancel();
+  };
 
   const categoryList =
     categories && categories.length > 0
       ? categories
       : [{ name: "Amakuru" }];
 
-  const headerSource = headerFile
-    ? URL.createObjectURL(headerFile)
-    : initial?.image || initial?.featured_image || null;
+  const paragraphText = sections
+    .filter((s) => s.type === "paragraph" && s.text && s.text.trim())
+    .map((s) => s.text.trim())
+    .join(" ");
 
-  const MAX_IMAGE_BYTES = 15 * 1024 * 1024;
-  const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-
-  const validateHeaderFile = (file) => {
-    if (!file) return "No file selected.";
-
-    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-      return "Unsupported image format. Only JPG, PNG, WEBP, and GIF are allowed.";
-    }
-
-    if (file.size > MAX_IMAGE_BYTES) {
-      return "Image is too large. Maximum allowed size is 15 MB.";
-    }
-
-    return "";
-  };
-
-  const setValidatedHeaderFile = (file) => {
-    const message = validateHeaderFile(file);
-    if (message) {
-      setHeaderError(message);
-      setHeaderFile(null);
-      return;
-    }
-    setHeaderError("");
-    setHeaderFile(file);
-  };
-
-  const addBlock = (type) => {
-    const base = { type };
-
-    const block =
-      type === "image"
-        ? { ...base, url: "", position: "center", caption: "", alt: "", file: null }
-        : type === "video"
-          ? { ...base, url: "" }
-          : { ...base, text: "" };
-
-    setBlocks((previous) => [...previous, block]);
-  };
-
-  const updateBlock = (index, patch) => {
-    setBlocks((previous) =>
-      previous.map((block, i) =>
-        i === index ? { ...block, ...patch } : block
+  const updateSection = (id, patch) => {
+    markDirty();
+    setSections((previous) =>
+      previous.map((section) =>
+        section.id === id ? { ...section, ...patch } : section
       )
     );
   };
 
-  const removeBlock = (index) => {
-    setBlocks((previous) => previous.filter((_, i) => i !== index));
+  const addParagraph = (afterId) => {
+    markDirty();
+    const newSection = { type: "paragraph", id: nextId(), text: "" };
+    setSections((previous) => {
+      const index = previous.findIndex((s) => s.id === afterId);
+      if (afterId && index >= 0) {
+        return [
+          ...previous.slice(0, index + 1),
+          newSection,
+          ...previous.slice(index + 1),
+        ];
+      }
+      return [...previous, newSection];
+    });
   };
 
-  const moveBlock = (index, direction) => {
-    setBlocks((previous) => {
-      const target = index + direction;
+  const addImagesAfter = (afterId, files) => {
+    markDirty();
+    const newContent = [];
+    files.forEach((file) => {
+      newContent.push({
+        type: "image",
+        id: nextId(),
+        imgId: nextImgId(),
+        url: URL.createObjectURL(file),
+        file,
+        error: "",
+      });
+      newContent.push({ type: "paragraph", id: nextId(), text: "" });
+    });
 
-      if (target < 0 || target >= previous.length) {
+    setSections((previous) => {
+      const index = previous.findIndex((s) => s.id === afterId);
+      if (afterId && index >= 0) {
+        return [
+          ...previous.slice(0, index + 1),
+          ...newContent,
+          ...previous.slice(index + 1),
+        ];
+      }
+      return [...previous, ...newContent];
+    });
+  };
+
+  const replaceImage = (id, file) => {
+    markDirty();
+    const message = validateImageFile(file);
+    if (message) {
+      updateSection(id, { error: message });
+      return;
+    }
+    updateSection(id, { file, url: URL.createObjectURL(file), error: "" });
+  };
+
+  const removeParagraph = (id) => {
+    markDirty();
+    setSections((previous) => previous.filter((s) => s.id !== id));
+  };
+
+  const removeImage = (id) => {
+    markDirty();
+    setSections((previous) => {
+      const index = previous.findIndex((s) => s.id === id);
+      if (index < 0) return previous;
+      const next = previous.slice();
+      next.splice(index, 1);
+      // Remove the auto-opened empty paragraph that followed the image.
+      const following = next[index];
+      if (
+        following &&
+        following.type === "paragraph" &&
+        !String(following.text || "").trim()
+      ) {
+        next.splice(index, 1);
+      }
+      return next;
+    });
+  };
+
+  const moveSection = (id, direction) => {
+    markDirty();
+    setSections((previous) => {
+      const index = previous.findIndex((s) => s.id === id);
+      const target = index + direction;
+      if (index < 0 || target < 0 || target >= previous.length) {
         return previous;
       }
-
       const next = previous.slice();
       const [item] = next.splice(index, 1);
       next.splice(target, 0, item);
-
       return next;
     });
   };
 
-  const handleDropBlock = (targetIndex) => {
-    if (dragIndex === null || dragIndex === targetIndex) {
-      setDragIndex(null);
+  const handleHeaderChange = (e) => {
+    markDirty();
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+
+    const message = validateImageFile(file);
+    if (message) {
+      setHeaderImage((prev) => ({ file: null, url: prev?.url || "", error: message }));
       return;
     }
 
-    setBlocks((previous) => {
-      const next = previous.slice();
-      const [item] = next.splice(dragIndex, 1);
-      next.splice(targetIndex, 0, item);
-      return next;
-    });
+    setHeaderImage({ file, url: URL.createObjectURL(file), error: "" });
+  };
 
-    setDragIndex(null);
+  const removeHeaderImage = () => {
+    markDirty();
+    setHeaderImage(null);
+  };
+
+  const splitPastedTextIntoParagraphs = () => {
+    const raw = String(pasteText || "");
+
+    const paragraphs = raw
+      .split(/\n{2,}/)
+      .map((part) => part.replace(/\s+/g, " ").trim())
+      .filter(Boolean);
+
+    if (paragraphs.length === 0) return;
+
+    markDirty();
+    const newSections = paragraphs.map((text) => ({
+      type: "paragraph",
+      id: nextId(),
+      text,
+    }));
+
+    setSections(newSections);
+    setPasteText("");
   };
 
   const buildFormData = () => {
     const fd = new FormData();
 
     fd.append("title", title.trim());
-
     fd.append("category", category || "Amakuru");
+    fd.append("description", paragraphText.slice(0, 400));
 
-    fd.append("description", subtitle.trim());
+    if (headerImage?.file) {
+      fd.append("image", headerImage.file);
+    }
 
     if (youtubeUrl.trim()) {
       fd.append("youtube_url", youtubeUrl.trim());
     }
-
     if (authorText && authorText.trim()) {
       fd.append("author", authorText.trim());
     }
-
-    if (headerFile) {
-      fd.append("image", headerFile);
+    if (initial && status && String(status).trim()) {
+      fd.append("status", String(status).trim());
     }
 
     const sendBlocks = [];
     const imageFiles = [];
-    let imageOrdinal = 0;
 
-    blocks.forEach((block) => {
-      if (block.type === "paragraph") {
-        if (String(block.text || "").trim()) {
-          sendBlocks.push({ type: "paragraph", text: block.text.trim() });
+    sections.forEach((section) => {
+      if (section.type === "paragraph") {
+        if (String(section.text || "").trim()) {
+          sendBlocks.push({ type: "paragraph", text: section.text.trim() });
         }
         return;
       }
 
-      if (block.type === "heading") {
-        if (String(block.text || "").trim()) {
-          sendBlocks.push({ type: "heading", text: block.text.trim() });
-        }
-        return;
-      }
-
-      if (block.type === "quote") {
-        if (String(block.text || "").trim()) {
-          sendBlocks.push({ type: "quote", text: block.text.trim() });
-        }
-        return;
-      }
-
-      if (block.type === "divider") {
-        sendBlocks.push({ type: "divider" });
-        return;
-      }
-
-      if (block.type === "video") {
-        if (String(block.url || "").trim()) {
-          sendBlocks.push({ type: "video", url: block.url.trim() });
-        }
-        return;
-      }
-
-      if (block.type === "image") {
-        const fallbackAlt = `${String(title || "Rubavu Today").slice(0, 80)} photo ${imageOrdinal + 1}`;
-
-        if (block.file) {
+      if (section.type === "image") {
+        const position = section.position === "header" ? "center" : section.position || "center";
+        if (section.file) {
           const index = imageFiles.length;
-          imageFiles.push(block.file);
-
+          imageFiles.push(section.file);
           sendBlocks.push({
             type: "image",
-            position: block.position || "center",
-            caption: String(block.caption || "").trim(),
-            alt: String(block.alt || "").trim() || fallbackAlt,
+            position,
+            caption: section.caption || "",
+            alt: `${String(title || "Rubavu Today").slice(0, 80)} photo ${
+              index + 1
+            }`,
             fileKey: "images",
             uploadIndex: index,
           });
-        } else if (block.url && String(block.url).trim()) {
+        } else if (section.url && String(section.url).trim()) {
           sendBlocks.push({
             type: "image",
-            url: String(block.url).trim(),
-            position: block.position || "center",
-            caption: String(block.caption || "").trim(),
-            alt: String(block.alt || "").trim() || fallbackAlt,
+            url: String(section.url).trim(),
+            position,
+            caption: section.caption || "",
+            alt: `${String(title || "Rubavu Today").slice(0, 80)} photo`,
           });
         }
-
-        imageOrdinal += 1;
       }
     });
 
@@ -271,50 +355,75 @@ const ArticleEditor = ({
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    e.stopPropagation();
 
     if (!title.trim()) {
-      setHeaderError("Please enter the article title.");
+      setFormError("Andika umutwe w'inkuru mbere yo gutanga.");
+      return;
+    }
+    if (!paragraphText) {
+      setFormError("Andika inkuru yawe mbere yo gutanga.");
+      return;
+    }
+    if (headerImage?.error) {
+      setFormError(headerImage.error);
       return;
     }
 
-    if (!subtitle.trim()) {
-      setHeaderError("Please enter the short description.");
-      return;
-    }
-
-    setHeaderError("");
+    setFormError("");
+    dirtyRef.current = false;
     onSubmit(buildFormData());
   };
 
-  const previewBlocks = blocks.map((block) => {
-    if (block.type === "image") {
+  const previewBlocks = sections
+    .filter((section) => {
+      if (section.type === "paragraph") {
+        return String(section.text || "").trim();
+      }
+      return section.file || String(section.url || "").trim();
+    })
+    .map((section) => {
+      if (section.type === "paragraph") {
+        return { type: "paragraph", text: section.text.trim() };
+      }
       return {
-        ...block,
-        url: resolvePreviewUrl(block),
+        type: "image",
+        url: previewUrl(section),
+        position: section.position || "center",
+        caption: section.caption || "",
       };
-    }
-    return block;
-  });
+    });
 
   return (
     <div>
-      <form onSubmit={handleSubmit} className="space-y-5">
-        {headerError && (
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {formError && (
           <div className="rounded-xl border border-red-200 bg-red-50 p-3">
-            <p className="text-xs font-medium text-red-600">{headerError}</p>
+            <p className="text-xs font-medium text-red-600">{formError}</p>
+          </div>
+        )}
+
+        {initial && (
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3">
+            <p className="text-xs font-medium text-emerald-700">
+              Uri guhindura inkuru ibaho. Guhindura amagambo y'inkuru, kongeraho, cyangwa gukuraho — kandi amafoto asigaye azabikwa. Ntukeneye kwandika inkuru usubire.
+            </p>
           </div>
         )}
 
         <div>
           <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-700">
-            Article Title
+            Umutwe w'inkuru
           </label>
           <input
             type="text"
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            onChange={(e) => {
+              setTitle(e.target.value);
+              markDirty();
+            }}
             required
-            placeholder="Catchy headline..."
+            placeholder="Andika umutwe ukurura..."
             className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
           />
         </div>
@@ -322,11 +431,14 @@ const ArticleEditor = ({
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-700">
-              Category
+              Icyiciro
             </label>
             <select
               value={category}
-              onChange={(e) => setCategory(e.target.value)}
+              onChange={(e) => {
+                setCategory(e.target.value);
+                markDirty();
+              }}
               className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
             >
               {categoryList.map((cat) => (
@@ -340,436 +452,358 @@ const ArticleEditor = ({
 
           <div>
             <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-700">
-              YouTube URL
+              Umurongo wa YouTube
               <span className="ml-1 font-normal normal-case text-slate-400">
-                Optional
+                Ntabwo ari ngombwa
               </span>
             </label>
             <input
               type="url"
               value={youtubeUrl}
-              onChange={(e) => setYoutubeUrl(e.target.value)}
+              onChange={(e) => {
+                setYoutubeUrl(e.target.value);
+                markDirty();
+              }}
               placeholder="https://www.youtube.com/watch?v=..."
               className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
             />
           </div>
         </div>
 
-        <div>
-          <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-700">
-            Short Description / Subtitle
-          </label>
-          <textarea
-            value={subtitle}
-            onChange={(e) => setSubtitle(e.target.value)}
-            rows={3}
-            required
-            placeholder="One or two sentences summarising the story..."
-            className="w-full resize-y rounded-xl border border-slate-300 px-4 py-3 text-sm leading-6 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-          />
-        </div>
+        {initial && (
+          <div>
+            <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-700">
+              Imiterere / Status
+            </label>
+            <div className="flex flex-wrap items-center gap-2">
+              <select
+                value={status}
+                onChange={(e) => {
+                  setStatus(e.target.value);
+                  markDirty();
+                }}
+                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 sm:w-56"
+              >
+                <option value="">Ntihinduke</option>
+                <option value="approved">Yemewe (approved)</option>
+                <option value="pending">Itegereje gusuzumwa (pending)</option>
+                <option value="rejected">Yanzwe (rejected)</option>
+              </select>
+              <p className="text-[10px] font-medium text-slate-400">
+                Aya mahitamo akurikiza uburenganzira bwawe n'uburyo bwo kwemeza biriho.
+              </p>
+            </div>
+          </div>
+        )}
 
         <div>
-          <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-700">
-            Header / Featured Image
-            <span className="ml-1 font-normal normal-case text-slate-400">
-              Optional
-            </span>
-          </label>
+          <div className="mb-2 flex items-center justify-between">
+            <label className="block text-xs font-bold uppercase tracking-wide text-slate-700">
+              Ifoto y'Umutwe
+              <span className="ml-1 font-normal normal-case text-slate-400">
+                Ntabwo ari ngombwa — ifoto itangiza inkuru hejuru
+              </span>
+            </label>
+          </div>
 
-          {!headerSource && (
-            <ImageUploader
-              multiple={false}
-              label="Drag the header image here"
-              onAdd={(files) => {
-                setValidatedHeaderFile(files[0] || null);
-              }}
-            />
-          )}
-
-          {headerSource && (
-            <div className="grid gap-4 sm:grid-cols-[200px_1fr]">
-              <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
-                <img
-                  src={headerSource}
-                  alt="Header preview"
-                  className="aspect-[4/3] h-full w-full object-cover"
-                />
-              </div>
-
-              <div className="flex flex-col items-start justify-center gap-2 sm:px-2">
-                <p className="text-xs text-slate-500">
-                  This image appears at the top of the article, below the
-                  headline.
-                </p>
-
-                {headerFile && (
-                  <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-                    <p className="max-w-full truncate text-xs font-semibold text-slate-700">
-                      {headerFile.name}
-                    </p>
-                    <p className="text-[10px] text-slate-400">
-                      {formatFileSize(headerFile.size)} ·{" "}
-                      {headerFile.type || "image"}
-                    </p>
-                  </div>
-                )}
-
-                <div className="flex flex-wrap gap-2">
-                  <label
-                    className="cursor-pointer rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
-                  >
-                    Replace image
+          {headerImage ? (
+            <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white">
+              <img
+                src={headerImageUrl(headerImage)}
+                alt="Article header"
+                className="block h-56 w-full object-cover sm:h-64"
+              />
+              {headerImage.error && (
+                <div className="bg-red-50 px-4 py-2">
+                  <p className="text-xs font-semibold text-red-600">
+                    {headerImage.error}
+                  </p>
+                </div>
+              )}
+              <div className="flex items-center justify-between gap-2 border-t border-slate-100 px-4 py-2.5">
+                <span className="text-[10px] font-medium text-slate-500">
+                  Ifoto y'umutwe
+                </span>
+                <div className="flex items-center gap-2">
+                  <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50">
+                    <ImageIcon className="h-3.5 w-3.5" />
+                    Gahindura
                     <input
+                      ref={headerInputRef}
                       type="file"
                       accept="image/jpeg,image/png,image/webp,image/gif"
                       className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) setValidatedHeaderFile(file);
-                        else setHeaderError("");
-                        e.target.value = "";
-                      }}
+                      onChange={handleHeaderChange}
                     />
                   </label>
-
                   <button
                     type="button"
-                    onClick={() => {
-                      setHeaderFile(null);
-                      setHeaderError("");
-                    }}
-                    className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
+                    onClick={removeHeaderImage}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-100"
                   >
-                    Remove
+                    <X className="h-3.5 w-3.5" />
+                    Gukuraho
                   </button>
                 </div>
               </div>
             </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => headerInputRef.current?.click()}
+              className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-sm font-semibold text-slate-500 transition hover:border-blue-400 hover:bg-blue-50/40 hover:text-blue-600"
+            >
+              <ImagePlus className="h-5 w-5" />
+              Bikora ifoto y'umutwe
+              <input
+                ref={headerInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                className="hidden"
+                onChange={handleHeaderChange}
+              />
+            </button>
           )}
         </div>
 
-        {/* BLOCK BUILDER */}
         <div>
           <div className="mb-2 flex items-center justify-between">
             <label className="block text-xs font-bold uppercase tracking-wide text-slate-700">
-              Article Content Builder
+              Inkuru
             </label>
             <span className="text-[10px] font-medium text-slate-400">
-              Drag blocks to reorder
+              Shyira inkuru yawe yose, cyangwa andika buri gika wongeraho amafoto
+            </span>
+          </div>
+
+          <div className="rounded-2xl border border-blue-100 bg-blue-50/40 p-3">
+            <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-blue-700">
+              <ClipboardPaste className="h-3.5 w-3.5" />
+              Iyandike byihuse — inkuru yose
+            </div>
+            <p className="mt-1 text-[11px] leading-snug text-slate-500">
+              Shyira inkuru yawe yose hano. Imirongo itandukanije iza nk'ibice, kandi ushobora kongera amafoto hagati yabyo.
+            </p>
+            <textarea
+              rows={4}
+              value={pasteText}
+              onChange={(e) => setPasteText(e.target.value)}
+              placeholder={"Shyira inkuru yawe yose hano...\n\nIgika cya mbere.\n\nIkindi gika cyatandukanijwe n'umurongo utarimo ikintu."}
+              className="mt-2 w-full resize-y rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm leading-7 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+            />
+            <button
+              type="button"
+              onClick={splitPastedTextIntoParagraphs}
+              disabled={!String(pasteText || "").trim()}
+              className="mt-2 inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Wand2 className="h-3.5 w-3.5" />
+              Itandukanya mu bice
+            </button>
+            <span className="mt-2 inline-flex items-center gap-1 text-[10px] font-medium text-slate-400">
+              <Plus className="h-3 w-3" />
+              Ibi bihagarika ifishi n'ibice bisukuye. Nyuma ongera amafoto aho ushaka.
             </span>
           </div>
 
           <div className="space-y-3">
-            {blocks.length === 0 && (
-              <div className="rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center">
+            {sections.length === 0 && (
+              <div className="rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 px-4 py-10 text-center">
                 <p className="text-sm text-slate-500">
-                  No content yet. Add paragraphs, headings, images, quotes,
-                  dividers or videos below.
+                  Tangira kwandika. Ongeraho igika, hanyuma ongera amafoto munsi yacyo — igika gishya kiragenda gifunguka nyuma ya buri foto.
                 </p>
               </div>
             )}
 
-            {blocks.map((block, index) => (
+            {sections.map((section, index, list) => (
               <div
-                key={`block-${index}`}
-                draggable
-                onDragStart={() => setDragIndex(index)}
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={() => handleDropBlock(index)}
-                onDragEnd={() => setDragIndex(null)}
-                className={`group rounded-2xl border bg-white transition ${dragIndex === index
-                    ? "border-blue-400 ring-2 ring-blue-100"
-                    : "border-slate-200"
-                  }`}
+                key={section.id}
+                className="group rounded-2xl border border-slate-200 bg-white p-3 transition focus-within:border-blue-400"
               >
-                <div className="flex items-center gap-1 border-b border-slate-100 px-3 py-2">
-                  <span className="cursor-grab text-slate-400">
-                    <GripVertical className="h-4 w-4" />
-                  </span>
-
-                  <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
-                    {BLOCK_TYPES.find((b) => b.value === block.type)?.icon &&
-                      (() => {
-                        const Icon =
-                          BLOCK_TYPES.find((b) => b.value === block.type).icon;
-                        return <Icon className="h-3.5 w-3.5" />;
-                      })()}
-                  </span>
-
-                  <span className="text-xs font-bold uppercase tracking-wide text-slate-600">
-                    {BLOCK_TYPES.find((b) => b.value === block.type)?.label}
-                  </span>
-
-                  <div className="ml-auto flex items-center gap-1">
-                    <button
-                      type="button"
-                      onClick={() => moveBlock(index, -1)}
-                      disabled={index === 0}
-                      className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 disabled:opacity-30"
-                      aria-label="Move block up"
-                    >
-                      <ArrowUp className="h-3.5 w-3.5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => moveBlock(index, 1)}
-                      disabled={index === blocks.length - 1}
-                      className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 disabled:opacity-30"
-                      aria-label="Move block down"
-                    >
-                      <ArrowDown className="h-3.5 w-3.5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => removeBlock(index)}
-                      className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition hover:bg-red-50 hover:text-red-600"
-                      aria-label="Delete block"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="p-3">
-                  {block.type === "paragraph" && (
-                    <textarea
-                      rows={4}
-                      placeholder="Write a paragraph..."
-                      value={block.text || ""}
-                      onChange={(e) =>
-                        updateBlock(index, { text: e.target.value })
-                      }
-                      className="w-full resize-y rounded-xl border border-slate-200 px-3 py-2.5 text-sm leading-6 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-                    />
-                  )}
-
-                  {block.type === "heading" && (
-                    <input
-                      type="text"
-                      value={block.text || ""}
-                      onChange={(e) =>
-                        updateBlock(index, { text: e.target.value })
-                      }
-                      placeholder="Subheading text..."
-                      className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-bold outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-                    />
-                  )}
-
-                  {block.type === "quote" && (
-                    <textarea
-                      rows={2}
-                      placeholder="Quote text..."
-                      value={block.text || ""}
-                      onChange={(e) =>
-                        updateBlock(index, { text: e.target.value })
-                      }
-                      className="w-full resize-y rounded-xl border-l-4 border-slate-300 px-3 py-2.5 text-sm italic outline-none focus:border-blue-400"
-                    />
-                  )}
-
-                  {block.type === "video" && (
-                    <input
-                      type="url"
-                      value={block.url || ""}
-                      onChange={(e) =>
-                        updateBlock(index, { url: e.target.value })
-                      }
-                      placeholder="https://www.youtube.com/watch?v=..."
-                      className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-                    />
-                  )}
-
-                  {block.type === "divider" && (
-                    <div className="py-1 text-center">
-                      <div className="mx-auto h-px max-w-[420px] bg-gradient-to-r from-transparent via-slate-300 to-transparent" />
-                      <p className="mt-1 font-body text-[10px] uppercase tracking-wider text-slate-400">
-                        Horizontal divider
-                      </p>
+                {section.type === "paragraph" ? (
+                  <div>
+                    <div className="mb-1.5 flex items-center justify-between">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                        Igika {index + 1}
+                      </span>
                     </div>
-                  )}
-
-                  {block.type === "image" && (
-                    <div className="space-y-3">
-                      {block.file || block.url ? (
-                        <div className="grid gap-4 sm:grid-cols-[180px_1fr]">
-                          <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
-                            <img
-                              src={resolvePreviewUrl(block)}
-                              alt={block.alt || "Image preview"}
-                              className="aspect-[4/3] h-full w-full object-cover"
-                            />
-                          </div>
-
-                          <div className="flex flex-col items-start justify-center gap-2">
-                            {block.error && (
-                              <p className="rounded-lg bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-600">
-                                {block.error}
-                              </p>
-                            )}
-                            <label
-                              className="cursor-pointer rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
-                            >
-                              Replace image
-                              <input
-                                type="file"
-                                accept="image/jpeg,image/png,image/webp,image/gif"
-                                className="hidden"
-                                onChange={(e) => {
-                                  const file = e.target.files?.[0];
-                                  if (file) {
-                                    const message = validateImageFile(file);
-                                    if (message) {
-                                      updateBlock(index, { error: message });
-                                    } else {
-                                      updateBlock(index, {
-                                        file,
-                                        url: URL.createObjectURL(file),
-                                        error: "",
-                                      });
-                                    }
-                                  }
-                                  e.target.value = "";
-                                }}
-                              />
-                            </label>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                updateBlock(index, {
-                                  file: null,
-                                  url: "",
-                                  error: "",
-                                })
-                              }
-                              className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-50"
-                            >
-                              Remove image
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <ImageUploader
+                    <textarea
+                      rows={section.text ? 5 : 3}
+                      placeholder="Andika igika..."
+                      value={section.text || ""}
+                      onChange={(e) =>
+                        updateSection(section.id, { text: e.target.value })
+                      }
+                      className="w-full resize-y rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-7 outline-none transition focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                    />
+                    <div className="mt-2 flex items-center justify-between">
+                      <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 transition hover:border-blue-300 hover:bg-blue-100">
+                        <ImageIcon className="h-3.5 w-3.5" />
+                        Ongeraho Ifoto munsi y'igika
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp,image/gif"
                           multiple
-                          label="Drag images here"
-                          onAdd={(files) => {
-                            const [first, ...extras] = files;
-
-                            updateBlock(index, {
-                              file: first,
-                              url: URL.createObjectURL(first),
-                            });
-
-                            if (extras.length > 0) {
-                              setBlocks((previous) => [
-                                ...previous,
-                                ...extras.map((file) => ({
-                                  type: "image",
-                                  url: URL.createObjectURL(file),
-                                  position: "center",
-                                  caption: "",
-                                  alt: "",
-                                  file,
-                                })),
-                              ]);
+                          className="hidden"
+                          onChange={(e) => {
+                            const files = Array.from(
+                              e.target.files || []
+                            );
+                            if (files.length > 0) {
+                              addImagesAfter(section.id, files);
                             }
+                            e.target.value = "";
                           }}
                         />
-                      )}
+                      </label>
 
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        <div>
-                          <label className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-slate-500">
-                            Position
-                          </label>
-                          <select
-                            value={block.position || "center"}
-                            onChange={(e) =>
-                              updateBlock(index, {
-                                position: e.target.value,
-                              })
-                            }
-                            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs outline-none focus:border-blue-400"
-                          >
-                            {IMAGE_POSITIONS.map((pos) => (
-                              <option key={pos.value} value={pos.value}>
-                                {pos.label}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        <div>
-                          <label className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-slate-500">
-                            Alt text
-                            <span className="ml-1 font-normal normal-case text-slate-300">
-                              for accessibility
-                            </span>
-                          </label>
-                          <input
-                            type="text"
-                            value={block.alt || ""}
-                            onChange={(e) =>
-                              updateBlock(index, { alt: e.target.value })
-                            }
-                            placeholder="Describe the photo..."
-                            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs outline-none focus:border-blue-400"
-                          />
-                        </div>
+                      <div className="flex items-center gap-1 opacity-0 transition group-hover:opacity-100">
+                        <button
+                          type="button"
+                          onClick={() => moveSection(section.id, -1)}
+                          disabled={index === 0}
+                          aria-label="Move up"
+                          className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 disabled:opacity-30"
+                        >
+                          <ArrowUp className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => moveSection(section.id, 1)}
+                          disabled={index === list.length - 1}
+                          aria-label="Move down"
+                          className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 disabled:opacity-30"
+                        >
+                          <ArrowDown className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removeParagraph(section.id)}
+                          aria-label="Delete paragraph"
+                          className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition hover:bg-red-50 hover:text-red-600"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-2.5 sm:flex-row sm:items-start">
+                    <div className="flex items-center gap-3 sm:flex-1">
+                      <div className="h-20 w-28 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-slate-100">
+                        <img
+                          src={previewUrl(section)}
+                          alt={`Uploaded ${index + 1}`}
+                          className="h-full w-full object-cover"
+                        />
                       </div>
 
-                      <div>
-                        <label className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-slate-500">
-                          Caption
-                          <span className="ml-1 font-normal normal-case text-slate-300">
-                            optional
-                          </span>
-                        </label>
+                      <div className="min-w-0 flex-1 space-y-1.5">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <label className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-50">
+                            <ImageIcon className="h-3 w-3" />
+                            Gahindura
+                            <input
+                              type="file"
+                              accept="image/jpeg,image/png,image/webp,image/gif"
+                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) replaceImage(section.id, file);
+                                e.target.value = "";
+                              }}
+                            />
+                          </label>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (window.confirm("U Rwanda? Gukuraho iyi foto muri iyi nkuru?")) {
+                                removeImage(section.id);
+                              }
+                            }}
+                            className="inline-flex items-center gap-1 rounded-lg border border-red-200 bg-red-50 px-2.5 py-1.5 text-[11px] font-semibold text-red-600 transition hover:bg-red-100"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                            Gukuraho
+                          </button>
+                        </div>
+
+                        <select
+                          value={section.position || "center"}
+                          onChange={(e) =>
+                            updateSection(section.id, {
+                              position: e.target.value,
+                            })
+                          }
+                          className="w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-slate-600 outline-none focus:border-blue-400"
+                        >
+                          <option value="center">Ahagati (center)</option>
+                          <option value="full">Ubugari bwose (full)</option>
+                          <option value="left">Iburyo (left)</option>
+                          <option value="right">Ibumoso (right)</option>
+                          <option value="inline">Buri muri (inline)</option>
+                          <option value="gallery">Amafoto (gallery)</option>
+                        </select>
+
                         <input
                           type="text"
-                          value={block.caption || ""}
+                          value={section.caption || ""}
                           onChange={(e) =>
-                            updateBlock(index, { caption: e.target.value })
+                            updateSection(section.id, {
+                              caption: e.target.value,
+                            })
                           }
-                          placeholder="Caption shown under the photo..."
-                          className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs outline-none focus:border-blue-400"
+                          placeholder="Igisobanuro cy'ifoto (caption)"
+                          className="w-full rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[11px] text-slate-600 outline-none focus:border-blue-400 focus:bg-white"
                         />
                       </div>
                     </div>
-                  )}
-                </div>
+
+                    <div className="flex items-center gap-1 sm:flex-col">
+                      <button
+                        type="button"
+                        onClick={() => moveSection(section.id, -1)}
+                        disabled={index === 0}
+                        aria-label="Move photo up"
+                        className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 disabled:opacity-30"
+                      >
+                        <ArrowUp className="h-4 w-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => moveSection(section.id, 1)}
+                        disabled={index === list.length - 1}
+                        aria-label="Move photo down"
+                        className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 disabled:opacity-30"
+                      >
+                        <ArrowDown className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
 
-          {/* ADD BLOCK */}
-          <div className="mt-4 flex flex-wrap gap-2">
-            {BLOCK_TYPES.map((type) => {
-              const Icon = type.icon;
-
-              return (
-                <button
-                  key={type.value}
-                  type="button"
-                  onClick={() => addBlock(type.value)}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-600 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700"
-                >
-                  <Icon className="h-3.5 w-3.5" />
-                  + {type.label}
-                </button>
-              );
-            })}
-          </div>
+          <button
+            type="button"
+            onClick={() => sections.length === 0 ? addParagraph() : addParagraph(sections[sections.length - 1].id)}
+            className="mt-3 inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-600 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Ongeraho igika
+          </button>
         </div>
 
         <div className="flex flex-col-reverse gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:justify-end">
           <button
             type="button"
-            onClick={onCancel}
+            onClick={handleCancel}
             disabled={saving}
             className="w-full rounded-xl border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50 sm:w-auto"
           >
-            Cancel
+            Gusiba
           </button>
 
           <button
@@ -779,7 +813,7 @@ const ArticleEditor = ({
             className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-blue-600 bg-white px-6 py-3 text-sm font-semibold text-blue-700 transition hover:bg-blue-50 disabled:opacity-50 sm:w-auto"
           >
             <Eye className="h-4 w-4" />
-            Preview Article
+            Reba Inkuru
           </button>
 
           <button
@@ -788,7 +822,7 @@ const ArticleEditor = ({
             className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
           >
             {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-            <FileText className="h-4 w-4" />
+            <ImageIcon className="h-4 w-4" />
             {submitLabel}
           </button>
         </div>
@@ -799,8 +833,8 @@ const ArticleEditor = ({
         onClose={() => setPreviewOpen(false)}
         title={title}
         category={category}
-        description={subtitle}
-        hero={headerSource}
+        description={paragraphText.slice(0, 400)}
+        hero={headerImageUrl(headerImage) || null}
         blocks={previewBlocks}
         author={authorText}
         dateLabel={new Date().toLocaleDateString()}
