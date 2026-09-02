@@ -1112,7 +1112,7 @@ export default function PostDetails() {
                     </video>
                   )}
 
-                  <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="mt-3">
                     <a
                       href={videoSourceUrl}
                       target="_blank"
@@ -1123,14 +1123,6 @@ export default function PostDetails() {
                         <path d="M23.5 6.19a3.02 3.02 0 0 0-2.12-2.14C19.5 3.55 12 3.55 12 3.55s-7.5 0-9.38.5A3.02 3.02 0 0 0 .5 6.19C0 8.07 0 12 0 12s0 3.93.5 5.81a3.02 3.02 0 0 0 2.12 2.14c1.88.5 9.38.5 9.38.5s7.5 0 9.38-.5a3.02 3.02 0 0 0 2.12-2.14C24 15.93 24 12 24 12s0-3.93-.5-5.81ZM9.55 15.57V8.43L15.82 12l-6.27 3.57Z" />
                       </svg>
                       {language === "rw" ? "Reba kuri YouTube" : "Watch on YouTube"}
-                    </a>
-                    <a
-                      href={videoSourceUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-block max-w-full break-all font-body text-xs text-red-700 underline decoration-red-300 underline-offset-2 hover:text-red-800"
-                    >
-                      {videoSourceUrl}
                     </a>
                   </div>
                 </div>
