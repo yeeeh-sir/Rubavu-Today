@@ -1092,7 +1092,7 @@ export default function PostDetails() {
               {videoSourceUrl ? (
                 <div className="mt-10 print:hidden">
                   {getYouTubeEmbedUrl(videoSourceUrl) ? (
-                    <div className="relative w-full aspect-video overflow-hidden rounded-2xl bg-black shadow-sm">
+                    <div className="relative w-full aspect-video overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 shadow-sm">
                       <iframe
                         src={getYouTubeEmbedUrl(videoSourceUrl)}
                         title={post?.title || "YouTube video"}

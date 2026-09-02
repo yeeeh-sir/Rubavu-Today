@@ -265,7 +265,7 @@ const ArticleRenderer = ({
           className="my-10 clear-both md:clear-both"
         >
           {embed ? (
-            <div className="relative aspect-video w-full overflow-hidden rounded-2xl bg-black shadow-sm">
+            <div className="relative aspect-video w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 shadow-sm">
               <iframe
                 src={embed}
                 title={post?.title || "YouTube video"}

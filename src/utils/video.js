@@ -18,21 +18,27 @@ export function getYouTubeEmbedUrl(url) {
 
   let match;
 
+  // https://youtu.be/VIDEO_ID
   if ((match = value.match(/^https?:\/\/(?:www\.)?youtu\.be\/([A-Za-z0-9_-]{11})(?:[?#&].*)?$/))) {
     return buildEmbed(match[1]);
   }
 
-  if ((match = value.match(/^https?:\/\/(?:www\.)?youtube\.com\/(?:shorts|embed)\/([A-Za-z0-9_-]{11})(?:[?#&].*)?$/))) {
+  // https://www.youtube.com/shorts/VIDEO_ID or /embed/VIDEO_ID
+  if ((match = value.match(/^https?:\/\/(?:www\.)?(?:youtube\.com|youtube-nocookie\.com)\/(?:shorts|embed|live)\/([A-Za-z0-9_-]{11})(?:[?#&].*)?$/))) {
     return buildEmbed(match[1]);
   }
 
-  if ((match = value.match(/^https?:\/\/(?:www\.)?(?:youtube\.com|youtube-nocookie\.com)\/watch\?.*[?&]v=([A-Za-z0-9_-]{11})(?:&.*)?$/))) {
-    return buildEmbed(match[1]);
+  // https://www.youtube.com/watch?v=... (v may appear anywhere in the query string)
+  if (/^https?:\/\/(?:www\.)?(?:youtube\.com|youtube-nocookie\.com)\//.test(value)) {
+    match = value.match(/[?&]v=([A-Za-z0-9_-]{11})/);
+    if (match) {
+      return buildEmbed(match[1]);
+    }
   }
 
   return null;
 }
 
 function buildEmbed(videoId) {
-  return `https://www.youtube.com/embed/${videoId}`;
+  return `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&color=white`;
 }
