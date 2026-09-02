@@ -95,6 +95,7 @@ const AdminDashboard = ({
     const [editingPostId, setEditingPostId] = useState(null);
     const [editInitial, setEditInitial] = useState(null);
     const [editSaving, setEditSaving] = useState(false);
+    const [createPostSaving, setCreatePostSaving] = useState(false);
 
     const previousRef = useRef([]);
 
@@ -729,7 +730,9 @@ const AdminDashboard = ({
 
 
     const handleCreatePost = async (formData) => {
+        if (createPostSaving) return;
         try {
+            setCreatePostSaving(true);
             setStatusMessage("Creating post...");
 
             await addPost(formData);
@@ -744,6 +747,8 @@ const AdminDashboard = ({
             setStatusMessage(
                 err?.message || "Failed to create post."
             );
+        } finally {
+            setCreatePostSaving(false);
         }
     };
 
@@ -2263,6 +2268,7 @@ const AdminDashboard = ({
                         initial={null}
                         categories={DEPARTMENTS}
                         submitLabel="Create Post"
+                        saving={createPostSaving}
                         onSubmit={handleCreatePost}
                         onCancel={() => setShowCreatePost(false)}
                     />

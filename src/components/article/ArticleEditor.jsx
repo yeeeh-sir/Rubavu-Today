@@ -14,7 +14,7 @@ import {
   Trash2,
   Video,
 } from "lucide-react";
-import ImageUploader from "./ImageUploader";
+import ImageUploader, { formatFileSize, validateImageFile } from "./ImageUploader";
 import ArticlePreview from "./ArticlePreview";
 
 const IMAGE_POSITIONS = [
@@ -59,8 +59,8 @@ const ArticleEditor = ({
   authorText = "",
   submitLabel = "Publish",
   saving = false,
-  onSubmit = () => {},
-  onCancel = () => {},
+  onSubmit = () => { },
+  onCancel = () => { },
 }) => {
   const [title, setTitle] = useState(initial?.title || "");
   const [subtitle, setSubtitle] = useState(
@@ -86,6 +86,34 @@ const ArticleEditor = ({
   const headerSource = headerFile
     ? URL.createObjectURL(headerFile)
     : initial?.image || initial?.featured_image || null;
+
+  const MAX_IMAGE_BYTES = 15 * 1024 * 1024;
+  const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+
+  const validateHeaderFile = (file) => {
+    if (!file) return "No file selected.";
+
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      return "Unsupported image format. Only JPG, PNG, WEBP, and GIF are allowed.";
+    }
+
+    if (file.size > MAX_IMAGE_BYTES) {
+      return "Image is too large. Maximum allowed size is 15 MB.";
+    }
+
+    return "";
+  };
+
+  const setValidatedHeaderFile = (file) => {
+    const message = validateHeaderFile(file);
+    if (message) {
+      setHeaderError(message);
+      setHeaderFile(null);
+      return;
+    }
+    setHeaderError("");
+    setHeaderFile(file);
+  };
 
   const addBlock = (type) => {
     const base = { type };
@@ -354,7 +382,7 @@ const ArticleEditor = ({
               multiple={false}
               label="Drag the header image here"
               onAdd={(files) => {
-                setHeaderFile(files[0] || null);
+                setValidatedHeaderFile(files[0] || null);
               }}
             />
           )}
@@ -375,6 +403,18 @@ const ArticleEditor = ({
                   headline.
                 </p>
 
+                {headerFile && (
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+                    <p className="max-w-full truncate text-xs font-semibold text-slate-700">
+                      {headerFile.name}
+                    </p>
+                    <p className="text-[10px] text-slate-400">
+                      {formatFileSize(headerFile.size)} ·{" "}
+                      {headerFile.type || "image"}
+                    </p>
+                  </div>
+                )}
+
                 <div className="flex flex-wrap gap-2">
                   <label
                     className="cursor-pointer rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
@@ -382,11 +422,12 @@ const ArticleEditor = ({
                     Replace image
                     <input
                       type="file"
-                      accept="image/*"
+                      accept="image/jpeg,image/png,image/webp,image/gif"
                       className="hidden"
                       onChange={(e) => {
                         const file = e.target.files?.[0];
-                        if (file) setHeaderFile(file);
+                        if (file) setValidatedHeaderFile(file);
+                        else setHeaderError("");
                         e.target.value = "";
                       }}
                     />
@@ -394,7 +435,10 @@ const ArticleEditor = ({
 
                   <button
                     type="button"
-                    onClick={() => setHeaderFile(null)}
+                    onClick={() => {
+                      setHeaderFile(null);
+                      setHeaderError("");
+                    }}
                     className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
                   >
                     Remove
@@ -434,11 +478,10 @@ const ArticleEditor = ({
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={() => handleDropBlock(index)}
                 onDragEnd={() => setDragIndex(null)}
-                className={`group rounded-2xl border bg-white transition ${
-                  dragIndex === index
+                className={`group rounded-2xl border bg-white transition ${dragIndex === index
                     ? "border-blue-400 ring-2 ring-blue-100"
                     : "border-slate-200"
-                }`}
+                  }`}
               >
                 <div className="flex items-center gap-1 border-b border-slate-100 px-3 py-2">
                   <span className="cursor-grab text-slate-400">
@@ -559,21 +602,32 @@ const ArticleEditor = ({
                           </div>
 
                           <div className="flex flex-col items-start justify-center gap-2">
+                            {block.error && (
+                              <p className="rounded-lg bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-600">
+                                {block.error}
+                              </p>
+                            )}
                             <label
                               className="cursor-pointer rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
                             >
                               Replace image
                               <input
                                 type="file"
-                                accept="image/*"
+                                accept="image/jpeg,image/png,image/webp,image/gif"
                                 className="hidden"
                                 onChange={(e) => {
                                   const file = e.target.files?.[0];
                                   if (file) {
-                                    updateBlock(index, {
-                                      file,
-                                      url: URL.createObjectURL(file),
-                                    });
+                                    const message = validateImageFile(file);
+                                    if (message) {
+                                      updateBlock(index, { error: message });
+                                    } else {
+                                      updateBlock(index, {
+                                        file,
+                                        url: URL.createObjectURL(file),
+                                        error: "",
+                                      });
+                                    }
                                   }
                                   e.target.value = "";
                                 }}
@@ -585,6 +639,7 @@ const ArticleEditor = ({
                                 updateBlock(index, {
                                   file: null,
                                   url: "",
+                                  error: "",
                                 })
                               }
                               className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-50"

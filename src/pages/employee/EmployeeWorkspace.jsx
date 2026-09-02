@@ -384,6 +384,7 @@ function Employee() {
 
 
   const handleSubmit = async (formData) => {
+    if (actionLoading) return;
     setActionLoading(true);
     setError("");
 

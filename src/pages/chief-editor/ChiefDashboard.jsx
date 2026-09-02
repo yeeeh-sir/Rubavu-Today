@@ -185,6 +185,7 @@ export default function ChiefDashboard({ onLogout }) {
 
 
   const handleSubmit = async (formData) => {
+    if (saving) return;
     setMessage("");
     setError("");
 

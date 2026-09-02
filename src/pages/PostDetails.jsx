@@ -419,7 +419,19 @@ export default function PostDetails() {
     }
   }, [post]);
 
+  const videoSourceUrl = useMemo(() => {
+    if (!post) return "";
 
+    if (post.youtube_url && String(post.youtube_url).trim()) {
+      return String(post.youtube_url).trim();
+    }
+
+    const videoBlock = contentBlocks.find(
+      (block) => block && block.type === "video" && block.url && String(block.url).trim()
+    );
+
+    return videoBlock ? String(videoBlock.url).trim() : "";
+  }, [post, contentBlocks]);
 
   const articleBlocks = useMemo(() => {
     const count = inlineParagraphs.length;
@@ -1109,6 +1121,42 @@ export default function PostDetails() {
                       allowFullScreen
                     />
                   </div>
+                </div>
+              )}
+
+              {videoSourceUrl && (
+                <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-xl border border-red-200 bg-red-50 p-4 print:hidden">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-red-600 text-white shadow-sm">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-6 w-6" aria-hidden="true">
+                        <path d="M23.5 6.19a3.02 3.02 0 0 0-2.12-2.14C19.5 3.55 12 3.55 12 3.55s-7.5 0-9.38.5A3.02 3.02 0 0 0 .5 6.19C0 8.07 0 12 0 12s0 3.93.5 5.81a3.02 3.02 0 0 0 2.12 2.14c1.88.5 9.38.5 9.38.5s7.5 0 9.38-.5a3.02 3.02 0 0 0 2.12-2.14C24 15.93 24 12 24 12s0-3.93-.5-5.81ZM9.55 15.57V8.43L15.82 12l-6.27 3.57Z" />
+                      </svg>
+                    </span>
+                    <div className="min-w-0">
+                      <p className="font-body text-sm font-bold text-slate-900">
+                        {language === "rw" ? "" : "Watch this video on Yand ouTube"}
+                      </p>
+                      <a
+                        href={videoSourceUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-0.5 inline-block max-w-full break-all font-body text-xs text-red-700 underline decoration-red-300 underline-offset-2 hover:text-red-800"
+                      >
+                        {videoSourceUrl}
+                      </a>
+                    </div>
+                  </div>
+                  <a
+                    href={videoSourceUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-red-600 px-5 py-2.5 font-body text-xs font-bold uppercase tracking-[0.06em] text-white shadow-sm transition hover:bg-red-700"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4" aria-hidden="true">
+                      <path d="M7 17 17 7M7 7h10v10" />
+                    </svg>
+                    {language === "rw" ? "Reba kuri YouTube" : "Watch on YouTube"}
+                  </a>
                 </div>
               )}
 

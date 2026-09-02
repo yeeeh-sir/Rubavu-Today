@@ -1,4 +1,5 @@
 import React from "react";
+import { useLanguage } from "../../context/LanguageContext";
 
 const normalizeImageUrl = (url) => {
   if (!url) return null;
@@ -144,6 +145,7 @@ const ArticleRenderer = ({
   onImageDownload = null,
   showHero = true,
 }) => {
+  const { language } = useLanguage();
   const heroSource = normalizeImageUrl(hero || post?.image || post?.featured_image || null);
   const heroUrlSource = normalizeImageUrl(heroUrl || heroSource);
 
@@ -285,6 +287,19 @@ const ArticleRenderer = ({
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
             />
+          </div>
+          <div className="mt-3">
+            <a
+              href={block.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2.5 font-body text-xs font-bold uppercase tracking-[0.05em] text-white transition hover:bg-red-700"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4" aria-hidden="true">
+                <path d="M23.5 6.19a3.02 3.02 0 0 0-2.12-2.14C19.5 3.55 12 3.55 12 3.55s-7.5 0-9.38.5A3.02 3.02 0 0 0 .5 6.19C0 8.07 0 12 0 12s0 3.93.5 5.81a3.02 3.02 0 0 0 2.12 2.14c1.88.5 9.38.5 9.38.5s7.5 0 9.38-.5a3.02 3.02 0 0 0 2.12-2.14C24 15.93 24 12 24 12s0-3.93-.5-5.81ZM9.55 15.57V8.43L15.82 12l-6.27 3.57Z" />
+              </svg>
+              {language === "rw" ? "Reba kuri YouTube" : "Watch on YouTube"}
+            </a>
           </div>
         </div>
       );

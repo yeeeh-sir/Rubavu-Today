@@ -1,27 +1,69 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import { Upload } from "lucide-react";
+
+const MAX_FILE_SIZE_BYTES = 15 * 1024 * 1024;
+
+const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+
+export const formatFileSize = (bytes) => {
+  if (!Number.isFinite(bytes) || bytes < 0) return "";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+};
+
+export const validateImageFile = (file) => {
+  if (!file) return "No file selected.";
+
+  if (!ALLOWED_TYPES.includes(file.type)) {
+    return "Unsupported image format. Only JPG, PNG, WEBP, and GIF are allowed.";
+  }
+
+  if (file.size > MAX_FILE_SIZE_BYTES) {
+    return "Image is too large. Maximum allowed size is 15 MB.";
+  }
+
+  return "";
+};
 
 const ImageUploader = ({
   onAdd,
   multiple = false,
   label = "Drag images here",
-  hint = "PNG, JPG or WEBP",
+  hint = "PNG, JPG, WEBP or GIF (max 15 MB)",
 }) => {
   const [dragging, setDragging] = useState(false);
-  const inputRef = React.useRef(null);
+  const [error, setError] = useState("");
+  const inputRef = useRef(null);
+
+  const validateFile = useCallback(validateImageFile, []);
 
   const handleFiles = useCallback(
     (fileList) => {
-      const files = Array.from(fileList || []);
-      const images = files.filter((file) =>
-        /^image\//i.test(file.type || "")
+      const files = Array.from(fileList || []).filter(
+        (file) => /^image\//i.test(file.type || "")
       );
 
-      if (images.length > 0 && onAdd) {
-        onAdd(images);
+      if (files.length === 0) {
+        setError("Please select an image file.");
+        return;
+      }
+
+      const firstInvalid = files
+        .map((file) => ({ file, message: validateFile(file) }))
+        .find((entry) => entry.message);
+
+      if (firstInvalid) {
+        setError(firstInvalid.message);
+        return;
+      }
+
+      setError("");
+      if (onAdd) {
+        onAdd(files);
       }
     },
-    [onAdd]
+    [onAdd, validateFile]
   );
 
   return (
@@ -29,7 +71,10 @@ const ImageUploader = ({
       <div
         role="button"
         tabIndex={0}
-        onClick={() => inputRef.current?.click()}
+        onClick={() => {
+          setError("");
+          inputRef.current?.click();
+        }}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
@@ -62,10 +107,16 @@ const ImageUploader = ({
         <span className="text-[10px] text-slate-400">{hint}</span>
       </div>
 
+      {error && (
+        <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-xs font-semibold text-red-600">
+          {error}
+        </p>
+      )}
+
       <input
         ref={inputRef}
         type="file"
-        accept="image/*"
+        accept="image/jpeg,image/png,image/webp,image/gif"
         multiple={multiple}
         className="hidden"
         onChange={(e) => {
