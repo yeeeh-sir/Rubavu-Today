@@ -1,5 +1,6 @@
 import React from "react";
 import { useLanguage } from "../../context/LanguageContext";
+import { getYouTubeEmbedUrl } from "../../utils/video";
 
 const normalizeImageUrl = (url) => {
   if (!url) return null;
@@ -22,23 +23,7 @@ const normalizeImageUrl = (url) => {
   return value;
 };
 
-const getVideoEmbed = (url) => {
-  if (!url) return null;
-
-  let videoId = "";
-
-  if (url.includes("youtu.be/")) {
-    videoId = url.split("youtu.be/")[1]?.split("?")[0];
-  } else if (url.includes("watch?v=")) {
-    videoId = url.split("watch?v=")[1]?.split("&")[0];
-  } else if (url.includes("/embed/")) {
-    videoId = url.split("/embed/")[1]?.split("?")[0];
-  }
-
-  return videoId
-    ? `https://www.youtube.com/embed/${videoId}`
-    : null;
-};
+const getVideoEmbed = (url) => getYouTubeEmbedUrl(url);
 
 const positionClasses = {
   full: "mt-10 mb-2 w-full",
@@ -270,7 +255,7 @@ const ArticleRenderer = ({
     if (type === "video") {
       const embed = getVideoEmbed(block.url);
 
-      if (!embed) {
+      if (!embed && !String(block.url || "").trim()) {
         return null;
       }
 
@@ -279,15 +264,26 @@ const ArticleRenderer = ({
           key={`v-${index}`}
           className="my-10 clear-both md:clear-both"
         >
-          <div className="relative aspect-video w-full overflow-hidden rounded-2xl bg-black shadow-sm">
-            <iframe
-              src={embed}
-              title={post?.title || "Embedded video"}
-              className="absolute inset-0 h-full w-full"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            />
-          </div>
+          {embed ? (
+            <div className="relative aspect-video w-full overflow-hidden rounded-2xl bg-black shadow-sm">
+              <iframe
+                src={embed}
+                title={post?.title || "YouTube video"}
+                className="absolute inset-0 h-full w-full"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+              />
+            </div>
+          ) : (
+            <video
+              controls
+              playsInline
+              preload="metadata"
+              className="aspect-video w-full rounded-2xl bg-black"
+            >
+              <source src={String(block.url).trim()} />
+            </video>
+          )}
           <div className="mt-3">
             <a
               href={block.url}
