@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef, useMemo } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
+import { ThumbsUp, ThumbsDown } from "lucide-react";
 import rubavuLogo from "../Rubavu.jpeg";
 import { API_ROOT as API_URL, getPostById, getPostBySlug, getPosts, commitCommentReaction } from "../services/api";
 import { ArticleSEO } from "../components/SEO/SEO";
@@ -1244,7 +1245,7 @@ export default function PostDetails() {
                               aria-label="Kunda ibitekerezo"
                               title="Kunda"
                             >
-                              ðŸ‘{" "}
+                              <ThumbsUp className="inline-block h-3.5 w-3.5" />{" "}
                               {comment.likes || 0}
                             </button>
 
@@ -1259,7 +1260,7 @@ export default function PostDetails() {
                               aria-label="Utanze ibitekerezo"
                               title="Ntanze"
                             >
-                              ðŸ‘Ž{" "}
+                              <ThumbsDown className="inline-block h-3.5 w-3.5" />{" "}
                               {comment.dislikes || 0}
                             </button>
                           </div>
@@ -1325,7 +1326,7 @@ export default function PostDetails() {
                                       aria-label="Kunda igisubizo"
                                       title="Kunda"
                                     >
-                                      ðŸ‘{" "}
+                                      <ThumbsUp className="inline-block h-3 w-3" />{" "}
                                       {reply.likes || 0}
                                     </button>
 
@@ -1340,7 +1341,7 @@ export default function PostDetails() {
                                       aria-label="Utanze igisubizo"
                                       title="Ntanze"
                                     >
-                                      ðŸ‘Ž{" "}
+                                      <ThumbsDown className="inline-block h-3 w-3" />{" "}
                                       {reply.dislikes || 0}
                                     </button>
                                   </div>
