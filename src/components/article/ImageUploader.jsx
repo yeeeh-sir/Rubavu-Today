@@ -1,7 +1,7 @@
 import React, { useCallback, useRef, useState } from "react";
 import { Upload } from "lucide-react";
 
-const MAX_FILE_SIZE_BYTES = 120 * 1024 * 1024;
+const MAX_FILE_SIZE_BYTES = 15 * 1024 * 1024;
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 
@@ -20,7 +20,7 @@ export const validateImageFile = (file) => {
   }
 
   if (file.size > MAX_FILE_SIZE_BYTES) {
-    return "Ifoto ni nini cyane. Ubunini bwasabwe ntiburenge 120 MB.";
+    return "Ifoto ni nini cyane. Ubunini bwasabwe ntiburenge 15 MB.";
   }
 
   return "";
@@ -30,7 +30,7 @@ const ImageUploader = ({
   onAdd,
   multiple = false,
   label = "Shyira amafoto hano",
-  hint = "PNG, JPG, WEBP cyangwa GIF (max 120 MB)",
+  hint = "PNG, JPG, WEBP cyangwa GIF (max 15 MB)",
 }) => {
   const [dragging, setDragging] = useState(false);
   const [error, setError] = useState("");
