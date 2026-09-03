@@ -35,6 +35,7 @@ import {
 
 import { DashboardLayout } from "../../components/dashboard";
 import ArticleEditor from "../../components/article/ArticleEditor";
+import { MessageSquare, Eye, EyeOff, ChevronDown, ChevronRight } from "lucide-react";
 
 const API_URL = API_ROOT;
 
@@ -91,6 +92,7 @@ const AdminDashboard = ({
     const [allComments, setAllComments] = useState([]);
     const [loadingComments, setLoadingComments] = useState(true);
     const [commentsError, setCommentsError] = useState("");
+    const [showAllComments, setShowAllComments] = useState(false);
 
     const [editingPostId, setEditingPostId] = useState(null);
     const [editInitial, setEditInitial] = useState(null);
@@ -329,12 +331,7 @@ const AdminDashboard = ({
 
 
     const modalOpen =
-        showCreatePost ||
-        showCreateEmployee ||
         showCreateChief ||
-        showCreateAd ||
-        showChangePassword ||
-        showChangeEmail ||
         showEditEmployee ||
         showEditChief ||
         showEditAd ||
@@ -350,6 +347,29 @@ const AdminDashboard = ({
             document.body.style.overflow = originalOverflow;
         };
     }, [modalOpen]);
+
+    const inlinePanelId = showCreatePost
+        ? "panel-create-post"
+        : showCreateAd
+            ? "panel-create-ad"
+            : showCreateEmployee
+                ? "panel-create-employee"
+                : showChangePassword
+                    ? "panel-change-password"
+                    : showChangeEmail
+                        ? "panel-change-email"
+                        : null;
+
+    useEffect(() => {
+        if (!inlinePanelId) return;
+
+        const timer = setTimeout(() => {
+            const el = document.getElementById(inlinePanelId);
+            if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 50);
+
+        return () => clearTimeout(timer);
+    }, [inlinePanelId]);
 
 
 
@@ -883,6 +903,19 @@ const AdminDashboard = ({
         }
     };
 
+    const openChangeEmail = () => {
+        setNewEmail("");
+        setCurrentPassword("");
+        setShowChangeEmail(true);
+    };
+
+    const openChangePassword = () => {
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+        setShowChangePassword(true);
+    };
+
 
 
 
@@ -1339,14 +1372,14 @@ const AdminDashboard = ({
                             </button>
 
                             <button
-                                onClick={() => setShowChangePassword(true)}
+                                onClick={() => openChangePassword()}
                                 className="rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-sm font-medium text-slate-600 shadow-sm transition hover:bg-slate-50 sm:px-3"
                             >
                                 Hindura ijambobanga
                             </button>
 
                             <button
-                                onClick={() => setShowChangeEmail(true)}
+                                onClick={() => openChangeEmail()}
                                 className="rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-sm font-medium text-slate-600 shadow-sm transition hover:bg-slate-50 sm:px-3"
                             >
                                 Hindura imeyili
@@ -1403,6 +1436,344 @@ const AdminDashboard = ({
                     </div>
                 </header>
 
+
+                {showCreatePost && (
+                    <div className="mx-auto w-full max-w-[1700px] px-3 sm:px-6 lg:px-8">
+                        <InlinePanel
+                            id="panel-create-post"
+                            title="Kora Inkuru"
+                            description="Onjera inkuru nshya mu miryango."
+                            onClose={() => setShowCreatePost(false)}
+                        >
+                            <ArticleEditor
+                                key={postEditorKey}
+                                initial={null}
+                                categories={DEPARTMENTS}
+                                submitLabel="Kora inkuru"
+                                saving={createPostSaving}
+                                onSubmit={handleCreatePost}
+                                onCancel={() => setShowCreatePost(false)}
+                            />
+                        </InlinePanel>
+                    </div>
+                )}
+
+                {showCreateAd && (
+                    <div className="mx-auto w-full max-w-[1700px] px-3 sm:px-6 lg:px-8">
+                        <InlinePanel
+                            id="panel-create-ad"
+                            title="Create Advertisement"
+                            description="Add a new advertisement to the site."
+                            onClose={() => setShowCreateAd(false)}
+                        >
+                            <form
+                                onSubmit={(e) => { e.preventDefault(); handleCreateAd(); }}
+                            >
+                                <div className="space-y-5 p-5 sm:p-7">
+                                    <div className="grid gap-5 sm:grid-cols-2">
+                                        <FormField label="Title">
+                                            <input
+                                                value={adTitle}
+                                                onChange={(e) =>
+                                                    setAdTitle(e.target.value)
+                                                }
+                                                className="form-input"
+                                                placeholder="Advertisement title"
+                                            />
+                                        </FormField>
+
+                                        <FormField label="Position">
+                                            <select
+                                                value={adPosition}
+                                                onChange={(e) =>
+                                                    setAdPosition(e.target.value)
+                                                }
+                                                className="form-input"
+                                            >
+                                                <option value="">
+                                                    Select position
+                                                </option>
+
+                                                {adPositions.map((position) => (
+                                                    <option key={position} value={position}>
+                                                        {position}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </FormField>
+                                    </div>
+
+                                    <div className="grid gap-5 sm:grid-cols-2">
+                                        <FormField label="Target URL">
+                                            <input
+                                                value={adTargetUrl}
+                                                onChange={(e) =>
+                                                    setAdTargetUrl(e.target.value)
+                                                }
+                                                placeholder="https://example.com"
+                                                className="form-input"
+                                            />
+                                        </FormField>
+
+                                        <FormField label="Fallback Link (optional)">
+                                            <input
+                                                value={adLink}
+                                                onChange={(e) =>
+                                                    setAdLink(e.target.value)
+                                                }
+                                                placeholder="Optional internal link or campaign id"
+                                                className="form-input"
+                                            />
+                                        </FormField>
+                                    </div>
+
+                                    <FormField label="Description (optional)">
+                                        <textarea
+                                            value={adDescription}
+                                            onChange={(e) =>
+                                                setAdDescription(e.target.value)
+                                            }
+                                            rows={4}
+                                            className="form-input resize-none"
+                                            placeholder="Advertisement description"
+                                        />
+                                    </FormField>
+
+                                    <div className="grid gap-4 sm:grid-cols-3">
+                                        <FormField label="Start Date">
+                                            <input
+                                                type="date"
+                                                value={adStartDate}
+                                                onChange={(e) =>
+                                                    setAdStartDate(e.target.value)
+                                                }
+                                                className="form-input"
+                                            />
+                                        </FormField>
+
+                                        <FormField label="End Date">
+                                            <input
+                                                type="date"
+                                                value={adEndDate}
+                                                onChange={(e) =>
+                                                    setAdEndDate(e.target.value)
+                                                }
+                                                className="form-input"
+                                            />
+                                        </FormField>
+
+                                        <FormField label="Status">
+                                            <select
+                                                value={adStatus}
+                                                onChange={(e) =>
+                                                    setAdStatus(e.target.value)
+                                                }
+                                                className="form-input"
+                                            >
+                                                <option value="active">
+                                                    Active
+                                                </option>
+
+                                                <option value="inactive">
+                                                    Inactive
+                                                </option>
+                                            </select>
+                                        </FormField>
+                                    </div>
+
+                                    <FormField label="Image (optional)">
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={(e) =>
+                                                setAdImage(
+                                                    e.target.files?.[0] || null
+                                                )
+                                            }
+                                            className="block w-full text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-indigo-50 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-indigo-700"
+                                        />
+                                    </FormField>
+
+                                    {(adImage || adTitle || adDescription) && (
+                                        <AdPreview
+                                            image={adImage}
+                                            title={adTitle}
+                                            description={adDescription}
+                                            targetUrl={adTargetUrl}
+                                        />
+                                    )}
+                                </div>
+
+                                <div className="flex flex-col-reverse gap-2 border-t border-slate-200 bg-slate-50 px-5 py-4 sm:flex-row sm:items-center sm:justify-end sm:px-7">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowCreateAd(false)}
+                                        className="w-full rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-slate-100 sm:w-auto"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className="w-full rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg transition hover:bg-indigo-700 sm:w-auto"
+                                    >
+                                        Save Ad
+                                    </button>
+                                </div>
+                            </form>
+                        </InlinePanel>
+                    </div>
+                )}
+
+                {showChangePassword && (
+                    <div className="mx-auto w-full max-w-[1700px] px-3 sm:px-6 lg:px-8">
+                        <section
+                            id="panel-change-password"
+                            className="mb-6 mt-4 flex max-h-[calc(100dvh-9rem)] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
+                        >
+                            <div className="flex shrink-0 items-center justify-between gap-4 border-b border-slate-100 bg-slate-50/60 px-5 py-4">
+                                <div className="min-w-0">
+                                    <h3 className="text-base font-black text-slate-900">
+                                        Change password
+                                    </h3>
+                                    <p className="mt-0.5 text-xs text-slate-400">
+                                        Confirm your current password before choosing a new one.
+                                    </p>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowChangePassword(false)}
+                                    className="shrink-0 rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                                    aria-label="Close"
+                                >
+                                    ✕
+                                </button>
+                            </div>
+
+                            <form onSubmit={handleChangePassword} className="min-h-0 flex-1 space-y-5 overflow-y-auto p-5 scrollbar-thin sm:p-6">
+                                <div className="grid gap-5 sm:grid-cols-2">
+                                    <FormField label="Current password">
+                                        <input
+                                            type="password"
+                                            value={currentPassword}
+                                            onChange={(event) => setCurrentPassword(event.target.value)}
+                                            className="form-input"
+                                            autoComplete="current-password"
+                                            required
+                                        />
+                                    </FormField>
+
+                                    <FormField label="New password">
+                                        <input
+                                            type="password"
+                                            value={newPassword}
+                                            onChange={(event) => setNewPassword(event.target.value)}
+                                            className="form-input"
+                                            autoComplete="new-password"
+                                            minLength={6}
+                                            required
+                                        />
+                                    </FormField>
+                                </div>
+
+                                <FormField label="Confirm new password">
+                                    <input
+                                        type="password"
+                                        value={confirmPassword}
+                                        onChange={(event) => setConfirmPassword(event.target.value)}
+                                        className="form-input"
+                                        autoComplete="new-password"
+                                        minLength={6}
+                                        required
+                                    />
+                                </FormField>
+
+                                <div className="flex flex-col-reverse gap-2 border-t border-slate-100 pt-5 sm:flex-row sm:justify-end">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowChangePassword(false)}
+                                        className="w-full rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-slate-100 sm:w-auto"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className="w-full rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg transition hover:bg-blue-700 sm:w-auto"
+                                    >
+                                        Change password
+                                    </button>
+                                </div>
+                            </form>
+                        </section>
+                    </div>
+                )}
+
+                {showChangeEmail && (
+                    <div className="mx-auto w-full max-w-[1700px] px-3 sm:px-6 lg:px-8">
+                        <section
+                            id="panel-change-email"
+                            className="mb-6 mt-4 flex max-h-[calc(100dvh-9rem)] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
+                        >
+                            <div className="flex shrink-0 items-center justify-between gap-4 border-b border-slate-100 bg-slate-50/60 px-5 py-4">
+                                <div className="min-w-0">
+                                    <h3 className="text-base font-black text-slate-900">
+                                        Change email
+                                    </h3>
+                                    <p className="mt-0.5 text-xs text-slate-400">
+                                        Confirm your current password before changing the admin email.
+                                    </p>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowChangeEmail(false)}
+                                    className="shrink-0 rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                                    aria-label="Close"
+                                >
+                                    ✕
+                                </button>
+                            </div>
+
+                            <form onSubmit={handleChangeEmail} className="min-h-0 flex-1 space-y-5 overflow-y-auto p-5 scrollbar-thin sm:p-6">
+                                <FormField label="New email address">
+                                    <input
+                                        type="email"
+                                        value={newEmail}
+                                        onChange={(event) => setNewEmail(event.target.value)}
+                                        className="form-input"
+                                        autoComplete="email"
+                                        required
+                                    />
+                                </FormField>
+
+                                <FormField label="Current password">
+                                    <input
+                                        type="password"
+                                        value={currentPassword}
+                                        onChange={(event) => setCurrentPassword(event.target.value)}
+                                        className="form-input"
+                                        autoComplete="current-password"
+                                        required
+                                    />
+                                </FormField>
+
+                                <div className="flex flex-col-reverse gap-2 border-t border-slate-100 pt-5 sm:flex-row sm:justify-end">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowChangeEmail(false)}
+                                        className="w-full rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-slate-100 sm:w-auto"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className="w-full rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg transition hover:bg-blue-700 sm:w-auto"
+                                    >
+                                        Change email
+                                    </button>
+                                </div>
+                            </form>
+                        </section>
+                    </div>
+                )}
 
 
                 <main className="mx-auto w-full max-w-[1700px] px-3 py-4 sm:px-6 sm:py-5 lg:px-8 lg:py-7">
@@ -1483,27 +1854,52 @@ const AdminDashboard = ({
 
 
                     {/* ---- ALL COMMENTS (every reader comment on every post) ---- */}
-                    <section className="mb-5 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+                    <section className="mb-5 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
 
-                        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-
-                            <div>
-
-                                <h2 className="text-lg font-black text-slate-900">
-                                    Ibitekerezo byose
-                                </h2>
-
-                                <p className="mt-1 text-xs text-slate-400">
-                                    Reba ibisobanuro by'abasomyi ku nkuru zose.
-                                </p>
-
+                        <button
+                            type="button"
+                            onClick={() => setShowAllComments((v) => !v)}
+                            className="flex w-full items-center justify-between gap-3 px-4 py-4 text-left transition hover:bg-slate-50 sm:px-5"
+                        >
+                            <div className="flex min-w-0 items-center gap-3">
+                                <span
+                                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition ${
+                                        showAllComments
+                                            ? "bg-blue-600 text-white"
+                                            : "bg-blue-50 text-blue-600"
+                                    }`}
+                                >
+                                    <MessageSquare className="h-5 w-5" />
+                                </span>
+                                <div className="min-w-0">
+                                    <h2 className="truncate text-base font-black text-slate-900">
+                                        Ibitekerezo byose
+                                    </h2>
+                                    <p className="mt-0.5 text-xs text-slate-400">
+                                        Reba ibisobanuro by'abasomyi ku nkuru zose.
+                                    </p>
+                                </div>
                             </div>
 
-                            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">
-                                {allComments.length}
-                            </span>
+                            <div className="flex shrink-0 items-center gap-2">
+                                <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-600">
+                                    {allComments.length}
+                                </span>
+                                <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:bg-slate-100">
+                                    {showAllComments
+                                        ? <EyeOff className="h-4 w-4" />
+                                        : <Eye className="h-4 w-4" />}
+                                </span>
+                                <span className="hidden text-slate-400 sm:block">
+                                    {showAllComments
+                                        ? <ChevronDown className="h-4 w-4" />
+                                        : <ChevronRight className="h-4 w-4" />}
+                                </span>
+                            </div>
+                        </button>
 
-                        </div>
+                        {showAllComments && (
+                        <div className="border-t border-slate-100 p-4 sm:p-5">
 
                         {commentsError && (
                             <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-xs font-semibold text-red-600">
@@ -1580,9 +1976,10 @@ const AdminDashboard = ({
 
                             </div>
                         )}
+                        </div>
+                        )}
 
                     </section>
-
 
                     <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1fr)_320px] xl:gap-6">
 
@@ -2253,207 +2650,34 @@ const AdminDashboard = ({
 
 
 
-            {showCreatePost && (
-                <ModalShell
-                    onClose={() => setShowCreatePost(false)}
-                    maxWidth="max-w-2xl"
-                >
-                    <ModalHeader
-                        title="Kora Inkuru"
-                        description="Onjera inkuru nshya mu miryango."
-                        onClose={() => setShowCreatePost(false)}
-                    />
-
-                    <ArticleEditor
-                        key={postEditorKey}
-                        initial={null}
-                        categories={DEPARTMENTS}
-                        submitLabel="Kora inkuru"
-                        saving={createPostSaving}
-                        onSubmit={handleCreatePost}
-                        onCancel={() => setShowCreatePost(false)}
-                    />
-                </ModalShell>
-            )}
-
-
-
-            {showCreateAd && (
-                <ModalShell
-                    onClose={() => setShowCreateAd(false)}
-                    maxWidth="max-w-full sm:max-w-2xl"
-                >
-                    <ModalHeader
-                        title="Create Advertisement"
-                        description="Add a new advertisement to the site."
-                        onClose={() => setShowCreateAd(false)}
-                    />
-                    <form
-                        onSubmit={(e) => { e.preventDefault(); handleCreateAd(); }}
-                        className="flex min-h-0 flex-1 flex-col"
-                    >
-                        <div className="min-h-0 flex-1 space-y-5 overflow-y-auto p-4 sm:p-6">
-                            <FormField label="Title">
-                                <input
-                                    value={adTitle}
-                                    onChange={(e) =>
-                                        setAdTitle(e.target.value)
-                                    }
-                                    className="form-input"
-                                    placeholder="Advertisement title"
-                                />
-                            </FormField>
-
-                            <FormField label="Position">
-                                <select
-                                    value={adPosition}
-                                    onChange={(e) =>
-                                        setAdPosition(e.target.value)
-                                    }
-                                    className="form-input"
-                                >
-                                    <option value="">
-                                        Select position
-                                    </option>
-
-                                    {adPositions.map((position) => (
-                                        <option key={position} value={position}>
-                                            {position}
-                                        </option>
-                                    ))}
-                                </select>
-                            </FormField>
-
-                            <FormField label="Target URL">
-                                <input
-                                    value={adTargetUrl}
-                                    onChange={(e) =>
-                                        setAdTargetUrl(e.target.value)
-                                    }
-                                    placeholder="https://example.com"
-                                    className="form-input"
-                                />
-                            </FormField>
-
-                            <FormField label="Fallback Link (optional)">
-                                <input
-                                    value={adLink}
-                                    onChange={(e) =>
-                                        setAdLink(e.target.value)
-                                    }
-                                    placeholder="Optional internal link or campaign id"
-                                    className="form-input"
-                                />
-                            </FormField>
-
-                            <FormField label="Description (optional)">
-                                <textarea
-                                    value={adDescription}
-                                    onChange={(e) =>
-                                        setAdDescription(e.target.value)
-                                    }
-                                    rows={4}
-                                    className="form-input resize-none"
-                                    placeholder="Advertisement description"
-                                />
-                            </FormField>
-
-
-                            <div className="grid gap-4 sm:grid-cols-2">
-                                <FormField label="Start Date">
-                                    <input
-                                        type="date"
-                                        value={adStartDate}
-                                        onChange={(e) =>
-                                            setAdStartDate(e.target.value)
-                                        }
-                                        className="form-input"
-                                    />
-                                </FormField>
-
-                                <FormField label="End Date">
-                                    <input
-                                        type="date"
-                                        value={adEndDate}
-                                        onChange={(e) =>
-                                            setAdEndDate(e.target.value)
-                                        }
-                                        className="form-input"
-                                    />
-                                </FormField>
-                            </div>
-
-                            <FormField label="Image (optional)">
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={(e) =>
-                                        setAdImage(
-                                            e.target.files?.[0] || null
-                                        )
-                                    }
-                                    className="block w-full text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-indigo-50 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-indigo-700"
-                                />
-                            </FormField>
-
-                            {(adImage || adTitle || adDescription) && (
-                                <AdPreview
-                                    image={adImage}
-                                    title={adTitle}
-                                    description={adDescription}
-                                    targetUrl={adTargetUrl}
-                                />
-                            )}
-
-                            <FormField label="Status">
-                                <select
-                                    value={adStatus}
-                                    onChange={(e) =>
-                                        setAdStatus(e.target.value)
-                                    }
-                                    className="form-input"
-                                >
-                                    <option value="active">
-                                        Active
-                                    </option>
-
-                                    <option value="inactive">
-                                        Inactive
-                                    </option>
-                                </select>
-                            </FormField>
-                        </div>
-
-                        <ModalFooter
-                            onCancel={() => setShowCreateAd(false)}
-                            confirmText="Save Ad"
-                            confirmClass="bg-indigo-600 hover:bg-indigo-700"
-                            confirmType="submit"
-                        />
-                    </form>
-                </ModalShell>
-            )}
-
-
-
             {showCreateEmployee && (
-                <ModalShell
-                    onClose={() => setShowCreateEmployee(false)}
-                    maxWidth="max-w-md"
+                <section
+                    id="panel-create-employee"
+                    className="mb-6 scroll-mt-24 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
                 >
-                    <ModalHeader
-                        title="Create Employee"
-                        description="Create a reporter account."
-                        onClose={() =>
-                            setShowCreateEmployee(false)
-                        }
-                    />
+                    <div className="flex items-center justify-between gap-4 border-b border-slate-100 bg-slate-50/60 px-5 py-4">
+                        <div className="min-w-0">
+                            <h3 className="text-base font-black text-slate-900">
+                                Create Employee
+                            </h3>
+                            <p className="mt-0.5 text-xs text-slate-400">
+                                Create a reporter account.
+                            </p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setShowCreateEmployee(false)}
+                            className="shrink-0 rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                            aria-label="Close"
+                        >
+                            ✕
+                        </button>
+                    </div>
 
                     <form
                         onSubmit={(e) => { e.preventDefault(); handleCreateEmployee(); }}
-                        className="flex min-h-0 flex-1 flex-col"
                     >
-                        <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4 sm:p-6">
+                        <div className="space-y-3 p-5">
                             <input
                                 value={empName}
                                 onChange={(e) =>
@@ -2492,16 +2716,23 @@ const AdminDashboard = ({
                                 className="form-input"
                             />
                         </div>
-                        <ModalFooter
-                            onCancel={() =>
-                                setShowCreateEmployee(false)
-                            }
-                            confirmText="Create"
-                            confirmClass="bg-emerald-600 hover:bg-emerald-700"
-                            confirmType="submit"
-                        />
+                        <div className="flex flex-col-reverse gap-2 border-t border-slate-100 bg-slate-50 p-5 sm:flex-row sm:justify-end">
+                            <button
+                                type="button"
+                                onClick={() => setShowCreateEmployee(false)}
+                                className="w-full rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-slate-100 sm:w-auto"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                className="w-full rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg transition hover:bg-emerald-700 sm:w-auto"
+                            >
+                                Create
+                            </button>
+                        </div>
                     </form>
-                </ModalShell>
+                </section>
             )}
 
 
@@ -2585,103 +2816,6 @@ const AdminDashboard = ({
                 />
             )}
 
-            {showChangePassword && (
-                <ModalShell
-                    onClose={() => setShowChangePassword(false)}
-                    maxWidth="max-w-md"
-                >
-                    <ModalHeader
-                        title="Change password"
-                        description="Confirm your current password before choosing a new one."
-                        onClose={() => setShowChangePassword(false)}
-                    />
-
-                    <form onSubmit={handleChangePassword} className="space-y-5 p-4 sm:p-6">
-                        <FormField label="Current password">
-                            <input
-                                type="password"
-                                value={currentPassword}
-                                onChange={(event) => setCurrentPassword(event.target.value)}
-                                className="form-input"
-                                autoComplete="current-password"
-                                required
-                            />
-                        </FormField>
-
-                        <FormField label="New password">
-                            <input
-                                type="password"
-                                value={newPassword}
-                                onChange={(event) => setNewPassword(event.target.value)}
-                                className="form-input"
-                                autoComplete="new-password"
-                                minLength={6}
-                                required
-                            />
-                        </FormField>
-
-                        <FormField label="Confirm new password">
-                            <input
-                                type="password"
-                                value={confirmPassword}
-                                onChange={(event) => setConfirmPassword(event.target.value)}
-                                className="form-input"
-                                autoComplete="new-password"
-                                minLength={6}
-                                required
-                            />
-                        </FormField>
-
-                        <ModalFooter
-                            onCancel={() => setShowChangePassword(false)}
-                            confirmText="Change password"
-                            confirmType="submit"
-                        />
-                    </form>
-                </ModalShell>
-            )}
-
-            {showChangeEmail && (
-                <ModalShell
-                    onClose={() => setShowChangeEmail(false)}
-                    maxWidth="max-w-md"
-                >
-                    <ModalHeader
-                        title="Change email"
-                        description="Confirm your current password before changing the admin email."
-                        onClose={() => setShowChangeEmail(false)}
-                    />
-
-                    <form onSubmit={handleChangeEmail} className="space-y-5 p-4 sm:p-6">
-                        <FormField label="New email address">
-                            <input
-                                type="email"
-                                value={newEmail}
-                                onChange={(event) => setNewEmail(event.target.value)}
-                                className="form-input"
-                                autoComplete="email"
-                                required
-                            />
-                        </FormField>
-
-                        <FormField label="Current password">
-                            <input
-                                type="password"
-                                value={currentPassword}
-                                onChange={(event) => setCurrentPassword(event.target.value)}
-                                className="form-input"
-                                autoComplete="current-password"
-                                required
-                            />
-                        </FormField>
-
-                        <ModalFooter
-                            onCancel={() => setShowChangeEmail(false)}
-                            confirmText="Change email"
-                            confirmType="submit"
-                        />
-                    </form>
-                </ModalShell>
             )}
         </DashboardLayout>
     );
@@ -3206,11 +3340,11 @@ const ModalShell = ({
                 onClick={onClose}
             />
 
-            <div
-                className={`
+                <div
+                    className={`
                     relative z-10 flex max-h-[calc(100dvh-1rem)]
                     w-full ${maxWidth}
-                    flex-col overflow-hidden
+                    flex-col overflow-y-auto
                     rounded-2xl bg-white shadow-2xl
                     sm:max-h-[85vh]
                 `}
@@ -3220,7 +3354,6 @@ const ModalShell = ({
         </div>
     );
 };
-
 
 
 
@@ -3256,6 +3389,46 @@ const ModalHeader = ({
 
 
 
+const InlinePanel = ({
+    id,
+    title,
+    description,
+    onClose,
+    children,
+}) => {
+    return (
+        <section
+            id={id}
+            className="mb-8 scroll-mt-24 flex max-h-[calc(100dvh-9rem)] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg shadow-slate-200/50"
+        >
+            <div className="flex shrink-0 items-center justify-between gap-4 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-blue-50/40 px-5 py-4 sm:px-7">
+                <div className="min-w-0">
+                    <h3 className="text-lg font-black text-slate-900">
+                        {title}
+                    </h3>
+
+                    {description && (
+                        <p className="mt-0.5 text-sm text-slate-500">
+                            {description}
+                        </p>
+                    )}
+                </div>
+
+                <button
+                    type="button"
+                    onClick={onClose}
+                    className="shrink-0 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-800"
+                >
+                    ✕ Fungura
+                </button>
+            </div>
+
+            <div className="min-h-0 flex-1 overflow-y-auto scrollbar-thin">
+                {children}
+            </div>
+        </section>
+    );
+};
 
 
 
