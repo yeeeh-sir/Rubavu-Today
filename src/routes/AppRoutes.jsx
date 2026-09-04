@@ -34,6 +34,18 @@ const EmployeeLogin = lazy(() => import("../pages/employee/EmployeeLogin"));
 const EmployeeDashboard = lazy(() => import("../pages/employee/EmployeeDashboard"));
 const EmployeeWorkspace = lazy(() => import("../pages/employee/EmployeeWorkspace"));
 const Profile = lazy(() => import("../pages/employee/Profile"));
+const TextCleanerPage = lazy(() => import("../pages/admin/TextCleanerPage"));
+const ChangePassword = lazy(() => import("../pages/admin/ChangePassword"));
+const ChangeEmail = lazy(() => import("../pages/admin/ChangeEmail"));
+const CreatePostPage = lazy(() => import("../pages/admin/CreatePost"));
+const PostListPage = lazy(() => import("../pages/admin/PostListPage"));
+const PostPreview = lazy(() => import("../pages/admin/PostPreview"));
+const EditPost = lazy(() => import("../pages/admin/EditPost"));
+const Overview = lazy(() => import("../pages/admin/Overview"));
+const Employees = lazy(() => import("../pages/admin/Employees"));
+const ChiefEditors = lazy(() => import("../pages/admin/ChiefEditors"));
+const Advertisements = lazy(() => import("../pages/admin/Advertisements"));
+const Reports = lazy(() => import("../pages/admin/Reports"));
 
 const PublicLayout = ({ children, showHomeContent = true }) => (
     <>
@@ -184,6 +196,18 @@ function AppRoutes() {
                 <Route path="/admin/dashboard" element={<ProtectedRoute roles={["admin"]} loginPath="/admin/login"><AdminPortal /></ProtectedRoute>} />
                 <Route path="/admin/create-employee" element={<ProtectedRoute roles={["admin"]} loginPath="/admin/login"><AdminCreateEmployeePortal /></ProtectedRoute>} />
                 <Route path="/admin/create-chief-editor" element={<ProtectedRoute roles={["admin"]} loginPath="/admin/login"><AdminCreateChiefPortal /></ProtectedRoute>} />
+                <Route path="/admin/text-cleaner" element={<ProtectedRoute roles={["admin"]} loginPath="/admin/login"><TextCleanerPage /></ProtectedRoute>} />
+                <Route path="/admin/change-password" element={<ProtectedRoute roles={["admin"]} loginPath="/admin/login"><ChangePassword /></ProtectedRoute>} />
+                <Route path="/admin/change-email" element={<ProtectedRoute roles={["admin"]} loginPath="/admin/login"><ChangeEmail /></ProtectedRoute>} />
+                <Route path="/admin/posts/new" element={<ProtectedRoute roles={["admin"]} loginPath="/admin/login"><CreatePostPage /></ProtectedRoute>} />
+                <Route path="/admin/posts/:mode" element={<ProtectedRoute roles={["admin"]} loginPath="/admin/login"><PostListPage /></ProtectedRoute>} />
+                <Route path="/admin/posts/:id/view" element={<ProtectedRoute roles={["admin"]} loginPath="/admin/login"><PostPreview /></ProtectedRoute>} />
+                <Route path="/admin/posts/:id/edit" element={<ProtectedRoute roles={["admin"]} loginPath="/admin/login"><EditPost /></ProtectedRoute>} />
+                <Route path="/admin/overview" element={<ProtectedRoute roles={["admin"]} loginPath="/admin/login"><Overview /></ProtectedRoute>} />
+                <Route path="/admin/employees" element={<ProtectedRoute roles={["admin"]} loginPath="/admin/login"><Employees /></ProtectedRoute>} />
+                <Route path="/admin/chief-editors" element={<ProtectedRoute roles={["admin"]} loginPath="/admin/login"><ChiefEditors /></ProtectedRoute>} />
+                <Route path="/admin/advertisements" element={<ProtectedRoute roles={["admin"]} loginPath="/admin/login"><Advertisements /></ProtectedRoute>} />
+                <Route path="/admin/reports" element={<ProtectedRoute roles={["admin"]} loginPath="/admin/login"><Reports /></ProtectedRoute>} />
 
                 <Route path="/chief/login" element={<PublicOnlyRoute role="chief_editor" redirectTo="/chief-editor/dashboard"><ChiefLogin /></PublicOnlyRoute>} />
                 <Route path="/chief" element={<Navigate to="/chief-editor/dashboard" replace />} />

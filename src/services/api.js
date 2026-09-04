@@ -722,6 +722,11 @@ export async function getAdminPosts() {
   return request("/api/admin/posts");
 }
 
+export async function getAdminPostById(id) {
+  const data = await request(`/api/admin/posts/${id}`);
+  return data ? normalizePost(data) : null;
+}
+
 export async function getPendingPosts() {
   return request("/api/admin/posts/pending");
 }
@@ -1373,6 +1378,7 @@ const api = {
   getPost,
   getPublicPosts,
   getAdminPosts,
+  getAdminPostById,
   getPendingPosts,
   getChiefEditorPosts,
   getChiefEditorPendingPosts,

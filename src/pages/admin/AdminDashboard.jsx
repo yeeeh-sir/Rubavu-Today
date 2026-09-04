@@ -31,11 +31,14 @@ import {
     changeMyEmail,
     getAllComments,
     deleteComment,
+    getComments,
+    updatePostStatus,
 } from "../../services/api";
 
 import { DashboardLayout } from "../../components/dashboard";
 import ArticleEditor from "../../components/article/ArticleEditor";
 import { MessageSquare, Eye, EyeOff, ChevronDown, ChevronRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const API_URL = API_ROOT;
 
@@ -71,6 +74,7 @@ const AdminDashboard = ({
     onCreateChiefEditor,
     onPostAdvertisement,
 }) => {
+    const navigate = useNavigate();
     const [posts, setPosts] = useState([]);
     const [selectedDepartment, setSelectedDepartment] = useState("All");
     const [selectedStatus, setSelectedStatus] = useState(
@@ -100,6 +104,9 @@ const AdminDashboard = ({
     const [createPostSaving, setCreatePostSaving] = useState(false);
 
     const previousRef = useRef([]);
+
+    const [selectedPost, setSelectedPost] = useState(null);
+    const [loadingPostComments, setLoadingPostComments] = useState(false);
 
 
 
@@ -231,7 +238,7 @@ const AdminDashboard = ({
 
                     if (newComments > oldComments) {
                         setStatusMessage(
-                            `New comment on "${post.title || "story"}"`
+                            `Ibitekerezo bishya kuri "${post.title || "inkuru"}"`
                         );
                     }
                 });
@@ -242,7 +249,7 @@ const AdminDashboard = ({
         } catch (error) {
             console.error("loadPosts", error);
             setPosts([]);
-            setErrorMessage("Unable to load posts. Please try again.");
+            setErrorMessage("Ntibyashobotse kunyura mu nkuru. Gerageza ukundi.");
         } finally {
             setLoading(false);
         }
@@ -291,7 +298,7 @@ const AdminDashboard = ({
                 setAllComments(Array.isArray(comments) ? comments : []);
             } catch (err) {
                 console.error("loadAllComments", err);
-                setCommentsError(err?.message || "Unable to load comments.");
+                setCommentsError(err?.message || "Ntibyashobotse kunyura mu bitekerezo.");
                 setAllComments([]);
             } finally {
                 setLoadingComments(false);
@@ -307,11 +314,11 @@ const AdminDashboard = ({
 
     const handleDeleteAllComment = async (commentId) => {
         if (!commentId) {
-            setCommentsError("Unable to identify this comment.");
+            setCommentsError("Ntibyashobotse kumenya iki bitekerezo.");
             return;
         }
 
-        const confirmed = window.confirm("Remove this comment?");
+        const confirmed = window.confirm("Siba iki bitekerezo?");
         if (!confirmed) return;
 
         try {
@@ -322,10 +329,101 @@ const AdminDashboard = ({
             );
         } catch (err) {
             console.error("Delete comment error:", err);
-            setCommentsError(err?.message || "Unable to remove comment.");
+            setCommentsError(err?.message || "Ntibyashobotse kureka iki bitekerezo.");
         }
     };
 
+
+
+
+    const handleViewPost = async (post) => {
+        const postId = post?.id || post?._id;
+        let enriched = { ...post, comments: [] };
+
+        if (postId) {
+            setLoadingPostComments(true);
+            try {
+                const comments = await getComments(postId);
+                enriched.comments = Array.isArray(comments) ? comments : [];
+            } catch (err) {
+                console.error("Load post comments error:", err);
+                enriched.comments = [];
+            } finally {
+                setLoadingPostComments(false);
+            }
+        }
+
+        setSelectedPost(enriched);
+    };
+
+    const handleClosePostDetail = () => setSelectedPost(null);
+
+    const handleStatusChangeFromDetail = async (postId, newStatus) => {
+        let confirmation = "Hindura imimerere y'iyi nkuru?";
+        if (newStatus === "approved") confirmation = "Emeka iyi nkuru kandi utangaze ku rubuga?";
+        if (newStatus === "rejected") confirmation = "Anga iyi nkuru? Ntizizerekanwa ku rubuga.";
+        if (newStatus === "pending") confirmation = "Subiza iyi nkuru gusuzumwa?";
+
+        if (!window.confirm(confirmation)) return;
+
+        try {
+            setStatusMessage("Nirimo guhindura imimerere...");
+            await updatePostStatus(postId, newStatus);
+            setStatusMessage(
+                newStatus === "approved" ? "Inkuru yemewe kandi yatangajwe." :
+                newStatus === "rejected" ? "Inkuru yanze." :
+                "Inkuru yasubijwe gusuzumwa."
+            );
+            await loadPosts();
+
+            if (selectedPost && (selectedPost.id === postId || selectedPost._id === postId)) {
+                setSelectedPost((prev) => prev ? { ...prev, status: newStatus } : null);
+            }
+        } catch (error) {
+            console.error("Status update error:", error);
+            setErrorMessage(error?.message || "Ntibyashobotse guhindura imimerere.");
+        }
+    };
+
+    const handleDeletePostComment = async (commentId) => {
+        if (!commentId) return;
+        if (!window.confirm("Siba iki bitekerezo?")) return;
+
+        try {
+            await deleteComment(commentId);
+            setSelectedPost((prev) => {
+                if (!prev) return null;
+                return {
+                    ...prev,
+                    comments: (prev.comments || []).filter(
+                        (c) => (c.id ?? c.comment_id ?? c._id) !== commentId
+                    ),
+                };
+            });
+            setStatusMessage("Iki bitekerezo cyasibwe.");
+        } catch (err) {
+            console.error("Delete comment error:", err);
+            setErrorMessage(err?.message || "Ntibyashobotse kureka iki bitekerezo.");
+        }
+    };
+
+    const handleBulkDelete = async () => {
+        if (!selectedPosts.length) return;
+        if (!window.confirm(`Siba inkuru ${selectedPosts.length} zatoranijwe? Iki gikorwa ntigishobora guhitirwa.`)) return;
+
+        try {
+            setStatusMessage("Nirimo kureka inkuru...");
+            for (const id of selectedPosts) {
+                await deletePost(id);
+            }
+            clearSelection();
+            setStatusMessage("Inkuru zatoranijwe zasibwe.");
+            await loadPosts();
+        } catch (error) {
+            console.error(error);
+            setStatusMessage("Inkuru nkeyo ntizibashoye kusibwa.");
+        }
+    };
 
 
 
@@ -335,7 +433,8 @@ const AdminDashboard = ({
         showEditEmployee ||
         showEditChief ||
         showEditAd ||
-        Boolean(editingPostId);
+        Boolean(editingPostId) ||
+        Boolean(selectedPost);
 
     useEffect(() => {
         if (!modalOpen) return;
@@ -480,58 +579,58 @@ const AdminDashboard = ({
 
 
     const handleApprove = async (post) => {
-        if (!window.confirm(`Approve "${post.title}"?`)) return;
+        if (!window.confirm(`Emeka "${post.title}"?`)) return;
 
         try {
-            setStatusMessage("Approving post...");
+            setStatusMessage("Nirimo kwemera...");
             await approvePost(post.id);
-            setStatusMessage("Post approved successfully.");
+            setStatusMessage("Inkuru yemewe neza.");
             await loadPosts();
         } catch (error) {
             console.error(error);
-            setStatusMessage("Failed to approve post.");
+            setStatusMessage("Ntibyashobotse kwemera inkuru.");
         }
     };
 
     const handleReject = async (post) => {
-        if (!window.confirm(`Reject "${post.title}"?`)) return;
+        if (!window.confirm(`Anga "${post.title}"?`)) return;
 
         try {
-            setStatusMessage("Rejecting post...");
+            setStatusMessage("Nirimo kureka...");
             await rejectPost(post.id);
-            setStatusMessage("Post rejected.");
+            setStatusMessage("Inkuru yanze.");
             await loadPosts();
         } catch (error) {
             console.error(error);
-            setStatusMessage("Failed to reject post.");
+            setStatusMessage("Ntibyashobotse kunze inkuru.");
         }
     };
 
     const handlePending = async (post) => {
-        if (!window.confirm(`Move "${post.title}" back to pending?`)) return;
+        if (!window.confirm(`Subiza "${post.title}" gusuzumwa?`)) return;
 
         try {
-            setStatusMessage("Updating post status...");
+            setStatusMessage("Nirimo guhindura imimerere...");
             await reviewPost(post.id);
-            setStatusMessage("Post moved back to pending.");
+            setStatusMessage("Inkuru yasubijwe gusuzumwa.");
             await loadPosts();
         } catch (error) {
             console.error(error);
-            setStatusMessage("Failed to change status.");
+            setStatusMessage("Ntibyashobotse guhindura imimerere.");
         }
     };
 
     const handleDelete = async (post) => {
         if (
             !window.confirm(
-                `Delete "${post.title}"?\n\nThis action cannot be undone.`
+                `Siba "${post.title}"?\n\nIki gikorwa ntigishobora guhitirwa.`
             )
         ) {
             return;
         }
 
         try {
-            setStatusMessage("Deleting post...");
+            setStatusMessage("Nirimo kureka inkuru...");
 
             await deletePost(post.id);
 
@@ -539,11 +638,11 @@ const AdminDashboard = ({
                 current.filter((id) => id !== post.id)
             );
 
-            setStatusMessage("Post deleted.");
+            setStatusMessage("Inkuru yasibwe.");
             await loadPosts();
         } catch (error) {
             console.error(error);
-            setStatusMessage("Failed to delete post.");
+            setStatusMessage("Ntibyashobotse kureka inkuru.");
         }
     };
 
@@ -573,18 +672,18 @@ const AdminDashboard = ({
         if (!editingPostId) return;
 
         try {
-            setStatusMessage("Updating post...");
+            setStatusMessage("Nirimo guhindura inkuru...");
             setEditSaving(true);
 
             await updatePost(editingPostId, formData);
 
-            setStatusMessage("Post updated successfully.");
+            setStatusMessage("Inkuru yavuguruwe neza.");
             closeEdit();
             await loadPosts();
         } catch (error) {
             console.error("Update post error:", error);
             setErrorMessage(
-                error?.message || "Failed to update post."
+                error?.message || "Ntibyashobotse guhindura inkuru."
             );
         } finally {
             setEditSaving(false);
@@ -630,25 +729,25 @@ const AdminDashboard = ({
 
         if (
             !window.confirm(
-                `Approve ${selectedPosts.length} selected post(s)?`
+                `Emeka inkuru ${selectedPosts.length} zatoranijwe?`
             )
         ) {
             return;
         }
 
         try {
-            setStatusMessage("Approving selected posts...");
+            setStatusMessage("Nirimo kwemera inkuru zatoranijwe...");
 
             for (const id of selectedPosts) {
                 await approvePost(id);
             }
 
             clearSelection();
-            setStatusMessage("Selected posts approved.");
+            setStatusMessage("Inkuru zatoranijwe zemewe.");
             await loadPosts();
         } catch (error) {
             console.error(error);
-            setStatusMessage("Some posts could not be approved.");
+            setStatusMessage("Inkuru nkeyo ntizemewe.");
         }
     };
 
@@ -657,25 +756,25 @@ const AdminDashboard = ({
 
         if (
             !window.confirm(
-                `Reject ${selectedPosts.length} selected post(s)?`
+                `Anka inkuru ${selectedPosts.length} zatoranijwe?`
             )
         ) {
             return;
         }
 
         try {
-            setStatusMessage("Rejecting selected posts...");
+            setStatusMessage("Nirimo kunze inkuru zatoranijwe...");
 
             for (const id of selectedPosts) {
                 await rejectPost(id);
             }
 
             clearSelection();
-            setStatusMessage("Selected posts rejected.");
+            setStatusMessage("Inkuru zatoranijwe zanze.");
             await loadPosts();
         } catch (error) {
             console.error(error);
-            setStatusMessage("Some posts could not be rejected.");
+            setStatusMessage("Inkuru nkeyo ntizanze.");
         }
     };
 
@@ -685,16 +784,16 @@ const AdminDashboard = ({
 
     const exportPosts = () => {
         if (!filteredPosts.length) {
-            setStatusMessage("There are no posts to export.");
+            setStatusMessage("Nta nkuru ziriho kurishyiraho.");
             return;
         }
 
         const headers = [
-            "Title",
-            "Category",
-            "Status",
-            "Created Date",
-            "Comments",
+            "Umutwe",
+            "Ibyiciro",
+            "Imimerere",
+            "Itariki y'iyaremwe",
+            "Ibitekerezo",
         ];
 
         const rows = filteredPosts.map((post) => [
@@ -731,7 +830,7 @@ const AdminDashboard = ({
 
         URL.revokeObjectURL(url);
 
-        setStatusMessage("Posts exported successfully.");
+        setStatusMessage("Inkuru zarishyijweho neza.");
     };
 
 
@@ -754,11 +853,11 @@ const AdminDashboard = ({
         if (createPostSaving) return;
         try {
             setCreatePostSaving(true);
-            setStatusMessage("Creating post...");
+            setStatusMessage("Nirimo kurema inkuru...");
 
             await addPost(formData);
 
-            setStatusMessage("Post created.");
+            setStatusMessage("Inkuru yaremewe.");
             setShowCreatePost(false);
             setPostEditorKey((k) => k + 1);
 
@@ -766,7 +865,7 @@ const AdminDashboard = ({
         } catch (err) {
             console.error(err);
             setStatusMessage(
-                err?.message || "Failed to create post."
+                err?.message || "Ntibyashobotse kurema inkuru."
             );
         } finally {
             setCreatePostSaving(false);
@@ -784,13 +883,13 @@ const AdminDashboard = ({
             !empPassword.trim()
         ) {
             setStatusMessage(
-                "Name, email and password are required for employee."
+                "Izina, imeyili n'ijambo ry'ibanga birakenewe kuri umukozi."
             );
             return;
         }
 
         try {
-            setStatusMessage("Creating employee...");
+            setStatusMessage("Nirimo kurema umukozi...");
 
             await addEmployee({
                 full_name: empName,
@@ -804,7 +903,7 @@ const AdminDashboard = ({
             const emps = await getEmployees();
             setEmployees(Array.isArray(emps) ? emps : []);
 
-            setStatusMessage("Employee created.");
+            setStatusMessage("Umukozi yaremewe.");
             setShowCreateEmployee(false);
 
             setEmpName("");
@@ -814,7 +913,7 @@ const AdminDashboard = ({
         } catch (err) {
             console.error(err);
             setStatusMessage(
-                err?.message || "Failed to create employee."
+                err?.message || "Ntibyashobotse kurema umukozi."
             );
         }
     };
@@ -830,13 +929,13 @@ const AdminDashboard = ({
             !chiefPassword.trim()
         ) {
             setStatusMessage(
-                "Name, email and password are required for chief editor."
+                "Izina, imeyili n'ijambo ry'ibanga birakenewe kuri umwanditsi mukuru."
             );
             return;
         }
 
         try {
-            setStatusMessage("Creating chief editor...");
+            setStatusMessage("Nirimo kurema umwanditsi mukuru...");
 
             await addChiefEditor({
                 full_name: chiefName,
@@ -849,7 +948,7 @@ const AdminDashboard = ({
             const chiefs = await getChiefEditors();
             setChiefEditors(Array.isArray(chiefs) ? chiefs : []);
 
-            setStatusMessage("Chief editor created.");
+            setStatusMessage("Umwanditsi mukuru yaremewe.");
             setShowCreateChief(false);
 
             setChiefName("");
@@ -859,7 +958,7 @@ const AdminDashboard = ({
         } catch (err) {
             console.error(err);
             setStatusMessage(
-                err?.message || "Failed to create chief editor."
+                err?.message || "Ntibyashobotse kurema umwanditsi mukuru."
             );
         }
     };
@@ -868,24 +967,24 @@ const AdminDashboard = ({
         event.preventDefault();
 
         if (newPassword.length < 6) {
-            setStatusMessage("New password must be at least 6 characters.");
+            setStatusMessage("Ijambo ry'ibanga rishya rigomba kuba n'ibyangombwa 6 ku bundle.");
             return;
         }
 
         if (newPassword !== confirmPassword) {
-            setStatusMessage("New passwords do not match.");
+            setStatusMessage("Ijambo ry'ibanga rishya n'iryo ririho ntiringana.");
             return;
         }
 
         try {
             await changeMyPassword(currentPassword, newPassword);
-            setStatusMessage("Password changed successfully.");
+            setStatusMessage("Ijambo ry'ibanga ryahinduwe neza.");
             setShowChangePassword(false);
             setCurrentPassword("");
             setNewPassword("");
             setConfirmPassword("");
         } catch (error) {
-            setStatusMessage(error?.message || "Unable to change password.");
+            setStatusMessage(error?.message || "Ntibyashobotse guhindura ijambo ry'ibanga.");
         }
     };
 
@@ -894,26 +993,13 @@ const AdminDashboard = ({
 
         try {
             await changeMyEmail(newEmail, currentPassword);
-            setStatusMessage("Email changed successfully.");
+            setStatusMessage("Imeyili yahinduwe neza.");
             setShowChangeEmail(false);
             setNewEmail("");
             setCurrentPassword("");
         } catch (error) {
-            setStatusMessage(error?.message || "Unable to change email.");
+            setStatusMessage(error?.message || "Ntibyashobotse guhindura imeyili.");
         }
-    };
-
-    const openChangeEmail = () => {
-        setNewEmail("");
-        setCurrentPassword("");
-        setShowChangeEmail(true);
-    };
-
-    const openChangePassword = () => {
-        setCurrentPassword("");
-        setNewPassword("");
-        setConfirmPassword("");
-        setShowChangePassword(true);
     };
 
 
@@ -923,13 +1009,13 @@ const AdminDashboard = ({
     const handleCreateAd = async () => {
         if (!adTitle.trim() || !adPosition.trim()) {
             setStatusMessage(
-                "Title and position are required for advertisement."
+                "Umutwe n'ahantu birakenewe kuri itangazo."
             );
             return;
         }
 
         try {
-            setStatusMessage("Creating advertisement...");
+            setStatusMessage("Nirimo kurema itangazo...");
 
             await addAdvertisement({
                 title: adTitle,
@@ -946,7 +1032,7 @@ const AdminDashboard = ({
             const ads = await getAdvertisements();
             setAdvertisements(Array.isArray(ads) ? ads : []);
 
-            setStatusMessage("Advertisement created.");
+            setStatusMessage("Itangazo ryaremewe.");
             setShowCreateAd(false);
 
             setAdTitle("");
@@ -961,7 +1047,7 @@ const AdminDashboard = ({
         } catch (err) {
             console.error(err);
             setStatusMessage(
-                err?.message || "Failed to create advertisement."
+                err?.message || "Ntibyashobotse kurema itangazo."
             );
         }
     };
@@ -978,12 +1064,12 @@ const AdminDashboard = ({
 
     const handleSaveEmployeeEdit = async () => {
         if (!editEmpName.trim() || !editEmpEmail.trim()) {
-            setStatusMessage("Name and email are required.");
+            setStatusMessage("Izina n'imeyili birakenewe.");
             return;
         }
 
         try {
-            setStatusMessage("Saving employee...");
+            setStatusMessage("Nirimo kubika umukozi...");
             await updateEmployee(editEmpId, {
                 full_name: editEmpName,
                 email: editEmpEmail,
@@ -999,27 +1085,27 @@ const AdminDashboard = ({
                 console.error('refresh employees', err2);
             }
 
-            setStatusMessage("Employee updated.");
+            setStatusMessage("Umukozi yavuguruwe.");
             setShowEditEmployee(false);
         } catch (err) {
             console.error(err);
-            setStatusMessage(err?.message || "Failed to update employee.");
+            setStatusMessage(err?.message || "Ntibyashobotse guhindura umukozi.");
         }
     };
 
     const handleDeleteEmployee = async (id) => {
-        if (!window.confirm('Delete this employee? This cannot be undone.')) return;
+        if (!window.confirm('Siba iyi mukozi? Iki gikorwa ntigishobora guhitirwa.')) return;
 
         try {
-            setStatusMessage('Deleting employee...');
+            setStatusMessage('Nirimo kureka umukozi...');
             await deleteEmployee(id);
 
             const emps = await getEmployees();
             setEmployees(Array.isArray(emps) ? emps : []);
-            setStatusMessage('Employee deleted.');
+            setStatusMessage('Umukozi yasibwe.');
         } catch (err) {
             console.error(err);
-            setStatusMessage(err?.message || 'Failed to delete employee.');
+            setStatusMessage(err?.message || 'Ntibyashobotse kureka umukozi.');
         }
     };
 
@@ -1035,12 +1121,12 @@ const AdminDashboard = ({
 
     const handleSaveChiefEdit = async () => {
         if (!editChiefName.trim() || !editChiefEmail.trim()) {
-            setStatusMessage("Name and email are required.");
+            setStatusMessage("Izina n'imeyili birakenewe.");
             return;
         }
 
         try {
-            setStatusMessage("Saving chief editor...");
+            setStatusMessage("Nirimo kubika umwanditsi mukuru...");
             await updateChiefEditor(editChiefId, {
                 full_name: editChiefName,
                 email: editChiefEmail,
@@ -1056,27 +1142,27 @@ const AdminDashboard = ({
                 console.error('refresh chiefs', err2);
             }
 
-            setStatusMessage("Chief editor updated.");
+            setStatusMessage("Umwanditsi mukuru yavuguruwe.");
             setShowEditChief(false);
         } catch (err) {
             console.error(err);
-            setStatusMessage(err?.message || "Failed to update chief editor.");
+            setStatusMessage(err?.message || "Ntibyashobotse guhindura umwanditsi mukuru.");
         }
     };
 
     const handleDeleteChief = async (id) => {
-        if (!window.confirm('Delete this chief editor? This cannot be undone.')) return;
+        if (!window.confirm('Siba uyu mwanditsi mukuru? Iki gikorwa ntigishobora guhitirwa.')) return;
 
         try {
-            setStatusMessage('Deleting chief editor...');
+            setStatusMessage('Nirimo kureka umwanditsi mukuru...');
             await deleteChiefEditor(id);
 
             const chiefs = await getChiefEditors();
             setChiefEditors(Array.isArray(chiefs) ? chiefs : []);
-            setStatusMessage('Chief editor deleted.');
+            setStatusMessage('Umwanditsi mukuru yasibwe.');
         } catch (err) {
             console.error(err);
-            setStatusMessage(err?.message || 'Failed to delete chief editor.');
+            setStatusMessage(err?.message || 'Ntibyashobotse kureka umwanditsi mukuru.');
         }
     };
 
@@ -1097,12 +1183,12 @@ const AdminDashboard = ({
 
     const handleSaveAdEdit = async () => {
         if (!editAdTitle.trim() || !editAdPosition.trim()) {
-            setStatusMessage('Title and position are required.');
+            setStatusMessage("Umutwe n'ahantu birakenewe.");
             return;
         }
 
         try {
-            setStatusMessage('Saving advertisement...');
+            setStatusMessage("Nirimo kubika itangazo...");
 
             await updateAdvertisement(editAdId, {
                 title: editAdTitle,
@@ -1119,27 +1205,27 @@ const AdminDashboard = ({
             const ads = await getAdvertisements();
             setAdvertisements(Array.isArray(ads) ? ads : []);
 
-            setStatusMessage('Advertisement updated.');
+            setStatusMessage('Itangazo ryavuguruwe.');
             setShowEditAd(false);
         } catch (err) {
             console.error(err);
-            setStatusMessage(err?.message || 'Failed to update advertisement.');
+            setStatusMessage(err?.message || 'Ntibyashobotse guhindura itangazo.');
         }
     };
 
     const handleDeleteAd = async (id) => {
-        if (!window.confirm('Delete this advertisement? This cannot be undone.')) return;
+        if (!window.confirm('Siba itangazo? Iki gikorwa ntigishobora guhitirwa.')) return;
 
         try {
-            setStatusMessage('Deleting advertisement...');
+            setStatusMessage('Nirimo kureka itangazo...');
             await deleteAdvertisement(id);
 
             const ads = await getAdvertisements();
             setAdvertisements(Array.isArray(ads) ? ads : []);
-            setStatusMessage('Advertisement deleted.');
+            setStatusMessage('Itangazo ryasibwe.');
         } catch (err) {
             console.error(err);
-            setStatusMessage(err?.message || 'Failed to delete advertisement.');
+            setStatusMessage(err?.message || 'Ntibyashobotse kureka itangazo.');
         }
     };
 
@@ -1148,20 +1234,20 @@ const AdminDashboard = ({
 
         if (!id) return;
 
-        if (!window.confirm('Send this advertisement to live (set status to active)?')) return;
+        if (!window.confirm('Ohora itangazo ririho (shyira imimerere ku "rirakora")?')) return;
 
         try {
-            setStatusMessage('Sending advertisement...');
+            setStatusMessage('Nirimo kohora itangazo...');
 
             await updateAdvertisement(id, { status: 'active' });
 
             const ads = await getAdvertisements();
             setAdvertisements(Array.isArray(ads) ? ads : []);
 
-            setStatusMessage('Advertisement sent (activated).');
+            setStatusMessage('Itangazo ryohotse (ryakoze).');
         } catch (err) {
             console.error('send ad', err);
-            setStatusMessage(err?.message || 'Failed to send advertisement.');
+            setStatusMessage(err?.message || 'Ntibyashobotse kohora itangazo.');
         }
     };
 
@@ -1173,7 +1259,7 @@ const AdminDashboard = ({
         if (onCreateEmployee) {
             quickAction(
                 onCreateEmployee,
-                "Employee management is ready to connect."
+                "Kongera umukozi birabonetse."
             );
         } else {
             setShowCreateEmployee(true);
@@ -1186,7 +1272,7 @@ const AdminDashboard = ({
         } else if (onCreateChiefEditor) {
             quickAction(
                 onCreateChiefEditor,
-                "Chief Editor management is ready to connect."
+                "Kongera umwanditsi mukuru birabonetse."
             );
         } else {
             setShowCreateChief(true);
@@ -1197,7 +1283,7 @@ const AdminDashboard = ({
         if (onPostAdvertisement) {
             quickAction(
                 onPostAdvertisement,
-                "Advertisement management is ready to connect."
+                "Kongera itangazo birabonetse."
             );
         } else {
             setShowCreateAd(true);
@@ -1206,7 +1292,7 @@ const AdminDashboard = ({
 
     const navSections = [
         {
-            label: "Dashboard",
+            label: "Imbonerahamwe",
             items: [
                 { icon: <span>▦</span>, label: "Imbonerahamwe", path: "/admin/dashboard" },
                 { icon: <span>⏳</span>, label: "Zitegereje gusuzumwa", badge: statistics.pending, onClick: () => { setSelectedStatus(POST_STATUSES.PENDING); } },
@@ -1221,6 +1307,7 @@ const AdminDashboard = ({
                 { icon: <span>🛡️</span>, label: "Abanditsi Bakuru", onClick: openChiefManager },
                 { icon: <span>📢</span>, label: "Kwamamaza", onClick: openAdvertisementManager },
                 { icon: <span>📥</span>, label: "Kuramo raporo", onClick: () => { exportPosts(); } },
+                { icon: <span>🧹</span>, label: "Text Cleaner", path: "/admin/text-cleaner" },
             ],
         },
     ];
@@ -1372,14 +1459,14 @@ const AdminDashboard = ({
                             </button>
 
                             <button
-                                onClick={() => openChangePassword()}
+                                onClick={() => navigate("/admin/change-password")}
                                 className="rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-sm font-medium text-slate-600 shadow-sm transition hover:bg-slate-50 sm:px-3"
                             >
                                 Hindura ijambobanga
                             </button>
 
                             <button
-                                onClick={() => openChangeEmail()}
+                                onClick={() => navigate("/admin/change-email")}
                                 className="rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-sm font-medium text-slate-600 shadow-sm transition hover:bg-slate-50 sm:px-3"
                             >
                                 Hindura imeyili
@@ -1407,11 +1494,11 @@ const AdminDashboard = ({
 
                                 <div className="hidden xl:block">
                                     <p className="text-xs font-bold text-slate-800">
-                                        Administrator
+                                        Umuyobozi
                                     </p>
 
                                     <p className="text-[10px] text-slate-400">
-                                        Super Admin
+                                        Umuyobozi mwiza
                                     </p>
                                 </div>
                             </div>
@@ -1419,7 +1506,7 @@ const AdminDashboard = ({
 
                             <div className="items-center gap-2 flex">
                                 <button
-                                    onClick={() => setShowCreatePost(true)}
+                                    onClick={() => navigate("/admin/posts/new")}
                                     className="rounded-xl bg-blue-600 px-2.5 py-1.5 text-xs sm:text-sm font-semibold text-white transition hover:bg-blue-700 lg:px-4"
                                 >
                                     + Inkuru nshya
@@ -1462,8 +1549,8 @@ const AdminDashboard = ({
                     <div className="mx-auto w-full max-w-[1700px] px-3 sm:px-6 lg:px-8">
                         <InlinePanel
                             id="panel-create-ad"
-                            title="Create Advertisement"
-                            description="Add a new advertisement to the site."
+                            title="Ongeraho itangazo"
+                            description="Ongeraho itangazo rishya ku rubuga."
                             onClose={() => setShowCreateAd(false)}
                         >
                             <form
@@ -1471,18 +1558,18 @@ const AdminDashboard = ({
                             >
                                 <div className="space-y-5 p-5 sm:p-7">
                                     <div className="grid gap-5 sm:grid-cols-2">
-                                        <FormField label="Title">
+                                        <FormField label="Umutwe">
                                             <input
                                                 value={adTitle}
                                                 onChange={(e) =>
                                                     setAdTitle(e.target.value)
                                                 }
                                                 className="form-input"
-                                                placeholder="Advertisement title"
+                                                placeholder="Umutwe w'itangazo"
                                             />
                                         </FormField>
 
-                                        <FormField label="Position">
+                                        <FormField label="Ahantu">
                                             <select
                                                 value={adPosition}
                                                 onChange={(e) =>
@@ -1491,7 +1578,7 @@ const AdminDashboard = ({
                                                 className="form-input"
                                             >
                                                 <option value="">
-                                                    Select position
+                                                    Hitamo ahantu
                                                 </option>
 
                                                 {adPositions.map((position) => (
@@ -1504,7 +1591,7 @@ const AdminDashboard = ({
                                     </div>
 
                                     <div className="grid gap-5 sm:grid-cols-2">
-                                        <FormField label="Target URL">
+                                        <FormField label="Linko igenga">
                                             <input
                                                 value={adTargetUrl}
                                                 onChange={(e) =>
@@ -1515,19 +1602,19 @@ const AdminDashboard = ({
                                             />
                                         </FormField>
 
-                                        <FormField label="Fallback Link (optional)">
+                                        <FormField label="Linko y'ubwugero (byibuze)">
                                             <input
                                                 value={adLink}
                                                 onChange={(e) =>
                                                     setAdLink(e.target.value)
                                                 }
-                                                placeholder="Optional internal link or campaign id"
+                                                placeholder="Linko yo mu mirongo cyangwa nimero y'igikorwa (byibuze)"
                                                 className="form-input"
                                             />
                                         </FormField>
                                     </div>
 
-                                    <FormField label="Description (optional)">
+                                    <FormField label="Ibisobanuro (byibuze)">
                                         <textarea
                                             value={adDescription}
                                             onChange={(e) =>
@@ -1535,12 +1622,12 @@ const AdminDashboard = ({
                                             }
                                             rows={4}
                                             className="form-input resize-none"
-                                            placeholder="Advertisement description"
+                                            placeholder="Ibisobanuro by'itangazo"
                                         />
                                     </FormField>
 
                                     <div className="grid gap-4 sm:grid-cols-3">
-                                        <FormField label="Start Date">
+                                        <FormField label="Itariki y'itangira">
                                             <input
                                                 type="date"
                                                 value={adStartDate}
@@ -1551,7 +1638,7 @@ const AdminDashboard = ({
                                             />
                                         </FormField>
 
-                                        <FormField label="End Date">
+                                        <FormField label="Itariki y'irangirira">
                                             <input
                                                 type="date"
                                                 value={adEndDate}
@@ -1562,7 +1649,7 @@ const AdminDashboard = ({
                                             />
                                         </FormField>
 
-                                        <FormField label="Status">
+                                        <FormField label="Imimerere">
                                             <select
                                                 value={adStatus}
                                                 onChange={(e) =>
@@ -1571,17 +1658,17 @@ const AdminDashboard = ({
                                                 className="form-input"
                                             >
                                                 <option value="active">
-                                                    Active
+                                                    Rirakora
                                                 </option>
 
                                                 <option value="inactive">
-                                                    Inactive
+                                                    Ntirirakora
                                                 </option>
                                             </select>
                                         </FormField>
                                     </div>
 
-                                    <FormField label="Image (optional)">
+                                        <FormField label="Ifoto (byibuze)">
                                         <input
                                             type="file"
                                             accept="image/*"
@@ -1610,13 +1697,13 @@ const AdminDashboard = ({
                                         onClick={() => setShowCreateAd(false)}
                                         className="w-full rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-slate-100 sm:w-auto"
                                     >
-                                        Cancel
+                                        Hagarika
                                     </button>
                                     <button
                                         type="submit"
                                         className="w-full rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg transition hover:bg-indigo-700 sm:w-auto"
                                     >
-                                        Save Ad
+                                        Bika itangazo
                                     </button>
                                 </div>
                             </form>
@@ -1633,17 +1720,17 @@ const AdminDashboard = ({
                             <div className="flex shrink-0 items-center justify-between gap-4 border-b border-slate-100 bg-slate-50/60 px-5 py-4">
                                 <div className="min-w-0">
                                     <h3 className="text-base font-black text-slate-900">
-                                        Change password
+                                        Hindura ijambo ry'ibanga
                                     </h3>
                                     <p className="mt-0.5 text-xs text-slate-400">
-                                        Confirm your current password before choosing a new one.
+                                        Emeza ijambo ry'ibanga ririho mbere yo guhitamo rishya.
                                     </p>
                                 </div>
                                 <button
                                     type="button"
                                     onClick={() => setShowChangePassword(false)}
                                     className="shrink-0 rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
-                                    aria-label="Close"
+                                    aria-label="Hagarika"
                                 >
                                     ✕
                                 </button>
@@ -1651,7 +1738,7 @@ const AdminDashboard = ({
 
                             <form onSubmit={handleChangePassword} className="min-h-0 flex-1 space-y-5 overflow-y-auto p-5 scrollbar-thin sm:p-6">
                                 <div className="grid gap-5 sm:grid-cols-2">
-                                    <FormField label="Current password">
+                                    <FormField label="Ijambo ry'ibanga ririho">
                                         <input
                                             type="password"
                                             value={currentPassword}
@@ -1662,7 +1749,7 @@ const AdminDashboard = ({
                                         />
                                     </FormField>
 
-                                    <FormField label="New password">
+                                    <FormField label="Ijambo ry'ibanga rishya">
                                         <input
                                             type="password"
                                             value={newPassword}
@@ -1675,7 +1762,7 @@ const AdminDashboard = ({
                                     </FormField>
                                 </div>
 
-                                <FormField label="Confirm new password">
+                                <FormField label="Emeza ijambo ry'ibanga rishya">
                                     <input
                                         type="password"
                                         value={confirmPassword}
@@ -1693,13 +1780,13 @@ const AdminDashboard = ({
                                         onClick={() => setShowChangePassword(false)}
                                         className="w-full rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-slate-100 sm:w-auto"
                                     >
-                                        Cancel
+                                        Hagarika
                                     </button>
                                     <button
                                         type="submit"
                                         className="w-full rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg transition hover:bg-blue-700 sm:w-auto"
                                     >
-                                        Change password
+                                        Hindura
                                     </button>
                                 </div>
                             </form>
@@ -1716,24 +1803,24 @@ const AdminDashboard = ({
                             <div className="flex shrink-0 items-center justify-between gap-4 border-b border-slate-100 bg-slate-50/60 px-5 py-4">
                                 <div className="min-w-0">
                                     <h3 className="text-base font-black text-slate-900">
-                                        Change email
+                                        Hindura imeyili
                                     </h3>
                                     <p className="mt-0.5 text-xs text-slate-400">
-                                        Confirm your current password before changing the admin email.
+                                        Emeza ijambo ry'ibanga ririho mbere yo guhindura imeyili.
                                     </p>
                                 </div>
                                 <button
                                     type="button"
                                     onClick={() => setShowChangeEmail(false)}
                                     className="shrink-0 rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
-                                    aria-label="Close"
+                                    aria-label="Hagarika"
                                 >
                                     ✕
                                 </button>
                             </div>
 
                             <form onSubmit={handleChangeEmail} className="min-h-0 flex-1 space-y-5 overflow-y-auto p-5 scrollbar-thin sm:p-6">
-                                <FormField label="New email address">
+                                <FormField label="Imeyili mishya">
                                     <input
                                         type="email"
                                         value={newEmail}
@@ -1744,7 +1831,7 @@ const AdminDashboard = ({
                                     />
                                 </FormField>
 
-                                <FormField label="Current password">
+                                <FormField label="Ijambo ry'ibanga ririho">
                                     <input
                                         type="password"
                                         value={currentPassword}
@@ -1761,13 +1848,13 @@ const AdminDashboard = ({
                                         onClick={() => setShowChangeEmail(false)}
                                         className="w-full rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-slate-100 sm:w-auto"
                                     >
-                                        Cancel
+                                        Hagarika
                                     </button>
                                     <button
                                         type="submit"
                                         className="w-full rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg transition hover:bg-blue-700 sm:w-auto"
                                     >
-                                        Change email
+                                        Hindura imeyili
                                     </button>
                                 </div>
                             </form>
@@ -1777,41 +1864,6 @@ const AdminDashboard = ({
 
 
                 <main className="mx-auto w-full max-w-[1700px] px-3 py-4 sm:px-6 sm:py-5 lg:px-8 lg:py-7">
-
-
-                    <section className="mb-5 sm:mb-6">
-                        <div className="overflow-hidden rounded-3xl bg-gradient-to-r from-slate-950 via-slate-900 to-blue-950 p-5 text-white shadow-xl sm:p-7">
-                            <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
-                                <div className="min-w-0">
-                                    <p className="mb-1 text-sm font-medium text-blue-300">
-                                        Murakaza neza, Imicungire
-                                    </p>
-
-                                    <h1 className="text-2xl font-black tracking-tight sm:text-3xl">
-                                        Editorial Control Center
-                                    </h1>
-
-                                    <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">
-                                        Review stories, manage your newsroom,
-                                        monitor publication activity and keep
-                                        Rubavu Today up to date.
-                                    </p>
-                                </div>
-
-                                <button
-                                    onClick={() =>
-                                        setShowCreateEmployee(true)
-                                    }
-                                    className="w-full shrink-0 rounded-xl bg-white px-5 py-3 text-sm font-bold text-slate-900 shadow-lg transition hover:bg-blue-50 sm:w-auto"
-                                >
-                                    + Ongeraho Umukozi
-                                </button>
-                            </div>
-                        </div>
-
-
-                    </section>
-
 
 
                     <section className="mb-5 grid grid-cols-2 gap-3 sm:mb-6 sm:grid-cols-3 lg:grid-cols-5">
@@ -1936,7 +1988,7 @@ const AdminDashboard = ({
                                                     <div className="flex flex-wrap items-center gap-2">
 
                                                         <span className="text-sm font-black text-slate-900">
-                                                            {comment.name || comment.user_name || comment.author || "Anonymous"}
+                                                            {comment.name || comment.user_name || comment.author || "Nturwaho"}
                                                         </span>
 
                                                         {comment.post_title && (
@@ -2288,6 +2340,15 @@ const AdminDashboard = ({
                                                 </button>
 
                                                 <button
+                                                    onClick={
+                                                        handleBulkDelete
+                                                    }
+                                                    className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-600 hover:text-white"
+                                                >
+                                                    🗑 Siba
+                                                </button>
+
+                                                <button
                                                     onClick={clearSelection}
                                                     className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600"
                                                 >
@@ -2308,7 +2369,7 @@ const AdminDashboard = ({
                                         onClick={() => loadPosts()}
                                         className="self-start font-bold underline sm:self-auto"
                                     >
-                                        Retry
+                                        Gerageza
                                     </button>
                                 </div>
                             )}
@@ -2390,6 +2451,9 @@ const AdminDashboard = ({
                                             onDelete={() =>
                                                 handleDelete(post)
                                             }
+                                            onView={() =>
+                                                handleViewPost(post)
+                                            }
                                         />
                                     ))
                                 )}
@@ -2463,23 +2527,23 @@ const AdminDashboard = ({
                             <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
                                 <div className="mb-4">
                                     <h3 className="font-black text-slate-900">
-                                        Quick Actions
+                                        Ibikorwa vyihutiraho
                                     </h3>
 
                                     <p className="mt-1 text-xs text-slate-400">
-                                        Common newsroom tasks
+                                        Ibikorwa bisanzwe mu kigo
                                     </p>
                                 </div>
 
                                 <div className="space-y-2">
                                     <QuickAction
                                         icon="👤"
-                                        label="Create Employee"
+                                        label="Ongeraho umukozi"
                                         onClick={() =>
                                             onCreateEmployee
                                                 ? quickAction(
                                                     onCreateEmployee,
-                                                    "Employee creation is ready to connect."
+                                                    "Kongera umukozi birabonetse."
                                                 )
                                                 : setShowCreateEmployee(
                                                     true
@@ -2489,12 +2553,12 @@ const AdminDashboard = ({
 
                                     <QuickAction
                                         icon="🛡️"
-                                        label="Create Chief Editor"
+                                        label="Ongeraho umwanditsi mukuru"
                                         onClick={() =>
                                             onCreateChiefEditor
                                                 ? quickAction(
                                                     onCreateChiefEditor,
-                                                    "Chief Editor management is ready to connect."
+                                                    "Kongera umwanditsi mukuru birabonetse."
                                                 )
                                                 : setShowCreateChief(
                                                     true
@@ -2504,12 +2568,12 @@ const AdminDashboard = ({
 
                                     <QuickAction
                                         icon="📢"
-                                        label="Post Advertisement"
+                                        label="Tangaza"
                                         onClick={() =>
                                             onPostAdvertisement
                                                 ? quickAction(
                                                     onPostAdvertisement,
-                                                    "Advertisement management is ready to connect."
+                                                    "Kongera itangazo birabonetse."
                                                 )
                                                 : setShowCreateAd(true)
                                         }
@@ -2517,7 +2581,7 @@ const AdminDashboard = ({
 
                                     <QuickAction
                                         icon="📥"
-                                        label="Export Report"
+                                        label="Kuramo raporo"
                                         onClick={exportPosts}
                                     />
                                 </div>
@@ -2542,11 +2606,11 @@ const AdminDashboard = ({
                                 <div className="mb-4 flex items-center justify-between gap-3">
                                     <div className="min-w-0">
                                         <h3 className="font-black text-slate-900">
-                                            Activity
+                                            Ibikorwa
                                         </h3>
 
                                         <p className="mt-1 text-xs text-slate-400">
-                                            Latest dashboard event
+                                            Igihe gishya ku rubuga
                                         </p>
                                     </div>
 
@@ -2556,11 +2620,11 @@ const AdminDashboard = ({
                                 <div className="rounded-xl bg-slate-50 p-4">
                                     <p className="break-words text-sm font-medium text-slate-700">
                                         {statusMessage ||
-                                            "Dashboard is up to date."}
+                                            "Urubuga rushya neza."}
                                     </p>
 
                                     <p className="mt-1 text-xs text-slate-400">
-                                        Auto-refresh enabled
+                                        Kuvugurura byarakora
                                     </p>
                                 </div>
                             </div>
@@ -2569,11 +2633,11 @@ const AdminDashboard = ({
                             <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
                                 <div className="mb-4">
                                     <h3 className="font-black text-slate-900">
-                                        Departments
+                                        Ibyiciro
                                     </h3>
 
                                     <p className="mt-1 text-xs text-slate-400">
-                                        Story distribution
+                                        Imigabane y'inkuru
                                     </p>
                                 </div>
 
@@ -2634,13 +2698,12 @@ const AdminDashboard = ({
                                 <div className="text-xl">💡</div>
 
                                 <h3 className="mt-3 font-black">
-                                    Editorial Reminder
+                                    Ikimburo
                                 </h3>
 
                                 <p className="mt-2 text-sm leading-6 text-blue-100">
-                                    Verify sources, headlines, images and
-                                    publication details before approving a
-                                    story.
+                                    Menya imvangano, utwe, amafoto n'amakuru
+                                    y'inkuru mbere yo kuyemera.
                                 </p>
                             </div>
                         </aside>
@@ -2658,17 +2721,17 @@ const AdminDashboard = ({
                     <div className="flex items-center justify-between gap-4 border-b border-slate-100 bg-slate-50/60 px-5 py-4">
                         <div className="min-w-0">
                             <h3 className="text-base font-black text-slate-900">
-                                Create Employee
+                                Ongeraho Umukozi
                             </h3>
                             <p className="mt-0.5 text-xs text-slate-400">
-                                Create a reporter account.
+                                Kurema konti y'umwanditsi.
                             </p>
                         </div>
                         <button
                             type="button"
                             onClick={() => setShowCreateEmployee(false)}
                             className="shrink-0 rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
-                            aria-label="Close"
+                            aria-label="Hagarika"
                         >
                             ✕
                         </button>
@@ -2683,7 +2746,7 @@ const AdminDashboard = ({
                                 onChange={(e) =>
                                     setEmpName(e.target.value)
                                 }
-                                placeholder="Full name"
+                                placeholder="Izina ryuzuye"
                                 className="form-input"
                             />
 
@@ -2692,7 +2755,7 @@ const AdminDashboard = ({
                                 onChange={(e) =>
                                     setEmpEmail(e.target.value)
                                 }
-                                placeholder="Email"
+                                placeholder="Imeyili"
                                 type="email"
                                 className="form-input"
                             />
@@ -2702,7 +2765,7 @@ const AdminDashboard = ({
                                 onChange={(e) =>
                                     setEmpPhone(e.target.value)
                                 }
-                                placeholder="Phone (optional)"
+                                placeholder="Telefoni (byibuze)"
                                 className="form-input"
                             />
 
@@ -2711,7 +2774,7 @@ const AdminDashboard = ({
                                 onChange={(e) =>
                                     setEmpPassword(e.target.value)
                                 }
-                                placeholder="Password"
+                                placeholder="Ijambo ry'ibanga"
                                 type="password"
                                 className="form-input"
                             />
@@ -2722,13 +2785,13 @@ const AdminDashboard = ({
                                 onClick={() => setShowCreateEmployee(false)}
                                 className="w-full rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-slate-100 sm:w-auto"
                             >
-                                Cancel
+                                Hagarika
                             </button>
                             <button
                                 type="submit"
                                 className="w-full rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg transition hover:bg-emerald-700 sm:w-auto"
                             >
-                                Create
+                                Kurema
                             </button>
                         </div>
                     </form>
@@ -2743,8 +2806,8 @@ const AdminDashboard = ({
                     maxWidth="max-w-md"
                 >
                     <ModalHeader
-                        title="Create Chief Editor"
-                        description="Create a chief editor account."
+                        title="Ongeraho Umwanditsi Mukuru"
+                        description="Kurema konti y'umwanditsi mukuru."
                         onClose={() => setShowCreateChief(false)}
                     />
 
@@ -2758,7 +2821,7 @@ const AdminDashboard = ({
                                 onChange={(e) =>
                                     setChiefName(e.target.value)
                                 }
-                                placeholder="Full name"
+                                placeholder="Izina ryuzuye"
                                 className="form-input"
                             />
 
@@ -2767,7 +2830,7 @@ const AdminDashboard = ({
                                 onChange={(e) =>
                                     setChiefEmail(e.target.value)
                                 }
-                                placeholder="Email"
+                                placeholder="Imeyili"
                                 type="email"
                                 className="form-input"
                             />
@@ -2777,7 +2840,7 @@ const AdminDashboard = ({
                                 onChange={(e) =>
                                     setChiefPhone(e.target.value)
                                 }
-                                placeholder="Phone (optional)"
+                                placeholder="Telefoni (byibuze)"
                                 className="form-input"
                             />
 
@@ -2786,7 +2849,7 @@ const AdminDashboard = ({
                                 onChange={(e) =>
                                     setChiefPassword(e.target.value)
                                 }
-                                placeholder="Password"
+                                placeholder="Ijambo ry'ibanga"
                                 type="password"
                                 className="form-input"
                             />
@@ -2794,7 +2857,7 @@ const AdminDashboard = ({
 
                         <ModalFooter
                             onCancel={() => setShowCreateChief(false)}
-                            confirmText="Create"
+                            confirmText="Kurema"
                             confirmClass="bg-indigo-600 hover:bg-indigo-700"
                             confirmType="submit"
                         />
@@ -2813,6 +2876,24 @@ const AdminDashboard = ({
                     saving={editSaving}
                     onSubmit={handleSubmitEdit}
                     onCancel={closeEdit}
+                />
+            )}
+
+            {selectedPost && (
+                <PostDetailModal
+                    post={selectedPost}
+                    loadingComments={loadingPostComments}
+                    onClose={handleClosePostDetail}
+                    onStatusChange={handleStatusChangeFromDetail}
+                    onDeleteComment={handleDeletePostComment}
+                    getImageUrl={getImageUrl}
+                    getStatus={normalizeStatus}
+                    formatDate={(post) => {
+                        const date = post.createdDate || post.created_at || post.createdAt;
+                        if (!date) return "Nta itariki";
+                        try { return new Date(date).toLocaleString(); } catch { return String(date); }
+                    }}
+                    saving={editSaving}
                 />
             )}
 
@@ -2841,21 +2922,21 @@ const AccountsPanel = ({
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
             <div className="mb-4">
                 <h3 className="font-black text-slate-900">
-                    Recent Accounts & Ads
+                    Amakonti n'Ibyangamwa
                 </h3>
 
                 <p className="mt-1 text-xs text-slate-400">
-                    Latest newsroom management records
+                    Amakuru agezweho y'ubushakashatsi
                 </p>
             </div>
 
             <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-1">
 
                 <AccountSection
-                    title="Employees"
+                    title="Abakozi"
                     count={employees.length}
                     items={employees}
-                    emptyText="No employees yet"
+                    emptyText="Nta baakozi bihari"
                     onEdit={onEditEmployee}
                     onDelete={onDeleteEmployee}
                     renderItem={(item) => (
@@ -2868,10 +2949,10 @@ const AccountsPanel = ({
 
 
                 <AccountSection
-                    title="Chief Editors"
+                    title="Abanditsi Bakuru"
                     count={chiefEditors.length}
                     items={chiefEditors}
-                    emptyText="No chief editors yet"
+                    emptyText="Nta banditsi bakuru bihari"
                     onEdit={onEditChief}
                     onDelete={onDeleteChief}
                     renderItem={(item) => (
@@ -2884,10 +2965,10 @@ const AccountsPanel = ({
 
 
                 <AccountSection
-                    title="Advertisements"
+                    title="Ibyangamwa"
                     count={advertisements.length}
                     items={advertisements}
-                    emptyText="No advertisements yet"
+                    emptyText="Nta vyangamwa bihari"
                     onEdit={onEditAd}
                     onDelete={onDeleteAd}
                     onSend={onSendAd}
@@ -2897,16 +2978,16 @@ const AccountsPanel = ({
                                 {item.image ? (
                                     <img src={item.image} alt={item.title || 'ad'} className="h-12 w-12 flex-none rounded-md object-cover sm:h-14 sm:w-14 md:h-20 md:w-20" />
                                 ) : (
-                                    <div className="h-12 w-12 flex-none rounded-md bg-slate-200 text-xs text-slate-500 flex items-center justify-center sm:h-14 sm:w-14 md:h-20 md:w-20">No
-                                        image</div>
+                                    <div className="h-12 w-12 flex-none rounded-md bg-slate-200 text-xs text-slate-500 flex items-center justify-center sm:h-14 sm:w-14 md:h-20 md:w-20">Nta
+                                        ifoto</div>
                                 )}
 
                                 <div className="min-w-0">
-                                    <p className="truncate text-sm sm:text-base md:text-lg font-semibold text-slate-700">{item.title || item.name || 'Untitled'}</p>
+                                    <p className="truncate text-sm sm:text-base md:text-lg font-semibold text-slate-700">{item.title || item.name || 'Nta mutwe'}</p>
                                     <p className="mt-0.5 truncate text-xs sm:text-sm text-slate-400">{item.description || item.summary || ''}</p>
 
                                     {item.link || item.target_url ? (
-                                        <a href={item.link || item.target_url} target="_blank" rel="noreferrer" className="mt-1 inline-block text-[11px] font-medium text-indigo-600 hover:underline">Open link</a>
+                                        <a href={item.link || item.target_url} target="_blank" rel="noreferrer" className="mt-1 inline-block text-[11px] font-medium text-indigo-600 hover:underline">Fungura</a>
                                     ) : null}
                                 </div>
                             </div>
@@ -2947,9 +3028,9 @@ const AccountSection = ({
 
                                 {(onEdit || onDelete || onSend) && (
                                     <div className="ml-3 flex items-center gap-2">
-                                        {onSend && <button onClick={() => onSend(item)} className="text-sm sm:text-xs text-emerald-600 hover:underline">Send</button>}
-                                        {onEdit && <button onClick={() => onEdit(item)} className="text-sm sm:text-xs text-blue-600 hover:underline">Edit</button>}
-                                        {onDelete && <button onClick={() => onDelete(item.id)} className="text-sm sm:text-xs text-red-600 hover:underline">Delete</button>}
+                                        {onSend && <button onClick={() => onSend(item)} className="text-sm sm:text-xs text-emerald-600 hover:underline">Ohora</button>}
+                                        {onEdit && <button onClick={() => onEdit(item)} className="text-sm sm:text-xs text-blue-600 hover:underline">Hindura</button>}
+                                        {onDelete && <button onClick={() => onDelete(item.id)} className="text-sm sm:text-xs text-red-600 hover:underline">Siba</button>}
                                     </div>
                                 )}
                             </li>
@@ -2977,7 +3058,7 @@ const StatusBadge = ({ post }) => {
         return (
             <span className="inline-flex max-w-full items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold text-emerald-700 shadow-sm sm:text-xs">
                 <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />
-                Approved
+                Yemewe
             </span>
         );
     }
@@ -2986,7 +3067,7 @@ const StatusBadge = ({ post }) => {
         return (
             <span className="inline-flex max-w-full items-center gap-1 rounded-full bg-red-50 px-2.5 py-1 text-[10px] font-semibold text-red-700 shadow-sm sm:text-xs">
                 <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-red-500" />
-                Rejected
+                Yanzwe
             </span>
         );
     }
@@ -2994,7 +3075,7 @@ const StatusBadge = ({ post }) => {
     return (
         <span className="inline-flex max-w-full items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-semibold text-amber-700 shadow-sm sm:text-xs">
             <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" />
-            Pending
+            Irimo gusuzumwa
         </span>
     );
 };
@@ -3112,6 +3193,7 @@ const PostCard = ({
     onPending,
     onEdit,
     onDelete,
+    onView,
 }) => {
     const status = String(
         post?.status ||
@@ -3188,17 +3270,17 @@ const PostCard = ({
 
                     {post.priority && (
                         <span className="shrink-0 rounded-md bg-red-50 px-2 py-1 text-[9px] font-bold uppercase text-red-600 sm:text-[10px]">
-                            Priority
+                            Igihitamwo
                         </span>
                     )}
                 </div>
 
                 <h3 className="mt-3 line-clamp-2 break-words text-base font-black leading-6 text-slate-900">
-                    {post.title || "Untitled Story"}
+                    {post.title || "Inkuru itagira umutwe"}
                 </h3>
 
                 <p className="mt-2 line-clamp-3 break-words text-sm leading-6 text-slate-500">
-                    {post.description || "No description available."}
+                    {post.description || "Nta bisobanuro bihari."}
                 </p>
 
                 <div className="mt-4 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2 text-xs text-slate-400">
@@ -3208,7 +3290,7 @@ const PostCard = ({
                             ? new Date(
                                 post.createdDate
                             ).toLocaleDateString()
-                            : "No date"}
+                            : "Nta itariki"}
                     </span>
 
                     <span className="shrink-0">
@@ -3226,12 +3308,26 @@ const PostCard = ({
 
 
                 <div className="mt-4 flex flex-wrap gap-2 border-t border-slate-100 pt-4">
+                    <ActionButton
+                        onClick={onView}
+                        className="bg-slate-900 text-white hover:bg-blue-700"
+                    >
+                        👁 Reba
+                    </ActionButton>
+
+                    <ActionButton
+                        onClick={onEdit}
+                        className="border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                    >
+                        ✎ Hindura
+                    </ActionButton>
+
                     {status !== "approved" && (
                         <ActionButton
                             onClick={onApprove}
                             className="bg-emerald-600 text-white hover:bg-emerald-700"
                         >
-                            ✓ Approve
+                            ✓ Emeka
                         </ActionButton>
                     )}
 
@@ -3240,7 +3336,7 @@ const PostCard = ({
                             onClick={onReject}
                             className="bg-red-600 text-white hover:bg-red-700"
                         >
-                            ✕ Reject
+                            ✕ Anga
                         </ActionButton>
                     )}
 
@@ -3249,22 +3345,15 @@ const PostCard = ({
                             onClick={onPending}
                             className="bg-amber-500 text-white hover:bg-amber-600"
                         >
-                            ↻ Pending
+                            ↻ Gusuzumwa
                         </ActionButton>
                     )}
-
-                    <ActionButton
-                        onClick={onEdit}
-                        className="border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-                    >
-                        ✎ Edit
-                    </ActionButton>
 
                     <ActionButton
                         onClick={onDelete}
                         className="border border-red-100 bg-red-50 text-red-600 hover:bg-red-100"
                     >
-                        🗑 Delete
+                        🗑 Siba
                     </ActionButton>
                 </div>
             </div>
@@ -3378,7 +3467,7 @@ const ModalHeader = ({
             <button
                 onClick={onClose}
                 className="shrink-0 rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
-                aria-label="Close"
+                aria-label="Hagarika"
             >
                 ✕
             </button>
@@ -3447,7 +3536,7 @@ const ModalFooter = ({
                 onClick={onCancel}
                 className="w-full rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-slate-100 sm:w-auto"
             >
-                Cancel
+                Hagarika
             </button>
 
             <button
@@ -3506,29 +3595,29 @@ const AdPreview = ({
     return (
         <div className="rounded-xl border border-slate-100 bg-slate-50 p-3 sm:p-4">
             <p className="mb-3 text-xs font-bold text-slate-700">
-                Ad Preview
+                Iherezo ry'itangazo
             </p>
 
             <div className="flex min-w-0 flex-col gap-3 sm:flex-row">
                 {previewUrl ? (
                     <img
                         src={previewUrl}
-                        alt="Advertisement preview"
+                        alt="Iherezo ry'itangazo"
                         className="h-20 w-full shrink-0 rounded-lg object-cover sm:w-20"
                     />
                 ) : (
                     <div className="flex h-20 w-full shrink-0 items-center justify-center rounded-lg bg-slate-200 text-xs text-slate-500 sm:w-20">
-                        No image
+                        Nta ifoto
                     </div>
                 )}
 
                 <div className="min-w-0 flex-1">
                     <div className="break-words text-sm font-bold text-slate-900">
-                        {title || "Title"}
+                        {title || "Umutwe"}
                     </div>
 
                     <div className="mt-1 break-words text-xs leading-5 text-slate-600">
-                        {description || "Description"}
+                        {description || "Ibisobanuro"}
                     </div>
 
                     {targetUrl && (
@@ -3536,6 +3625,216 @@ const AdPreview = ({
                             {targetUrl}
                         </div>
                     )}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const PostDetailModal = ({
+    post,
+    loadingComments,
+    onClose,
+    onStatusChange,
+    onDeleteComment,
+    getImageUrl,
+    getStatus,
+    formatDate,
+    saving,
+}) => {
+    if (!post) return null;
+
+    const status = getStatus(post);
+    const postId = post.id || post._id;
+    const imageUrl = getImageUrl(post.image);
+
+    return (
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm"
+            onClick={onClose}
+        >
+            <div
+                className="max-h-[94vh] w-full max-w-4xl overflow-y-auto rounded-3xl bg-white shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white px-5 py-4">
+                    <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-cyan-500 text-sm font-bold text-white shadow-sm">
+                            RT
+                        </div>
+                        <div>
+                        <p className="text-xs font-black uppercase tracking-wide text-blue-600">
+                            Isuzuma ry'inkuru
+                        </p>
+                        <p className="text-xs text-slate-400">
+                            Umuyobozi
+                        </p>
+                        </div>
+                    </div>
+                    <button
+                        onClick={onClose}
+                        className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-lg font-black text-slate-700 hover:bg-red-100 hover:text-red-600"
+                    >
+                        ×
+                    </button>
+                </div>
+
+                <div className="p-5 sm:p-7">
+                    <div className="mb-5 flex flex-wrap items-center gap-3">
+                        <StatusBadge post={post} />
+                        <span className="rounded-full bg-blue-50 px-3 py-1.5 text-xs font-black text-blue-700">
+                            {post.category || "Amakuru"}
+                        </span>
+                    </div>
+
+                    <h2 className="text-2xl font-black leading-tight text-slate-900 sm:text-4xl">
+                        {post.title || "Inkuru itagira umutwe"}
+                    </h2>
+
+                    <div className="mt-3 flex flex-wrap gap-4 text-xs font-semibold text-slate-400">
+                        <span>
+                            Wanditse:{" "}
+                            <strong className="text-slate-700">
+                                {post.Author || post.author || post.author_name || "Umukozi"}
+                            </strong>
+                        </span>
+                        <span>{formatDate(post)}</span>
+                    </div>
+
+                    {imageUrl && (
+                        <img
+                            src={imageUrl}
+                            alt={post.title}
+                            className="mt-6 max-h-[500px] w-full rounded-2xl object-cover"
+                        />
+                    )}
+
+                    <div className="mt-6 whitespace-pre-wrap text-base leading-8 text-slate-700">
+                        {post.description || post.content || "Nta bisobanuro bihari."}
+                    </div>
+
+                    {(post.youtube_url || post.youtubeUrl) && (
+                        <div className="mt-6 rounded-2xl bg-slate-50 p-4">
+                            <p className="text-xs font-black uppercase tracking-wide text-slate-400">
+                                YouTube
+                            </p>
+                            <a
+                                href={post.youtube_url || post.youtubeUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="mt-2 block break-all text-sm font-bold text-blue-600 hover:underline"
+                            >
+                                {post.youtube_url || post.youtubeUrl}
+                            </a>
+                        </div>
+                    )}
+
+                    <div className="mt-8 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                        <p className="text-xs font-black uppercase tracking-wide text-slate-500">
+                            Izina ry'ubusobanuro
+                        </p>
+                        <p className="mt-1 text-sm text-slate-500">
+                            Inkuru zemerewe zizerekanwa ku rubuga rishingiye.
+                        </p>
+
+                        <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+                            {status === "pending" && (
+                                <>
+                                    <button
+                                        onClick={() => onStatusChange(postId, "approved")}
+                                        disabled={saving}
+                                        className="flex-1 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-black text-white hover:bg-emerald-700 disabled:opacity-50"
+                                    >
+                                        ✓ Emeka kandi utangaze
+                                    </button>
+                                    <button
+                                        onClick={() => onStatusChange(postId, "rejected")}
+                                        disabled={saving}
+                                        className="flex-1 rounded-xl bg-red-600 px-5 py-3 text-sm font-black text-white hover:bg-red-700 disabled:opacity-50"
+                                    >
+                                        ✕ Anga inkuru
+                                    </button>
+                                </>
+                            )}
+
+                            {status === "rejected" && (
+                                <button
+                                    onClick={() => onStatusChange(postId, "pending")}
+                                    disabled={saving}
+                                    className="w-full rounded-xl bg-amber-500 px-5 py-3 text-sm font-black text-white hover:bg-amber-600 disabled:opacity-50"
+                                >
+                                    ↻ Subiza gusuzumwa
+                                </button>
+                            )}
+
+                            {status === "approved" && (
+                                <button
+                                    onClick={() => onStatusChange(postId, "pending")}
+                                    disabled={saving}
+                                    className="w-full rounded-xl bg-amber-500 px-5 py-3 text-sm font-black text-white hover:bg-amber-600 disabled:opacity-50"
+                                >
+                                    ↻ Subiza gusuzumwa
+                                </button>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="mt-8">
+                        <div className="mb-4 flex items-center justify-between">
+                            <div>
+                                <p className="text-xs font-black uppercase tracking-wide text-slate-400">
+                                    Ibitekerezo
+                                </p>
+                                <h3 className="mt-1 text-lg font-black text-slate-900">
+                                    Ibitekerezo by'abasomi
+                                </h3>
+                            </div>
+                            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">
+                                {Array.isArray(post.comments) ? post.comments.length : 0}
+                            </span>
+                        </div>
+
+                        {loadingComments ? (
+                            <p className="py-6 text-center text-sm text-slate-500">
+                                Birimo gutwara ibitekerezo...
+                            </p>
+                        ) : Array.isArray(post.comments) && post.comments.length > 0 ? (
+                            <div className="space-y-3">
+                                {post.comments.map((comment, index) => {
+                                    const commentId = comment.id || comment.comment_id || comment._id;
+                                    return (
+                                        <div
+                                            key={commentId || index}
+                                            className="rounded-2xl border border-slate-200 bg-white p-4"
+                                        >
+                                            <div className="flex items-start justify-between gap-4">
+                                                <div className="min-w-0">
+                                                    <p className="text-sm font-black text-slate-900">
+                                                        {comment.name || comment.user_name || comment.author || "Anonymous"}
+                                                    </p>
+                                                    <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-600">
+                                                        {comment.comment || comment.content || comment.text || ""}
+                                                    </p>
+                                                </div>
+                                                {commentId && (
+                                                    <button
+                                                        onClick={() => onDeleteComment(commentId)}
+                                                        className="shrink-0 rounded-lg bg-red-50 px-3 py-2 text-[10px] font-black text-red-600 hover:bg-red-600 hover:text-white"
+                                                    >
+                                                        Siba
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            <div className="rounded-2xl bg-slate-50 p-6 text-center text-sm font-semibold text-slate-400">
+                                Nta bitekerezo bihari kuri iyi nkuru.
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>
