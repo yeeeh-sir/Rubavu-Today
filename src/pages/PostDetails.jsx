@@ -8,7 +8,7 @@ import ArticleRenderer from "../components/article/ArticleRenderer";
 import { getPostSlug, getArticleUrl } from "../utils/slug";
 import { formatRelativeTime } from "../utils/time";
 import { getYouTubeEmbedUrl } from "../utils/video";
-import { useLanguage, translateCategory, translatePostsBatch } from "../context/LanguageContext";
+import { useLanguage, translateCategory } from "../context/LanguageContext";
 
 const TimeLabel = ({ date, className = "" }) => {
   const { language, t } = useLanguage();
@@ -27,7 +27,7 @@ const TimeLabel = ({ date, className = "" }) => {
 export default function PostDetails() {
   const { id, slug } = useParams();
   const navigate = useNavigate();
-  const { language, t, setTranslating, setTranslationUnavailable } = useLanguage();
+  const { language, t } = useLanguage();
 
   const [post, setPost] = useState(null);
   const [originalPost, setOriginalPost] = useState(null);
@@ -288,54 +288,13 @@ export default function PostDetails() {
 
 
   useEffect(() => {
-    let cancelled = false;
-
-    const translate = async () => {
-      if (!originalPost) return;
-
-      if (language === "rw") {
-        if (!cancelled) {
-          setPost(originalPost);
-          setAllPosts(originalAllPosts);
-          setTranslating(false);
-          setTranslationUnavailable(false);
-        }
-        return;
-      }
-
-      setTranslating(true);
-      setTranslationUnavailable(false);
-
-      try {
-        const combined = [originalPost, ...originalAllPosts].filter(Boolean);
-        const translatedCombined = await translatePostsBatch(combined, language);
-
-        if (cancelled) return;
-
-        if (translatedCombined && translatedCombined.length > 0) {
-          setPost(translatedCombined[0]);
-          if (originalAllPosts.length > 0) {
-            setAllPosts(translatedCombined.slice(1));
-          }
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setPost(originalPost);
-          setAllPosts(originalAllPosts);
-        }
-      } finally {
-        if (!cancelled) {
-          setTranslating(false);
-        }
-      }
-    };
-
-    translate();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [language, originalPost, originalAllPosts, setTranslating, setTranslationUnavailable]);
+    // Single-language site: the original article and its related posts are
+    // shown as-is (translation system removed).
+    if (originalPost) {
+      setPost(originalPost);
+    }
+    setAllPosts(originalAllPosts);
+  }, [originalPost, originalAllPosts]);
 
 
 

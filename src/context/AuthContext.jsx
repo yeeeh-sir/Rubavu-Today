@@ -29,6 +29,10 @@ export function AuthProvider({ children }) {
                 if (mounted) setUser(currentUser);
             })
             .catch(() => {
+                // Stale/expired token: /api/auth/me returns 401. Clear the
+                // old session so we do NOT re-fetch (and re-log that 401) on
+                // every page load. This is session cleanup, not weakening auth.
+                clearAuthStorage();
                 if (mounted) setUser(null);
             })
             .finally(() => {

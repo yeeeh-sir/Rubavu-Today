@@ -328,8 +328,6 @@ export default function ChiefDashboard({ onLogout }) {
 
 
 
-
-
   const handleStatusChange = async (
     postId,
     newStatus

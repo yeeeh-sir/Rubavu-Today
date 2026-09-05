@@ -244,7 +244,7 @@ function PostListPage() {
                                                     ↩ Subiza pending
                                                 </button>
                                             )}
-                                            <button onClick={() => handleDelete(post)}
+<button onClick={() => handleDelete(post)}
                                                 title="Siba inkuru"
                                                 className="rounded-lg border border-red-200 px-2.5 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-50">
                                                 🗑 Siba

@@ -10,6 +10,9 @@ const BACKEND_URL = "https://rubavu-today-backend.onrender.com";
 const DEFAULT_DESCRIPTION =
   "Rubavu Today - Amakuru mashya mu karere ka Rubavu n'ibindi byose. Latest news from Rubavu and beyond.";
 
+const DEFAULT_LANG = "rw";
+const DEFAULT_LOCALE = "rw_RW";
+
 function getAbsoluteImageUrl(image) {
   if (!image) return DEFAULT_IMAGE;
 
@@ -68,6 +71,7 @@ export function SiteSEO() {
 
   return (
     <Helmet>
+      <html lang={DEFAULT_LANG} />
       <title>{SITE_NAME}</title>
       <meta name="description" content={DEFAULT_DESCRIPTION} />
       <link rel="canonical" href={SITE_URL} />
@@ -83,7 +87,7 @@ export function SiteSEO() {
       <meta property="og:image:secure_url" content={DEFAULT_IMAGE} />
       <meta property="og:url" content={SITE_URL} />
       <meta property="og:site_name" content={SITE_NAME} />
-      <meta property="og:locale" content="rw_RW" />
+      <meta property="og:locale" content={DEFAULT_LOCALE} />
 
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content={SITE_NAME} />
@@ -162,6 +166,7 @@ export function ArticleSEO({ post }) {
 
   return (
     <Helmet>
+      <html lang={DEFAULT_LANG} />
       <title>{title} | {SITE_NAME}</title>
       <meta name="description" content={description} />
       <link rel="canonical" href={articleUrl} />
@@ -178,7 +183,7 @@ export function ArticleSEO({ post }) {
       <meta property="og:image:height" content="630" />
       <meta property="og:url" content={articleUrl} />
       <meta property="og:site_name" content={SITE_NAME} />
-      <meta property="og:locale" content="rw_RW" />
+      <meta property="og:locale" content={DEFAULT_LOCALE} />
 
       <meta property="article:published_time" content={publishedTime} />
       {modifiedTime && (

@@ -126,7 +126,7 @@ const PostCard = ({ post }) => {
           to={getPostSlugPath(post)}
           className="font-bold uppercase tracking-wider text-[#161616] transition hover:text-[#B3261E]"
         >
-          {t("readMorePost")} →
+          Read More →
         </Link>
 
         <div className="flex items-center gap-3">

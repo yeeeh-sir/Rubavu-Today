@@ -149,7 +149,7 @@ const Media = () => {
           <div className="flex flex-col gap-3 border-b-2 border-black pb-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="font-masthead text-2xl font-black uppercase tracking-tight text-slate-900">
-                {language === "rw" ? "AMAFOTO & VIDEOS" : "PHOTOS & VIDEOS"}
+                PHOTOS & VIDEOS
               </h1>
             </div>
 

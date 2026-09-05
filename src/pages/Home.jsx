@@ -3,7 +3,7 @@ import { useLocation, Link } from "react-router-dom";
 import { getPosts, getAdvertisements } from "../services/api";
 import { SiteSEO } from "../components/SEO/SEO";
 import { getArticleUrl } from "../utils/slug";
-import { useLanguage, translatePostsBatch } from "../context/LanguageContext";
+import { useLanguage } from "../context/LanguageContext";
 import AdBanner from "../components/common/AdBanner";
 
 
@@ -34,7 +34,7 @@ const Home = () => {
   const [showMedia, setShowMedia] = useState(true);
   const [mediaSearch, setMediaSearch] = useState("");
   const location = useLocation();
-  const { language, t, setTranslating, setTranslationUnavailable } = useLanguage();
+  const { language, t } = useLanguage();
 
 
 
@@ -66,41 +66,9 @@ const Home = () => {
   }, []);
 
   useEffect(() => {
-    let cancelled = false;
-
-    const translate = async () => {
-      if (originalPosts.length === 0) return;
-
-      if (language === "rw") {
-        if (!cancelled) {
-          setPosts(originalPosts);
-          setTranslating(false);
-          setTranslationUnavailable(false);
-        }
-        return;
-      }
-
-      setTranslating(true);
-      setTranslationUnavailable(false);
-
-      try {
-        const translated = await translatePostsBatch(originalPosts, language);
-        if (!cancelled) setPosts(translated);
-      } catch (err) {
-        if (!cancelled) setPosts(originalPosts);
-      } finally {
-        if (!cancelled) {
-          setTranslating(false);
-        }
-      }
-    };
-
-    translate();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [language, originalPosts, setTranslating, setTranslationUnavailable]);
+    // Single-language site: show the original posts as-is.
+    setPosts(originalPosts);
+  }, [originalPosts]);
 
 
   useEffect(() => {
@@ -118,7 +86,6 @@ const Home = () => {
       setShowMedia(true);
     }
   }, [location.search, location.pathname]);
-
 
   const filteredPosts = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -230,7 +197,7 @@ const Home = () => {
 
             <div className="mt-auto pt-2">
               <span className="inline-flex items-center gap-1 text-[8.5px] font-black uppercase tracking-[0.08em] text-slate-900 transition-colors group-hover:text-red-600 sm:text-[9px]">
-                Soma inkuru
+                Read More
                 <span aria-hidden="true">→</span>
               </span>
             </div>
@@ -263,7 +230,7 @@ const Home = () => {
             onClick={() => setShowMedia((prev) => !prev)}
             className="flex w-full items-center justify-between gap-2 rounded-md border border-slate-900 bg-slate-950 px-2.5 py-1.5 sm:px-3 sm:py-2 font-body text-[8px] xs:text-[9px] sm:text-[10px] font-black uppercase tracking-[0.14em] sm:tracking-[0.16em] text-white shadow-sm transition hover:border-red-600 hover:bg-red-600"
           >
-            <span className="truncate">AMAFOTO &amp; VIDEOS</span>
+            <span className="truncate">PHOTOS &amp; VIDEOS</span>
             <span className="flex shrink-0 items-center gap-1 text-[10px] sm:text-[12px] leading-none">
               <span aria-hidden="true">{showMedia ? "−" : "+"}</span>
               {showMedia ? (

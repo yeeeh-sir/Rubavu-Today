@@ -25,11 +25,10 @@ import {
 } from "../../services/api";
 
 import SearchBar from "../SearchBar/SearchBar";
-import LanguageSelector from "../LanguageSelector/LanguageSelector";
 import AdBanner from "../common/AdBanner";
 import { getArticleUrl } from "../../utils/slug";
 import { formatRelativeTime } from "../../utils/time";
-import { useLanguage, translateCategory, translatePostsBatch } from "../../context/LanguageContext";
+import { useLanguage, translateCategory } from "../../context/LanguageContext";
 
 
 
@@ -1454,7 +1453,7 @@ const NewsPostsLayout = ({
 ========================================================= */
 
 const Navbar = ({ showHomeContent = true }) => {
-  const { language, t, setTranslating, setTranslationUnavailable } = useLanguage();
+  const { language, t } = useLanguage();
 
   const [
     isMenuOpen,
@@ -1745,45 +1744,20 @@ const Navbar = ({ showHomeContent = true }) => {
   }, []);
 
   /* =====================================================
-     TRANSLATE POSTS
+     POSTS (single-language: originals shown as-is)
   ===================================================== */
 
   useEffect(() => {
     let mounted = true;
 
-    const translate = async () => {
-      if (posts.length === 0) return;
-
-      if (language === "rw") {
-        if (mounted) {
-          setTranslatedPosts(posts);
-          setTranslating(false);
-          setTranslationUnavailable(false);
-        }
-        return;
-      }
-
-      setTranslating(true);
-      setTranslationUnavailable(false);
-
-      try {
-        const translated = await translatePostsBatch(posts, language);
-        if (mounted) setTranslatedPosts(translated);
-      } catch (error) {
-        if (mounted) setTranslatedPosts(posts);
-      } finally {
-        if (mounted) {
-          setTranslating(false);
-        }
-      }
-    };
-
-    translate();
+    if (mounted && posts.length > 0) {
+      setTranslatedPosts(posts);
+    }
 
     return () => {
       mounted = false;
     };
-  }, [language, posts, setTranslating, setTranslationUnavailable]);
+  }, [posts, setTranslatedPosts]);
 
   /* =====================================================
      NAV LINKS
@@ -2380,7 +2354,6 @@ const Navbar = ({ showHomeContent = true }) => {
 
 
           <div className="absolute right-3 hidden flex-col items-end gap-3 sm:flex sm:right-6 lg:right-10">
-            <LanguageSelector compact={false} />
             <SocialLinks />
           </div>
 
@@ -2453,7 +2426,7 @@ const Navbar = ({ showHomeContent = true }) => {
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-3.5 w-3.5" aria-hidden="true">
                   <path d="M4.5 4.5a3 3 0 0 0-3 3v9a3 3 0 0 0 3 3h8.25a3 3 0 0 0 3-3v-9a3 3 0 0 0-3-3H4.5ZM19.94 18.75l-2.44-2.44V7.69l2.44-2.44a1.5 1.5 0 0 1 2.56 1.06v11.38a1.5 1.5 0 0 1-2.56 1.06Z" />
                 </svg>
-                {language === "rw" ? "AMAFOTO & VIDEOS" : "PHOTOS & VIDEOS"}
+                PHOTOS & VIDEOS
               </Link>
               {links.map(
                 (link) => {
@@ -2508,7 +2481,7 @@ const Navbar = ({ showHomeContent = true }) => {
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-3.5 w-3.5" aria-hidden="true">
                   <path d="M4.5 4.5a3 3 0 0 0-3 3v9a3 3 0 0 0 3 3h8.25a3 3 0 0 0 3-3v-9a3 3 0 0 0-3-3H4.5ZM19.94 18.75l-2.44-2.44V7.69l2.44-2.44a1.5 1.5 0 0 1 2.56 1.06v11.38a1.5 1.5 0 0 1-2.56 1.06Z" />
                 </svg>
-                {language === "rw" ? "AMAFOTO & VIDEOS" : "PHOTOS & VIDEOS"}
+                PHOTOS & VIDEOS
               </Link>
               {links.map(
                 (link) => {
@@ -2555,12 +2528,6 @@ const Navbar = ({ showHomeContent = true }) => {
 
           {isMenuOpen && (
             <div className="border-t border-slate-800 bg-slate-900 px-4 py-4 shadow-2xl sm:hidden">
-              <div className="mb-4 flex items-center justify-between">
-                <p className="font-body text-[9px] font-bold uppercase tracking-[0.2em] text-slate-500">
-                  {language === "rw" ? "Ururimi" : t("language")}
-                </p>
-                <LanguageSelector compact />
-              </div>
               <div className="mb-4">
                 <p className="mb-2 font-body text-[9px] font-bold uppercase tracking-[0.2em] text-slate-500">
                   {language === "rw" ? "Ibice by'amakuru" : t("categories")}
@@ -2575,7 +2542,7 @@ const Navbar = ({ showHomeContent = true }) => {
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4" aria-hidden="true">
                       <path d="M4.5 4.5a3 3 0 0 0-3 3v9a3 3 0 0 0 3 3h8.25a3 3 0 0 0 3-3v-9a3 3 0 0 0-3-3H4.5ZM19.94 18.75l-2.44-2.44V7.69l2.44-2.44a1.5 1.5 0 0 1 2.56 1.06v11.38a1.5 1.5 0 0 1-2.56 1.06Z" />
                     </svg>
-                    {language === "rw" ? "AMAFOTO & VIDEOS" : "PHOTOS & VIDEOS"}
+                    PHOTOS & VIDEOS
                   </Link>
                   {links.map(
                     (link) => {

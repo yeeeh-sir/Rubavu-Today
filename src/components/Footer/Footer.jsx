@@ -3,10 +3,17 @@ import { Link } from "react-router-dom";
 import { MapPin, Phone } from "lucide-react";
 import logo from "../../Rubavu.jpeg";
 import { DEPARTMENTS } from "../Navbar/Navbar";
-import { useLanguage, translateCategory } from "../../context/LanguageContext";
 
 const WHATSAPP_URL = "https://wa.me/250788945200";
 const WHATSAPP_DISPLAY = "+250 788 945 200";
+
+const DEPT_NAMES_EN = {
+  Amakuru: "News",
+  Ubukungu: "Economy",
+  Imikino: "Sports",
+  Imyidagaduro: "Entertainment",
+  Uburezi: "Education",
+};
 
 const OFFICE_LOCATION = "Rubavu, Rwanda";
 const MAPS_EMBED_URL =
@@ -80,13 +87,11 @@ const FooterLink = ({ to, children }) => (
 );
 
 const Footer = () => {
-  const { language, t } = useLanguage();
-
   const quickLinks = [
-    { label: t("home"), to: "/" },
-    { label: t("aboutUs"), to: "/about" },
-    { label: t("contactUs"), to: "/contact" },
-    { label: t("advertiseWithUs"), to: "/contact" },
+    { label: "Home", to: "/" },
+    { label: "About Us", to: "/about" },
+    { label: "Contact Us", to: "/contact" },
+    { label: "Advertise With Us", to: "/contact" },
   ];
 
   return (
@@ -109,7 +114,9 @@ const Footer = () => {
             </Link>
 
             <p className="mt-4 max-w-md text-[13px] leading-relaxed text-slate-400">
-              {t("footerDescription")}
+              Rubavu Today is a modern digital news platform delivering trusted
+              news, stories, entertainment, sports, business and community
+              updates from Rubavu and beyond.
             </p>
 
             <div className="mt-5 flex items-center gap-2.5">
@@ -130,7 +137,7 @@ const Footer = () => {
 
           {/* NEWS CATEGORIES */}
           <div className="lg:col-span-2">
-            <FooterHeading>{t("newsCategories")}</FooterHeading>
+            <FooterHeading>News Categories</FooterHeading>
 
             <ul className="mt-4 space-y-1">
               {DEPARTMENTS.map((department) => (
@@ -138,7 +145,7 @@ const Footer = () => {
                   key={department.name}
                   to={`/?category=${encodeURIComponent(department.name)}`}
                 >
-                  {translateCategory(department.name, language)}
+                  {DEPT_NAMES_EN[department.name] || department.name}
                 </FooterLink>
               ))}
             </ul>
@@ -146,7 +153,7 @@ const Footer = () => {
 
           {/* QUICK LINKS */}
           <div className="lg:col-span-2">
-            <FooterHeading>{t("quickLinks")}</FooterHeading>
+            <FooterHeading>Quick Links</FooterHeading>
 
             <ul className="mt-4 space-y-1">
               {quickLinks.map((link) => (
@@ -159,7 +166,7 @@ const Footer = () => {
 
           {/* CONTACT */}
           <div className="lg:col-span-3">
-            <FooterHeading>{t("footerContact")}</FooterHeading>
+            <FooterHeading>Contact</FooterHeading>
 
             <ul className="mt-4 space-y-3 text-[13px]">
               <li>
@@ -174,13 +181,7 @@ const Footer = () => {
                   </span>
                   <span>
                     <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                      {language === "rw"
-                        ? "Telefoni / WhatsApp"
-                        : language === "fr"
-                          ? "Téléphone / WhatsApp"
-                          : language === "sw"
-                            ? "Simu / WhatsApp"
-                            : "Phone / WhatsApp"}
+                      Phone / WhatsApp
                     </span>
                     <span className="font-semibold text-slate-300 group-hover:text-white">
                       {WHATSAPP_DISPLAY}
@@ -195,13 +196,7 @@ const Footer = () => {
                 </span>
                 <span>
                   <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                    {language === "rw"
-                      ? "Aho duherereye"
-                      : language === "fr"
-                        ? "Notre emplacement"
-                        : language === "sw"
-                          ? "Mahali tulipo"
-                          : "Our location"}
+                    Our location
                   </span>
                   <span className="font-semibold text-slate-300">{OFFICE_LOCATION}</span>
                 </span>
@@ -212,7 +207,7 @@ const Footer = () => {
               to="/contact"
               className="mt-5 inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2.5 text-[12px] font-bold uppercase tracking-wider text-white transition hover:bg-red-700"
             >
-              {t("contactUs")} →
+              Contact Us →
             </Link>
           </div>
         </div>
@@ -221,7 +216,7 @@ const Footer = () => {
         <div className="mt-12 border-t border-slate-800 pt-10">
           <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12 lg:gap-8">
             <div className="lg:col-span-4">
-              <FooterHeading>{t("ourLocation")}</FooterHeading>
+              <FooterHeading>Find Us</FooterHeading>
 
               <div className="mt-5 flex items-center gap-3 text-slate-300">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-red-600 bg-slate-800 text-red-500">
@@ -238,13 +233,7 @@ const Footer = () => {
               </div>
 
               <p className="mt-4 max-w-sm text-[13px] leading-relaxed text-slate-400">
-                {language === "rw"
-                  ? "Turi mu mujyi wa Rubavu, mu Rwanda."
-                  : language === "fr"
-                    ? "Notre rédaction est située à Rubavu, au Rwanda."
-                    : language === "sw"
-                      ? "Ofisi yetu iko Rubavu, Rwanda."
-                      : "Our newsroom is located in Rubavu, Rwanda."}
+                Our newsroom is located in Rubavu, Rwanda.
               </p>
 
               <a
@@ -252,9 +241,9 @@ const Footer = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="mt-5 inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2.5 text-[12px] font-bold uppercase tracking-wider text-white transition hover:bg-red-700"
-                aria-label={t("openInGoogleMaps")}
+                aria-label="Open in Google Maps"
               >
-                {t("openInGoogleMaps")}
+                Open in Google Maps
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   viewBox="0 0 24 24"
@@ -290,7 +279,7 @@ const Footer = () => {
                     aria-hidden="true"
                     className="h-2 w-2 shrink-0 rounded-full bg-red-600"
                   />
-                  {t("ourLocation")}: Rubavu Today — {OFFICE_LOCATION}
+                  Find Us: Rubavu Today — {OFFICE_LOCATION}
                 </p>
               </div>
             </div>
