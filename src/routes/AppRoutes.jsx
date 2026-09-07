@@ -4,6 +4,7 @@ import {
     Route,
     Routes,
     useNavigate,
+    useLocation,
 } from "react-router-dom";
 import Navbar from "../components/Navbar/Navbar";
 import Footer from "../components/Footer/Footer";
@@ -175,6 +176,15 @@ function EmployeeProfileRoute() {
 
 function AppRoutes() {
     const navigate = useNavigate();
+    const location = useLocation();
+
+    useEffect(() => {
+        if (typeof window.gtag === "function") {
+            window.gtag("config", "G-J25JBHTZ8D", {
+                page_path: location.pathname + location.search + location.hash,
+            });
+        }
+    }, [location]);
 
     return (
         <Suspense fallback={<LoadingScreen message="Loading..." />}>
