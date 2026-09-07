@@ -32,6 +32,20 @@ export const normalizeImageUrl = (image) => {
   return `${API_ROOT}/uploads/${image}`;
 };
 
+export const getProfileImageUrl = (user) => {
+  if (!user) return null;
+
+  const candidate =
+    user.profile_image_url ||
+    user.profile_image ||
+    user.avatar ||
+    null;
+
+  if (!candidate) return null;
+
+  return normalizeImageUrl(candidate);
+};
+
 export const normalizePost = (post) => ({
   ...post,
 
@@ -59,10 +73,28 @@ export const normalizePost = (post) => ({
     post.youtube_url || null,
 
   author:
-    post.Author ||
-    post.author ||
-    post.author_name ||
-    "",
+    post.author &&
+      typeof post.author === "object"
+      ? {
+        ...post.author,
+        profile_image: post.author.profile_image
+          ? normalizeImageUrl(post.author.profile_image)
+          : null,
+      }
+      : post.Author ||
+      post.author ||
+      post.author_name ||
+      "",
+
+  author_profile_image:
+    post.author_profile_image ||
+      (post.author && typeof post.author === "object"
+        ? post.author.profile_image
+        : null)
+      ? normalizeImageUrl(
+        post.author_profile_image || post.author.profile_image
+      )
+      : null,
 
   slug: post.slug || "",
 
@@ -326,6 +358,46 @@ export async function changeMyEmail(
 
   if (data?.user) {
     setAuthStorage(getToken(), data.user);
+  }
+
+  return data;
+}
+
+export async function uploadProfileImage(imageFile) {
+  if (!imageFile) {
+    throw new Error("No image file was selected.");
+  }
+
+  const formData = new FormData();
+  formData.append("image", imageFile);
+
+  const response = await fetch(
+    `${API_ROOT}/api/profile/image`,
+    {
+      method: "PUT",
+      headers: getFormDataHeaders(),
+      body: formData,
+    }
+  );
+
+  const data = await handleResponse(response);
+
+  const profileImage = data?.profile_image || null;
+  const profileImageUrl = data?.profile_image_url || profileImage;
+
+  if (profileImageUrl) {
+    const storedUser = getStoredUser();
+
+    if (storedUser) {
+      const updatedUser = {
+        ...storedUser,
+        profile_image: profileImageUrl,
+        profile_image_url: profileImageUrl,
+        profile_image_public_id: data?.profile_image_public_id || storedUser.profile_image_public_id || null,
+      };
+
+      setAuthStorage(getToken(), updatedUser);
+    }
   }
 
   return data;
@@ -1121,6 +1193,7 @@ const api = {
   getCurrentUser,
   changeMyPassword,
   changeMyEmail,
+  uploadProfileImage,
   getToken,
   getTokenValue,
   getStoredUser,

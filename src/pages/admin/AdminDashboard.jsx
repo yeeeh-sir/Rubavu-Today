@@ -32,10 +32,14 @@ import {
     getAllComments,
     deleteComment,
     getComments,
+    getProfileImageUrl,
+    getStoredUser,
+    uploadProfileImage,
     updatePostStatus,
 } from "../../services/api";
 
 import { DashboardLayout } from "../../components/dashboard";
+import AuthorProfileTrigger from "../../components/common/AuthorProfileTrigger";
 import ArticleEditor from "../../components/article/ArticleEditor";
 import { MessageSquare, Eye, EyeOff, ChevronDown, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -107,6 +111,64 @@ const AdminDashboard = ({
 
     const [selectedPost, setSelectedPost] = useState(null);
     const [loadingPostComments, setLoadingPostComments] = useState(false);
+
+    const adminUser = getStoredUser();
+
+    const [adminProfilePreview, setAdminProfilePreview] = useState(null);
+    const [adminProfileFile, setAdminProfileFile] = useState(null);
+    const [adminProfileImage, setAdminProfileImage] = useState(getProfileImageUrl(adminUser));
+    const [adminProfileSaving, setAdminProfileSaving] = useState(false);
+    const [adminProfileMessage, setAdminProfileMessage] = useState("");
+    const [adminProfileError, setAdminProfileError] = useState("");
+    const adminProfileInputRef = useRef(null);
+
+    const handleAdminProfileSelect = (e) => {
+        const file = e.target.files?.[0];
+
+        if (!file) return;
+
+        if (!["image/jpeg", "image/jpg", "image/png", "image/webp"].includes(file.type)) {
+            setAdminProfileError("Shyiramo ifoto ya JPG, PNG cyangwa WebP gusa.");
+            return;
+        }
+
+        setAdminProfileError("");
+        setAdminProfileMessage("");
+        setAdminProfileFile(file);
+
+        const reader = new FileReader();
+
+        reader.onload = () => setAdminProfilePreview(reader.result);
+
+        reader.readAsDataURL(file);
+
+    };
+
+    const handleAdminProfileUpload = async () => {
+        const file = adminProfileFile;
+
+        if (!file) {
+            setAdminProfileError("Hitamo ifoto mbere yo kuyibika.");
+            return;
+        }
+
+        setAdminProfileSaving(true);
+        setAdminProfileMessage("");
+        setAdminProfileError("");
+
+        try {
+            const result = await uploadProfileImage(file);
+            setAdminProfileMessage("Ifoto yavuguruwe neza.");
+            setAdminProfilePreview(null);
+            setAdminProfileFile(null);
+            setAdminProfileImage(getProfileImageUrl({ profile_image: result?.profile_image_url || result?.profile_image }));
+            if (adminProfileInputRef.current) adminProfileInputRef.current.value = "";
+        } catch (err) {
+            setAdminProfileError(err?.message || "Ntibyashobotse kubika ifoto.");
+        } finally {
+            setAdminProfileSaving(false);
+        }
+    };
 
 
 
@@ -371,8 +433,8 @@ const AdminDashboard = ({
             await updatePostStatus(postId, newStatus);
             setStatusMessage(
                 newStatus === "approved" ? "Inkuru yemewe kandi yatangajwe." :
-                newStatus === "rejected" ? "Inkuru yanze." :
-                "Inkuru yasubijwe gusuzumwa."
+                    newStatus === "rejected" ? "Inkuru yanze." :
+                        "Inkuru yasubijwe gusuzumwa."
             );
             await loadPosts();
 
@@ -1487,19 +1549,87 @@ const AdminDashboard = ({
                                 )}
                             </button>
 
-                            <div className="hidden items-center gap-2 border-l border-slate-200 pl-3 sm:flex">
-                                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-100 font-bold text-blue-700">
-                                    A
+                            <div className="relative hidden items-center gap-2 border-l border-slate-200 pl-3 sm:flex">
+                                <div className="relative shrink-0">
+                                    {adminProfilePreview ? (
+                                        <img
+                                            src={adminProfilePreview}
+                                            alt="Ifoto"
+                                            className="h-9 w-9 rounded-full object-cover"
+                                        />
+                                    ) : adminProfileImage ? (
+                                        <img
+                                            src={adminProfileImage}
+                                            alt={adminUser?.full_name || "Umuyobozi"}
+                                            className="h-9 w-9 rounded-full object-cover"
+                                        />
+                                    ) : (
+                                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-100 font-bold text-blue-700">
+                                            {(adminUser?.full_name || "A").trim().charAt(0).toUpperCase()}
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="hidden xl:block">
                                     <p className="text-xs font-bold text-slate-800">
-                                        Umuyobozi
+                                        {adminUser?.full_name || "Umuyobozi"}
                                     </p>
 
                                     <p className="text-[10px] text-slate-400">
                                         Umuyobozi mwiza
                                     </p>
+
+                                    <div className="mt-0.5">
+                                        <input
+                                            ref={adminProfileInputRef}
+                                            type="file"
+                                            accept="image/jpeg,image/jpg,image/png,image/webp"
+                                            onChange={handleAdminProfileSelect}
+                                            className="hidden"
+                                        />
+
+                                        <button
+                                            type="button"
+                                            onClick={() => adminProfileInputRef.current?.click()}
+                                            className="text-[10px] font-bold text-blue-600 transition hover:underline"
+                                            title="Hitamo ifoto"
+                                        >
+                                            {adminProfilePreview ? "Hindura ifoto" : "+ Ifoto"}
+                                        </button>
+
+                                        {adminProfilePreview && (
+                                            <span className="ml-1.5 inline-flex gap-1">
+                                                <button
+                                                    type="button"
+                                                    onClick={handleAdminProfileUpload}
+                                                    disabled={adminProfileSaving}
+                                                    className="text-[10px] font-bold text-emerald-600 transition hover:underline disabled:opacity-50"
+                                                >
+                                                    {adminProfileSaving ? "..." : "Bika"}
+                                                </button>
+
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setAdminProfilePreview(null);
+                                                        setAdminProfileFile(null);
+                                                        if (adminProfileInputRef.current) adminProfileInputRef.current.value = "";
+                                                    }}
+                                                    className="text-[10px] font-bold text-red-500 transition hover:underline"
+                                                >
+                                                    Reka
+                                                </button>
+                                            </span>
+                                        )}
+
+                                        {adminProfileMessage && (
+                                            <p className="text-[10px] font-bold text-emerald-600">✓ {adminProfileMessage}</p>
+                                        )}
+
+                                        {adminProfileError && (
+                                            <p className="text-[10px] font-bold text-red-600">✕ {adminProfileError}</p>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
 
@@ -1668,7 +1798,7 @@ const AdminDashboard = ({
                                         </FormField>
                                     </div>
 
-                                        <FormField label="Ifoto (byibuze)">
+                                    <FormField label="Ifoto (byibuze)">
                                         <input
                                             type="file"
                                             accept="image/*"
@@ -1915,11 +2045,10 @@ const AdminDashboard = ({
                         >
                             <div className="flex min-w-0 items-center gap-3">
                                 <span
-                                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition ${
-                                        showAllComments
-                                            ? "bg-blue-600 text-white"
-                                            : "bg-blue-50 text-blue-600"
-                                    }`}
+                                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition ${showAllComments
+                                        ? "bg-blue-600 text-white"
+                                        : "bg-blue-50 text-blue-600"
+                                        }`}
                                 >
                                     <MessageSquare className="h-5 w-5" />
                                 </span>
@@ -1951,84 +2080,84 @@ const AdminDashboard = ({
                         </button>
 
                         {showAllComments && (
-                        <div className="border-t border-slate-100 p-4 sm:p-5">
+                            <div className="border-t border-slate-100 p-4 sm:p-5">
 
-                        {commentsError && (
-                            <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-xs font-semibold text-red-600">
-                                {commentsError}
-                            </p>
-                        )}
+                                {commentsError && (
+                                    <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-xs font-semibold text-red-600">
+                                        {commentsError}
+                                    </p>
+                                )}
 
-                        {loadingComments ? (
-                            <p className="py-6 text-center text-sm text-slate-500">
-                                Birimo gutwara ibitekerezo...
-                            </p>
-                        ) : allComments.length === 0 ? (
-                            <p className="py-6 text-center text-sm text-slate-500">
-                                Nta bitekerezo bihari.
-                            </p>
-                        ) : (
-                            <div className="max-h-[480px] space-y-3 overflow-y-auto pr-1">
+                                {loadingComments ? (
+                                    <p className="py-6 text-center text-sm text-slate-500">
+                                        Birimo gutwara ibitekerezo...
+                                    </p>
+                                ) : allComments.length === 0 ? (
+                                    <p className="py-6 text-center text-sm text-slate-500">
+                                        Nta bitekerezo bihari.
+                                    </p>
+                                ) : (
+                                    <div className="max-h-[480px] space-y-3 overflow-y-auto pr-1">
 
-                                {allComments.map((comment) => {
+                                        {allComments.map((comment) => {
 
-                                    const commentId = comment.id ?? comment.comment_id ?? comment._id;
+                                            const commentId = comment.id ?? comment.comment_id ?? comment._id;
 
-                                    return (
+                                            return (
 
-                                        <div
-                                            key={commentId}
-                                            className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
-                                        >
+                                                <div
+                                                    key={commentId}
+                                                    className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
+                                                >
 
-                                            <div className="flex items-start justify-between gap-3">
+                                                    <div className="flex items-start justify-between gap-3">
 
-                                                <div className="min-w-0">
+                                                        <div className="min-w-0">
 
-                                                    <div className="flex flex-wrap items-center gap-2">
+                                                            <div className="flex flex-wrap items-center gap-2">
 
-                                                        <span className="text-sm font-black text-slate-900">
-                                                            {comment.name || comment.user_name || comment.author || "Nturwaho"}
-                                                        </span>
+                                                                <span className="text-sm font-black text-slate-900">
+                                                                    {comment.name || comment.user_name || comment.author || "Nturwaho"}
+                                                                </span>
 
-                                                        {comment.post_title && (
-                                                            <span className="truncate rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-black text-blue-700">
-                                                                {comment.post_title}
-                                                            </span>
-                                                        )}
+                                                                {comment.post_title && (
+                                                                    <span className="truncate rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-black text-blue-700">
+                                                                        {comment.post_title}
+                                                                    </span>
+                                                                )}
+
+                                                            </div>
+
+                                                            <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-600">
+                                                                {comment.comment || comment.content || comment.text || ""}
+                                                            </p>
+
+                                                            {comment.created_at && (
+                                                                <p className="mt-2 text-[11px] text-slate-400">
+                                                                    {new Date(comment.created_at).toLocaleString()}
+                                                                </p>
+                                                            )}
+
+                                                        </div>
+
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleDeleteAllComment(commentId)}
+                                                            className="flex-shrink-0 rounded-lg bg-red-50 px-2 py-1 text-[10px] font-black text-red-600 hover:bg-red-600 hover:text-white"
+                                                        >
+                                                            Gusiba
+                                                        </button>
 
                                                     </div>
 
-                                                    <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-600">
-                                                        {comment.comment || comment.content || comment.text || ""}
-                                                    </p>
-
-                                                    {comment.created_at && (
-                                                        <p className="mt-2 text-[11px] text-slate-400">
-                                                            {new Date(comment.created_at).toLocaleString()}
-                                                        </p>
-                                                    )}
-
                                                 </div>
 
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleDeleteAllComment(commentId)}
-                                                    className="flex-shrink-0 rounded-lg bg-red-50 px-2 py-1 text-[10px] font-black text-red-600 hover:bg-red-600 hover:text-white"
-                                                >
-                                                    Gusiba
-                                                </button>
+                                            );
+                                        })}
 
-                                            </div>
-
-                                        </div>
-
-                                    );
-                                })}
-
+                                    </div>
+                                )}
                             </div>
-                        )}
-                        </div>
                         )}
 
                     </section>
@@ -2897,7 +3026,6 @@ const AdminDashboard = ({
                 />
             )}
 
-            )}
         </DashboardLayout>
     );
 };
@@ -3298,11 +3426,18 @@ const PostCard = ({
                     </span>
 
                     {post.author && (
-                        <span className="min-w-0 max-w-full truncate">
-                            ✍{" "}
-                            {post.author.name ||
-                                post.author}
-                        </span>
+                        <AuthorProfileTrigger
+                            author={typeof post.author === "object" ? post.author : {
+                                name: post.author,
+                                role: post.author_role || post.role || "unknown",
+                            }}
+                            className="max-w-full"
+                        >
+                            <span className="block max-w-full truncate">
+                                ✍{" "}
+                                {post.author.name || post.author}
+                            </span>
+                        </AuthorProfileTrigger>
                     )}
                 </div>
 
@@ -3429,8 +3564,8 @@ const ModalShell = ({
                 onClick={onClose}
             />
 
-                <div
-                    className={`
+            <div
+                className={`
                     relative z-10 flex max-h-[calc(100dvh-1rem)]
                     w-full ${maxWidth}
                     flex-col overflow-y-auto
@@ -3663,12 +3798,12 @@ const PostDetailModal = ({
                             RT
                         </div>
                         <div>
-                        <p className="text-xs font-black uppercase tracking-wide text-blue-600">
-                            Isuzuma ry'inkuru
-                        </p>
-                        <p className="text-xs text-slate-400">
-                            Umuyobozi
-                        </p>
+                            <p className="text-xs font-black uppercase tracking-wide text-blue-600">
+                                Isuzuma ry'inkuru
+                            </p>
+                            <p className="text-xs text-slate-400">
+                                Umuyobozi
+                            </p>
                         </div>
                     </div>
                     <button

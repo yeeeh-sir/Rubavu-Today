@@ -2205,7 +2205,7 @@ const Navbar = ({ showHomeContent = true }) => {
 
           <div className="ml-2 flex shrink-0 items-center gap-2">
             <span className="rounded border border-slate-700 bg-slate-900 px-2 py-0.5 font-mono text-yellow-400">
-              • {timeLabel}
+              {timeLabel}
             </span>
 
             <span className="hidden font-semibold text-white md:inline">

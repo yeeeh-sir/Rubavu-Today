@@ -20,6 +20,7 @@ import {
 import api, { API_ROOT } from "../../services/api";
 import rubavuLogo from "../../Rubavu.jpeg";
 import ArticleEditor from "../../components/article/ArticleEditor";
+import AuthorProfileTrigger from "../../components/common/AuthorProfileTrigger";
 
 function Employee() {
 
@@ -775,11 +776,17 @@ function Employee() {
                           Written by
                         </p>
 
-                        <p className="truncate text-xs font-bold text-slate-700">
-
-                          {getAuthorName(post)}
-
-                        </p>
+                        <AuthorProfileTrigger
+                          author={typeof post.author === "object" ? post.author : {
+                            name: getAuthorName(post),
+                            role: post.author_role || post.role || "employee",
+                          }}
+                          className="max-w-full"
+                        >
+                          <span className="block truncate text-xs font-bold text-slate-700">
+                            {getAuthorName(post)}
+                          </span>
+                        </AuthorProfileTrigger>
 
                       </div>
 
@@ -949,13 +956,16 @@ function Employee() {
                     Written by
                   </p>
 
-                  <p className="text-sm font-bold text-slate-800">
-
-                    {getAuthorName(
-                      selectedPost
-                    )}
-
-                  </p>
+                  <AuthorProfileTrigger
+                    author={typeof selectedPost.author === "object" ? selectedPost.author : {
+                      name: getAuthorName(selectedPost),
+                      role: selectedPost.author_role || selectedPost.role || "employee",
+                    }}
+                  >
+                    <span className="text-sm font-bold text-slate-800">
+                      {getAuthorName(selectedPost)}
+                    </span>
+                  </AuthorProfileTrigger>
 
                 </div>
 

@@ -2,12 +2,17 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { getArticleUrl } from "../../utils/slug";
 import { useLanguage } from "../../context/LanguageContext";
+import AuthorProfilePopup, {
+  PROFILE_POPUP_EVENT,
+  getAuthorKey,
+} from "../common/AuthorProfilePopup";
 
 const FALLBACK_IMAGE =
   "https://images.unsplash.com/photo-1495020689067-958852a7765e?auto=format&fit=crop&w=900&q=80";
 
 const PostCard = ({ post }) => {
   const [copied, setCopied] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const { language, t } = useLanguage();
 
   const locale = language === "fr" ? "fr-FR" : language === "sw" ? "sw-KE" : language === "en" ? "en-US" : "rw-RW";
@@ -30,7 +35,40 @@ const PostCard = ({ post }) => {
 
   const contentText = post?.summary || post?.description || "";
   const readTime = calculateReadTime(contentText);
-  const authorName = post?.Author || post?.author || "Rubavu Today";
+  const authorName =
+    post?.Author ||
+    (typeof post?.author === "object"
+      ? post.author.name
+      : post?.author) ||
+    "Rubavu Today";
+  const authorProfileImage =
+    post?.author_profile_image ||
+    (typeof post?.author === "object"
+      ? post.author.profile_image
+      : null) ||
+    null;
+  const author =
+    typeof post?.author === "object"
+      ? { ...post.author, profile_image: authorProfileImage }
+      : {
+        name: authorName,
+        role: post?.author_role || post?.role || "unknown",
+        profile_image: authorProfileImage,
+      };
+
+  const toggleProfile = () => {
+    const nextOpen = !profileOpen;
+
+    if (nextOpen) {
+      document.dispatchEvent(
+        new CustomEvent(PROFILE_POPUP_EVENT, {
+          detail: getAuthorKey(author),
+        })
+      );
+    }
+
+    setProfileOpen(nextOpen);
+  };
 
   const getPostSlugPath = (entry) => getArticleUrl(entry);
 
@@ -104,7 +142,32 @@ const PostCard = ({ post }) => {
             <span>•</span>
             <span className="text-slate-700 bg-slate-100 px-2 py-0.5 rounded-full lowercase text-[10px]">{readTime}</span>
             <span>•</span>
-            <span className="truncate max-w-[100px]" title={authorName}>{authorName}</span>
+            <span className="relative flex min-w-0 items-center gap-1">
+              <button
+                type="button"
+                onClick={toggleProfile}
+                className="flex min-w-0 items-center gap-1 rounded-full text-left transition hover:text-[#B3261E]"
+                aria-expanded={profileOpen}
+              >
+                {authorProfileImage ? (
+                  <img
+                    src={authorProfileImage}
+                    alt=""
+                    className="h-3.5 w-3.5 flex-shrink-0 rounded-full object-cover"
+                  />
+                ) : (
+                  <span className="flex h-3.5 w-3.5 flex-shrink-0 items-center justify-center rounded-full bg-red-600 text-[8px] font-bold text-white">
+                    {authorName.trim().charAt(0).toUpperCase() || "A"}
+                  </span>
+                )}
+                <span className="max-w-[100px] truncate" title={authorName}>{authorName}</span>
+              </button>
+              <AuthorProfilePopup
+                author={author}
+                open={profileOpen}
+                onClose={() => setProfileOpen(false)}
+              />
+            </span>
           </div>
 
           <Link to={getPostSlugPath(post)}>

@@ -2,6 +2,7 @@ import React, {
   useEffect,
   useState,
   useCallback,
+  useRef,
 } from "react";
 
 import {
@@ -9,7 +10,9 @@ import {
   deletePost,
   updatePost,
   deleteComment,
+  getProfileImageUrl,
   getStoredUser,
+  uploadProfileImage,
   getChiefEditorPosts,
   getAllComments,
   getComments,
@@ -20,6 +23,7 @@ import { API_ROOT as SERVER_URL } from "../../services/api";
 import LoadingScreen from "../../components/common/LoadingScreen";
 import { DashboardLayout, StatusBadge as SharedStatusBadge } from "../../components/dashboard";
 import ArticleEditor from "../../components/article/ArticleEditor";
+import AuthorProfileTrigger from "../../components/common/AuthorProfileTrigger";
 
 export default function ChiefDashboard({ onLogout }) {
 
@@ -61,6 +65,77 @@ export default function ChiefDashboard({ onLogout }) {
     loggedInUser?.name ||
     loggedInUser?.email ||
     "Chief Editor";
+
+  const [profilePreview, setProfilePreview] = useState(
+    null
+  );
+  const [profileFile, setProfileFile] = useState(null);
+  const [profileImage, setProfileImage] = useState(getProfileImageUrl(loggedInUser));
+
+  const [profileUploading, setProfileUploading] =
+    useState(false);
+
+  const [profileMessage, setProfileMessage] =
+    useState("");
+
+  const [profileError, setProfileError] =
+    useState("");
+
+  const profileInputRef = useRef(null);
+
+  const handleProfileFileSelect = (e) => {
+    const file = e.target.files?.[0];
+
+    if (!file) return;
+
+    if (
+      !["image/jpeg", "image/jpg", "image/png", "image/webp"].includes(
+        file.type
+      )
+    ) {
+      setProfileError("Shyiramo ifoto ya JPG, PNG cyangwa WebP gusa.");
+      return;
+    }
+
+    setProfileError("");
+    setProfileMessage("");
+    setProfileFile(file);
+
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      setProfilePreview(reader.result);
+    };
+
+    reader.readAsDataURL(file);
+
+  };
+
+  const handleProfileUpload = async () => {
+    const file = profileFile;
+
+    if (!file) {
+      setProfileError("Hitamo ifoto mbere yo kuyibika.");
+      return;
+    }
+
+    setProfileUploading(true);
+    setProfileMessage("");
+    setProfileError("");
+
+    try {
+      const result = await uploadProfileImage(file);
+      setProfileMessage("Ifoto yavuguruwe neza.");
+      setProfilePreview(null);
+      setProfileFile(null);
+      setProfileImage(getProfileImageUrl({ profile_image: result?.profile_image_url || result?.profile_image }));
+      if (profileInputRef.current) profileInputRef.current.value = "";
+    } catch (err) {
+      setProfileError(err?.message || "Ntibyashobotse kubika ifoto.");
+    } finally {
+      setProfileUploading(false);
+    }
+  };
 
 
 
@@ -832,9 +907,86 @@ export default function ChiefDashboard({ onLogout }) {
                   Winjiye nka
                 </p>
 
-                <p className="mt-1 font-black">
-                  {editorName}
-                </p>
+                <div className="mt-1 flex items-center gap-3">
+                  {profilePreview ? (
+                    <img
+                      src={profilePreview}
+                      alt="Preview"
+                      className="h-10 w-10 shrink-0 rounded-full border-2 border-white/40 object-cover"
+                    />
+                  ) : profileImage ? (
+                    <img
+                      src={profileImage}
+                      alt={editorName}
+                      className="h-10 w-10 shrink-0 rounded-full border-2 border-white/40 object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/20 font-black text-white">
+                      {editorName.trim().charAt(0).toUpperCase() || "C"}
+                    </div>
+                  )}
+
+                  <div className="min-w-0">
+                    <p className="truncate font-black">
+                      {editorName}
+                    </p>
+
+                    <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                      <input
+                        ref={profileInputRef}
+                        type="file"
+                        accept="image/jpeg,image/jpg,image/png,image/webp"
+                        onChange={handleProfileFileSelect}
+                        className="hidden"
+                      />
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          profileInputRef.current?.click()
+                        }
+                        className="rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-bold text-white transition hover:bg-white/25"
+                      >
+                        {profilePreview ? "Hindura" : "Ifoto"}
+                      </button>
+
+                      {profilePreview && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={handleProfileUpload}
+                            disabled={profileUploading}
+                            className="rounded-full bg-emerald-500 px-2 py-0.5 text-[10px] font-bold text-white transition hover:bg-emerald-600 disabled:opacity-50"
+                          >
+                            {profileUploading ? "..." : "Bika"}
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setProfilePreview(null)
+                            }
+                            className="rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold text-white transition hover:bg-red-600"
+                          >
+                            Reka
+                          </button>
+                        </>
+                      )}
+                    </div>
+
+                    {profileMessage && (
+                      <p className="mt-1 text-[10px] font-bold text-emerald-300">
+                        ✓ {profileMessage}
+                      </p>
+                    )}
+
+                    {profileError && (
+                      <p className="mt-1 text-[10px] font-bold text-red-300">
+                        ✕ {profileError}
+                      </p>
+                    )}
+                  </div>
+                </div>
 
               </div>
 
@@ -1412,7 +1564,14 @@ export default function ChiefDashboard({ onLogout }) {
                         </p>
 
                         <p className="mt-0.5 truncate text-xs font-black text-slate-800">
-                          {author}
+                          <AuthorProfileTrigger
+                            author={typeof post.author === "object" ? post.author : {
+                              name: author,
+                              role: post.author_role || post.role || "unknown",
+                            }}
+                          >
+                            {author}
+                          </AuthorProfileTrigger>
                         </p>
 
                       </div>

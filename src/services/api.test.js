@@ -1,4 +1,4 @@
-import { addPost, deletePost, getPosts, updatePost } from './api';
+import { addPost, deletePost, getPosts, updatePost, uploadProfileImage } from './api';
 
 describe('api service', () => {
   beforeEach(() => {
@@ -92,5 +92,46 @@ describe('api service', () => {
 
     expect(updated.title).toBe('Updated post');
     expect(deleted).toBe(true);
+  });
+
+  it('stores profile image URLs from the canonical auth payload', async () => {
+    const file = new File(['avatar'], 'avatar.png', { type: 'image/png' });
+
+    global.fetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        profile_image: '/uploads/profiles/profile-7.png',
+        profile_image_url: '/uploads/profiles/profile-7.png',
+      }),
+    });
+
+    localStorage.setItem('token', 'abc123');
+    localStorage.setItem('user', JSON.stringify({ id: 7, full_name: 'Test User', role_type: 'employee' }));
+
+    await uploadProfileImage(file);
+
+    const stored = JSON.parse(localStorage.getItem('user'));
+    expect(stored.profile_image).toBe('/uploads/profiles/profile-7.png');
+    expect(stored.profile_image_url).toBe('/uploads/profiles/profile-7.png');
+  });
+
+  it('sends the selected profile File under the backend image field', async () => {
+    const file = new File(['avatar'], 'avatar.webp', { type: 'image/webp' });
+
+    global.fetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        profile_image: '/uploads/profiles/profile-7.webp',
+        profile_image_url: '/uploads/profiles/profile-7.webp',
+      }),
+    });
+
+    localStorage.setItem('token', 'abc123');
+    localStorage.setItem('user', JSON.stringify({ id: 7, full_name: 'Test User' }));
+
+    await uploadProfileImage(file);
+
+    const requestBody = global.fetch.mock.calls[0][1].body;
+    expect(requestBody.get('image')).toBe(file);
   });
 });

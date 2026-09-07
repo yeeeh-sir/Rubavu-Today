@@ -9,6 +9,10 @@ import { getPostSlug, getArticleUrl } from "../utils/slug";
 import { formatRelativeTime } from "../utils/time";
 import { getYouTubeEmbedUrl } from "../utils/video";
 import { useLanguage, translateCategory } from "../context/LanguageContext";
+import AuthorProfilePopup, {
+  PROFILE_POPUP_EVENT,
+  getAuthorKey,
+} from "../components/common/AuthorProfilePopup";
 
 const TimeLabel = ({ date, className = "" }) => {
   const { language, t } = useLanguage();
@@ -38,6 +42,7 @@ export default function PostDetails() {
   const [error, setError] = useState("");
   const [reloadKey, setReloadKey] = useState(0);
   const [commentStatus, setCommentStatus] = useState("");
+  const [profileOpen, setProfileOpen] = useState(false);
 
   const [name, setName] = useState("");
   const [commentText, setCommentText] = useState("");
@@ -496,7 +501,7 @@ export default function PostDetails() {
 
 
 
-  
+
 
 
 
@@ -747,6 +752,41 @@ export default function PostDetails() {
     ? "RubavuToday"
     : getAuthorName(post);
 
+  const authorProfileImage = adminPost
+    ? rubavuLogo
+    : post?.author_profile_image ||
+    (typeof post?.author === "object"
+      ? post.author.profile_image
+      : null) ||
+    null;
+
+  const author = adminPost
+    ? {
+      ...(typeof post?.author === "object" ? post.author : {}),
+      name: authorName,
+      role: "admin",
+      profile_image: authorProfileImage,
+    }
+    : {
+      ...(typeof post?.author === "object" ? post.author : {}),
+      name: authorName,
+      profile_image: authorProfileImage,
+    };
+
+  const toggleProfile = () => {
+    const nextOpen = !profileOpen;
+
+    if (nextOpen) {
+      document.dispatchEvent(
+        new CustomEvent(PROFILE_POPUP_EVENT, {
+          detail: getAuthorKey(author),
+        })
+      );
+    }
+
+    setProfileOpen(nextOpen);
+  };
+
   const employeeInitial = authorName
     .trim()
     .charAt(0)
@@ -828,49 +868,23 @@ export default function PostDetails() {
 
               {/* BYLINE */}
               <div className="mt-7 border-y border-slate-200 bg-white px-4 py-4 sm:px-5">
-                <div className="flex flex-wrap items-center gap-3">
+                <div className="relative flex flex-wrap items-center gap-3">
 
-                  {adminPost ? (
-                    <div className="relative shrink-0">
-                      <img
-                        src={rubavuLogo}
-                        alt="RubavuToday"
-                        className="h-11 w-11 rounded-full border-2 border-white object-cover shadow-md"
-                      />
-                      <span
-                        className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-blue-600 shadow-md"
-                        title="Verified RubavuToday"
-                        aria-label="Verified RubavuToday"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          viewBox="0 0 24 24"
-                          className="h-3 w-3 text-white fill-none stroke-current"
-                          strokeWidth="3"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <path d="M5 12.5l4 4L19 7.5" />
-                        </svg>
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-red-600 font-post-title text-lg font-black text-white">
-                      {employeeInitial || "E"}
-                    </div>
-                  )}
-
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-body text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                        {language === "rw" ? "Yanditswe Na:" : t("writtenBy")}
-                      </span>
-                      <span className="truncate font-body text-sm font-bold text-slate-950">
-                        {authorName}
-                      </span>
-                      {adminPost && (
+                  <button
+                    type="button"
+                    onClick={toggleProfile}
+                    aria-expanded={profileOpen}
+                    className="flex min-w-0 items-center gap-3 rounded-xl text-left transition hover:bg-slate-50"
+                  >
+                    {adminPost ? (
+                      <div className="relative shrink-0">
+                        <img
+                          src={rubavuLogo}
+                          alt="RubavuToday"
+                          className="h-11 w-11 rounded-full border-2 border-white object-cover shadow-md"
+                        />
                         <span
-                          className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 shadow-sm"
+                          className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-blue-600 shadow-md"
                           title="Verified RubavuToday"
                           aria-label="Verified RubavuToday"
                         >
@@ -885,15 +899,61 @@ export default function PostDetails() {
                             <path d="M5 12.5l4 4L19 7.5" />
                           </svg>
                         </span>
-                      )}
-                    </div>
+                      </div>
+                    ) : authorProfileImage ? (
+                      <div className="relative shrink-0">
+                        <img
+                          src={authorProfileImage}
+                          alt={authorName}
+                          className="h-11 w-11 rounded-full border-2 border-white object-cover shadow-md"
+                        />
+                      </div>
+                    ) : (
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-red-600 font-post-title text-lg font-black text-white">
+                        {employeeInitial || "E"}
+                      </div>
+                    )}
 
-                    <p className="mt-1 font-body text-xs text-slate-500">
-                      <time dateTime={postDate ? String(postDate) : undefined}>
-                        {formattedDate}
-                      </time>
-                    </p>
-                  </div>
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-body text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                          {language === "rw" ? "Yanditswe Na:" : t("writtenBy")}
+                        </span>
+                        <span className="truncate font-body text-sm font-bold text-slate-950">
+                          {authorName}
+                        </span>
+                        {adminPost && (
+                          <span
+                            className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 shadow-sm"
+                            title="Verified RubavuToday"
+                            aria-label="Verified RubavuToday"
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              viewBox="0 0 24 24"
+                              className="h-3 w-3 text-white fill-none stroke-current"
+                              strokeWidth="3"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <path d="M5 12.5l4 4L19 7.5" />
+                            </svg>
+                          </span>
+                        )}
+                      </div>
+
+                      <p className="mt-1 font-body text-xs text-slate-500">
+                        <time dateTime={postDate ? String(postDate) : undefined}>
+                          {formattedDate}
+                        </time>
+                      </p>
+                    </div>
+                  </button>
+                  <AuthorProfilePopup
+                    author={author}
+                    open={profileOpen}
+                    onClose={() => setProfileOpen(false)}
+                  />
                 </div>
               </div>
 
@@ -1482,7 +1542,7 @@ export default function PostDetails() {
             </div>
           </aside>
         </div>
-      </div>
-    </div>
+      </div >
+    </div >
   );
 }

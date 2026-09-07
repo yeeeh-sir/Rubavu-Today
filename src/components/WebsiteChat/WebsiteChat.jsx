@@ -6,14 +6,6 @@ import websiteLogo from "../../Rubavu.jpeg";
 
 const MAX_POSTS = 200;
 
-const WEBSITE_KNOWLEDGE = `
-Rubavu Today ni urubuga rw'amakuru rwo muri Rubavu n'ibice biyegereye.
-Ibyiciro by'amakuru ni Amakuru, Ubukungu, Imikino, Imyidagaduro n'Uburezi.
-Abasura urubuga bashobora kureba amakuru mashya, gushakisha inkuru, gufungura inkuru yose, gusoma izifitanye isano, gusangiza inkuru, kureba amashusho no gutanga ibitekerezo.
-Umufasha asobanura imikorere y'urubuga mu buryo busobanutse, agatanga inkuru zijyanye n'ikibazo kandi agakoresha gusa amakuru yatanzwe.
-Niba igisubizo kitari mu makuru yatanzwe, abivuge mu Kinyarwanda kandi ayobore umukoresha kuri Shakisha.
-`;
-
 const cleanText = (value) => String(value || "").trim();
 
 const postTitle = (post) => cleanText(post?.title) || "Inkuru ya Rubavu Today";
@@ -246,45 +238,47 @@ const answerQuestion = (question, posts) => {
     return { text: copy.empty };
 };
 
-const buildWebsiteContext = (posts) => [
-    WEBSITE_KNOWLEDGE.trim(),
-    "Published website articles:",
-    ...posts.slice(0, MAX_POSTS).map((post) => [
-        `Title: ${postTitle(post)}`,
-        `Category: ${cleanText(post.category)}`,
-        `Date: ${getDate(post)}`,
-        `Summary: ${cleanText(post.summary || post.description || post.content).slice(0, 500)}`,
-        `Author: ${cleanText(post.author || post.author_name)}`,
-        `Article link: ${postHref(post)}`,
-    ].join("\n")),
-].join("\n\n");
+const MessageBubble = ({ message, onPostClick }) => {
+    const hasSources = message.sources?.length > 0 || message.posts?.length > 0;
+    const sources = message.sources || message.posts || [];
 
-const MessageBubble = ({ message, onPostClick }) => (
-    <div className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
-        <div
-            className={`max-w-[88%] rounded-2xl px-3 py-2 text-sm leading-relaxed ${message.role === "user"
-                ? "rounded-br-sm bg-red-600 text-white"
-                : "rounded-bl-sm bg-slate-100 text-slate-800"
-                }`}
-        >
-            <p className="whitespace-pre-line">{message.text}</p>
-            {message.posts?.length > 0 && (
-                <div className="mt-2 space-y-1.5 border-t border-slate-200 pt-2">
-                    {message.posts.map((post) => (
-                        <button
-                            key={post.id || post._id || postTitle(post)}
-                            type="button"
-                            onClick={() => onPostClick(post)}
-                            className="block w-full text-left text-xs font-bold text-red-700 transition hover:text-red-900"
-                        >
-                            {postTitle(post)} <span aria-hidden="true">→</span>
-                        </button>
-                    ))}
-                </div>
-            )}
+    return (
+        <div className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
+            <div
+                className={`max-w-[88%] rounded-2xl px-3 py-2 text-sm leading-relaxed ${message.role === "user"
+                    ? "rounded-br-sm bg-red-600 text-white"
+                    : "rounded-bl-sm bg-slate-100 text-slate-800"
+                    }`}
+            >
+                <p className="whitespace-pre-line">{message.text}</p>
+                {hasSources && (
+                    <div className="mt-2 space-y-1.5 border-t border-slate-200 pt-2">
+                        <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">
+                            Inkomoko / Sources
+                        </p>
+                        {sources.map((source, index) => (
+                            <button
+                                key={source.id || source._id || index}
+                                type="button"
+                                onClick={() => onPostClick(source)}
+                                className="flex w-full flex-col gap-0.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-left transition hover:border-red-400 hover:bg-red-50"
+                            >
+                                <span className="text-xs font-bold text-red-700">
+                                    {source.title || postTitle(source)}
+                                </span>
+                                {(source.date || source.category) && (
+                                    <span className="text-[10px] text-slate-500">
+                                        {[source.category, source.date].filter(Boolean).join(" • ")}
+                                    </span>
+                                )}
+                            </button>
+                        ))}
+                    </div>
+                )}
+            </div>
         </div>
-    </div>
-);
+    );
+};
 
 export default function WebsiteChat() {
     const [isOpen, setIsOpen] = useState(false);
@@ -352,7 +346,6 @@ export default function WebsiteChat() {
                         role: message.role,
                         content: message.text,
                     })),
-                    websiteContext: buildWebsiteContext(posts),
                 }),
             });
             const data = await response.json();
@@ -361,7 +354,7 @@ export default function WebsiteChat() {
                 throw new Error(data.error || "AI request failed");
             }
 
-            const linkedPosts = answerQuestion(text, posts).posts || [];
+            const sources = Array.isArray(data.sources) ? data.sources : [];
 
             setMessages((current) => [
                 ...current,
@@ -369,7 +362,7 @@ export default function WebsiteChat() {
                     id: `assistant-${Date.now()}`,
                     role: "assistant",
                     text: data.answer,
-                    posts: linkedPosts,
+                    sources,
                 },
             ]);
         } catch (error) {
@@ -389,7 +382,11 @@ export default function WebsiteChat() {
     };
 
     const openPost = (post) => {
-        window.location.href = postHref(post);
+        const url =
+            typeof post?.url === "string" && post.url
+                ? post.url
+                : postHref(post);
+        window.location.href = url;
         setIsOpen(false);
     };
 
