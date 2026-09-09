@@ -82,6 +82,11 @@ const ArticleEditor = ({
   saving = false,
   onSubmit = () => { },
   onCancel = () => { },
+  extraFields = null,
+  draftLabel = null,
+  onDraft = null,
+  hideStatusField = false,
+  forcedStatus = "",
 }) => {
   const [title, setTitle] = useState(initial?.title || "");
   const [category, setCategory] = useState(
@@ -302,7 +307,10 @@ const ArticleEditor = ({
     if (authorText && authorText.trim()) {
       fd.append("author", authorText.trim());
     }
-    if (initial && status && String(status).trim()) {
+    if (forcedStatus && String(forcedStatus).trim()) {
+      fd.append("status", String(forcedStatus).trim());
+    }
+    if (!hideStatusField && initial && status && String(status).trim()) {
       fd.append("status", String(status).trim());
     }
 
@@ -375,6 +383,24 @@ const ArticleEditor = ({
     onSubmit(buildFormData());
   };
 
+  const handleDraft = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!title.trim()) {
+      setFormError("Andika umutwe w'inkuru mbere yo kubika draft.");
+      return;
+    }
+    if (headerImage?.error) {
+      setFormError(headerImage.error);
+      return;
+    }
+
+    setFormError("");
+    dirtyRef.current = false;
+    onDraft(buildFormData());
+  };
+
   const previewBlocks = sections
     .filter((section) => {
       if (section.type === "paragraph") {
@@ -410,6 +436,8 @@ const ArticleEditor = ({
             </p>
           </div>
         )}
+
+        {extraFields}
 
         <div>
           <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-700">
@@ -470,7 +498,7 @@ const ArticleEditor = ({
           </div>
         </div>
 
-        {initial && (
+        {!hideStatusField && initial && (
           <div>
             <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-700">
               Imiterere / Status
@@ -607,14 +635,6 @@ const ArticleEditor = ({
           </div>
 
           <div className="space-y-3">
-            {sections.length === 0 && (
-              <div className="rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 px-4 py-10 text-center">
-                <p className="text-sm text-slate-500">
-                  Tangira kwandika. Ongeraho igika, hanyuma ongera amafoto munsi yacyo — igika gishya kiragenda gifunguka nyuma ya buri foto.
-                </p>
-              </div>
-            )}
-
             {sections.map((section, index, list) => (
               <div
                 key={section.id}
@@ -805,6 +825,19 @@ const ArticleEditor = ({
           >
             Gusiba
           </button>
+
+          {draftLabel && onDraft && (
+            <button
+              type="button"
+              onClick={handleDraft}
+              disabled={saving}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:opacity-60 sm:w-auto"
+            >
+              {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+              <Plus className="h-4 w-4" />
+              {draftLabel}
+            </button>
+          )}
 
           <button
             type="button"

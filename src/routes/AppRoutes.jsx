@@ -1,6 +1,7 @@
 import React, { Suspense, lazy, useEffect } from "react";
 import {
     Navigate,
+    Outlet,
     Route,
     Routes,
     useNavigate,
@@ -10,6 +11,7 @@ import Navbar from "../components/Navbar/Navbar";
 import Footer from "../components/Footer/Footer";
 import EmployeeNavbar from "../components/employee/Navbar";
 import EmployeeSidebar from "../components/employee/Sidebar";
+import EmployeePortalLayout from "../components/employee/EmployeeLayout";
 import { DashboardLayout } from "../components/dashboard";
 import { logout, getStoredUser } from "../services/api";
 import { getUserRole, isAuthenticated } from "../utils/auth";
@@ -35,6 +37,12 @@ const EmployeeLogin = lazy(() => import("../pages/employee/EmployeeLogin"));
 const EmployeeDashboard = lazy(() => import("../pages/employee/EmployeeDashboard"));
 const EmployeeWorkspace = lazy(() => import("../pages/employee/EmployeeWorkspace"));
 const Profile = lazy(() => import("../pages/employee/Profile"));
+const CreateArticle = lazy(() => import("../pages/employee/CreateArticle"));
+const MyArticles = lazy(() => import("../pages/employee/MyArticles"));
+const EmployeeMediaLibrary = lazy(() => import("../pages/employee/MediaLibrary"));
+const EmployeeNotifications = lazy(() => import("../pages/employee/EmployeeNotifications"));
+const EmployeeStatistics = lazy(() => import("../pages/employee/EmployeeStatistics"));
+const EmployeeProfilePage = lazy(() => import("../pages/employee/EmployeeProfile"));
 const TextCleanerPage = lazy(() => import("../pages/admin/TextCleanerPage"));
 const ChangePassword = lazy(() => import("../pages/admin/ChangePassword"));
 const ChangeEmail = lazy(() => import("../pages/admin/ChangeEmail"));
@@ -57,7 +65,7 @@ const PublicLayout = ({ children, showHomeContent = true }) => (
     </>
 );
 
-const EmployeeLayout = ({ children }) => (
+const LegacyEmployeeLayout = ({ children }) => (
     <div className="min-h-screen bg-slate-50 flex flex-col">
         <EmployeeNavbar />
         <div className="flex flex-1">
@@ -66,6 +74,20 @@ const EmployeeLayout = ({ children }) => (
         </div>
     </div>
 );
+
+function EmployeeShellLayout() {
+    const navigate = useNavigate();
+    return (
+        <EmployeePortalLayout
+            onLogout={() => {
+                logout();
+                navigate("/employee/login", { replace: true });
+            }}
+        >
+            <Outlet />
+        </EmployeePortalLayout>
+    );
+}
 
 function ProtectedRoute({ roles, loginPath, children }) {
     const { user, refreshUser } = useAuth();
@@ -120,15 +142,6 @@ function ChiefPortal() {
     );
 }
 
-function EmployeePortal() {
-    const navigate = useNavigate();
-    return (
-        <EmployeeDashboard
-            onLogout={() => { logout(); navigate("/employee/login", { replace: true }); }}
-        />
-    );
-}
-
 function AdminCreateEmployeePortal() {
     const navigate = useNavigate();
     return (
@@ -160,15 +173,6 @@ function ChiefProfileRoute() {
     const navigate = useNavigate();
     return (
         <DashboardLayout navigationSections={[]} roleLabel="Umwanditsi Mukuru" onLogout={() => { logout(); navigate("/chief/login", { replace: true }); }}>
-            <Profile />
-        </DashboardLayout>
-    );
-}
-
-function EmployeeProfileRoute() {
-    const navigate = useNavigate();
-    return (
-        <DashboardLayout navigationSections={[]} roleLabel="Employee" onLogout={() => { logout(); navigate("/employee/login", { replace: true }); }}>
             <Profile />
         </DashboardLayout>
     );
@@ -225,11 +229,19 @@ function AppRoutes() {
                 <Route path="/chief-editor/posts" element={<ProtectedRoute roles={["chief_editor"]} loginPath="/chief/login"><ChiefPortal /></ProtectedRoute>} />
 
                 <Route path="/employee/login" element={<PublicOnlyRoute role="employee" redirectTo="/employee/dashboard"><EmployeeLogin /></PublicOnlyRoute>} />
-                <Route path="/dashboard" element={<Navigate to="/employee/dashboard" replace />} />
-                <Route path="/employee/dashboard" element={<ProtectedRoute roles={["employee", "reporter"]} loginPath="/employee/login"><EmployeePortal /></ProtectedRoute>} />
-                <Route path="/employee/workspace" element={<ProtectedRoute roles={["employee", "reporter"]} loginPath="/employee/login"><EmployeeLayout><EmployeeWorkspace /></EmployeeLayout></ProtectedRoute>} />
+                <Route path="/employee" element={<ProtectedRoute roles={["employee", "reporter"]} loginPath="/employee/login"><EmployeeShellLayout /></ProtectedRoute>}>
+                    <Route index element={<Navigate to="dashboard" replace />} />
+                    <Route path="dashboard" element={<EmployeeDashboard />} />
+                    <Route path="create" element={<CreateArticle />} />
+                    <Route path="articles" element={<MyArticles />} />
+                    <Route path="media" element={<EmployeeMediaLibrary />} />
+                    <Route path="notifications" element={<EmployeeNotifications />} />
+                    <Route path="statistics" element={<EmployeeStatistics />} />
+                    <Route path="profile" element={<EmployeeProfilePage />} />
+                </Route>
+                <Route path="/employee/workspace" element={<ProtectedRoute roles={["employee", "reporter"]} loginPath="/employee/login"><LegacyEmployeeLayout><EmployeeWorkspace /></LegacyEmployeeLayout></ProtectedRoute>} />
                 <Route path="/employee/posts" element={<Navigate to="/employee/workspace" replace />} />
-                <Route path="/employee/profile" element={<ProtectedRoute roles={["employee", "reporter"]} loginPath="/employee/login"><EmployeeProfileRoute /></ProtectedRoute>} />
+                <Route path="/dashboard" element={<Navigate to="/employee/dashboard" replace />} />
                 <Route path="/admin/profile" element={<ProtectedRoute roles={["admin"]} loginPath="/admin/login"><AdminProfileRoute /></ProtectedRoute>} />
                 <Route path="/chief-editor/profile" element={<ProtectedRoute roles={["chief_editor"]} loginPath="/chief/login"><ChiefProfileRoute /></ProtectedRoute>} />
                 <Route path="/profile" element={<Navigate to="/employee/profile" replace />} />

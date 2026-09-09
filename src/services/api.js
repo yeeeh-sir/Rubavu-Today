@@ -363,6 +363,16 @@ export async function changeMyEmail(
   return data;
 }
 
+export async function updateProfile(payload = {}) {
+  return request("/api/profile", {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+}
+
 export async function uploadProfileImage(imageFile) {
   if (!imageFile) {
     throw new Error("No image file was selected.");
@@ -684,6 +694,43 @@ const buildPostFormData = (postData) => {
     formData.append("author", postData.author);
   }
 
+  if (
+    postData.tags !== undefined &&
+    postData.tags !== null
+  ) {
+    const tagsString = Array.isArray(postData.tags)
+      ? postData.tags.filter(Boolean).join(",")
+      : String(postData.tags);
+    if (tagsString.trim()) {
+      formData.append("tags", tagsString.trim());
+    }
+  }
+
+  if (
+    postData.location !== undefined &&
+    postData.location !== null
+  ) {
+    if (String(postData.location).trim()) {
+      formData.append("location", String(postData.location).trim());
+    }
+  }
+
+  if (
+    postData.summary !== undefined &&
+    postData.summary !== null
+  ) {
+    if (String(postData.summary).trim()) {
+      formData.append("summary", String(postData.summary).trim());
+    }
+  }
+
+  if (
+    postData.status !== undefined &&
+    postData.status !== null
+  ) {
+    formData.append("status", String(postData.status));
+  }
+
   if (postData.image) {
     formData.append("image", postData.image);
   }
@@ -758,6 +805,53 @@ export async function getChiefEditorDashboard() {
 
 export async function getMyPosts() {
   return request("/api/my-posts");
+}
+
+export async function getNotifications() {
+  return request("/api/notifications");
+}
+
+export async function getUnreadNotificationsCount() {
+  const data = await request("/api/notifications/unread-count");
+  return Number(data?.unread || 0);
+}
+
+export async function markNotificationRead(id) {
+  return request(`/api/notifications/${id}/read`, { method: "PUT" });
+}
+
+export async function markAllNotificationsRead() {
+  return request("/api/notifications/read-all", { method: "PUT" });
+}
+
+export async function getMediaLibrary() {
+  return request("/api/media-library");
+}
+
+export async function uploadMedia(imageFile) {
+  if (!imageFile) {
+    throw new Error("No image file was selected.");
+  }
+
+  const formData = new FormData();
+  formData.append("image", imageFile);
+
+  const response = await fetch(
+    `${API_ROOT}/api/media-library`,
+    {
+      method: "POST",
+      headers: getFormDataHeaders(),
+      body: formData,
+    }
+  );
+
+  return handleResponse(response);
+}
+
+export async function deleteMedia(id) {
+  return request(`/api/media-library/${id}`, {
+    method: "DELETE",
+  });
 }
 
 export async function getComments(postId) {
@@ -1194,6 +1288,7 @@ const api = {
   changeMyPassword,
   changeMyEmail,
   uploadProfileImage,
+  updateProfile,
   getToken,
   getTokenValue,
   getStoredUser,
@@ -1226,6 +1321,15 @@ const api = {
   getDashboard,
   getChiefEditorDashboard,
   getMyPosts,
+
+  getNotifications,
+  getUnreadNotificationsCount,
+  markNotificationRead,
+  markAllNotificationsRead,
+
+  getMediaLibrary,
+  uploadMedia,
+  deleteMedia,
 
   getComments,
   getAllComments,

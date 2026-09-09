@@ -1,191 +1,331 @@
-import React, { useEffect, useMemo, useState } from "react";
-import api from "../../services/api";
-import { DashboardLayout, StatCard } from "../../components/dashboard";
-import { BarChart3, FileText, Newspaper } from "lucide-react";
+import React, { useCallback, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import {
+  ArrowRight,
+  Bell,
+  CheckCircle2,
+  Clock,
+  FileText,
+  LayoutDashboard,
+  Newspaper,
+  PenSquare,
+  TrendingUp,
+  XCircle,
+} from "lucide-react";
+import {
+  getMyPosts,
+  getNotifications,
+} from "../../services/api";
+import { useAuth } from "../../context/AuthContext";
+import { useNotifications } from "../../context/NotificationsContext";
+import {
+  EmployeeStatCard,
+  EmployeeStatusBadge,
+  CardSkeleton,
+  Skeleton,
+} from "../../components/employee/EmployeeUI";
+import {
+  DEPARTMENTS,
+  DEPARTMENT_COLORS,
+  DEPARTMENT_ICONS,
+  getStatus,
+  getCategory,
+  getPostId,
+  formatDate,
+} from "./employeeHelpers";
 
-const departments = [
-  "Amakuru",
-  "Ubukungu",
-  "Imikino",
-  "Imyidagaduro",
-  "Uburezi",
-];
-
-const badgeColors = {
-  Amakuru: "bg-blue-100 text-blue-700",
-  Ubukungu: "bg-green-100 text-green-700",
-  Imikino: "bg-orange-100 text-orange-700",
-  Imyidagaduro: "bg-pink-100 text-pink-700",
-  Uburezi: "bg-purple-100 text-purple-700",
+const STATUS_META = {
+  draft: { accent: "slate", icon: FileText, label: "Drafts", valueKey: "draft" },
+  pending: { accent: "amber", icon: Clock, label: "Zitegereje", valueKey: "pending" },
+  approved: { accent: "blue", icon: CheckCircle2, label: "Zemejwe / Zisohowe", valueKey: "approved" },
+  rejected: { accent: "red", icon: XCircle, label: "Zanzwe", valueKey: "rejected" },
 };
 
-const navSections = [
-  {
-    label: "Imbonerahamwe",
-    items: [
-      { icon: <BarChart3 size={16} />, label: "Imbonerahamwe", path: "/employee/dashboard" },
-      { icon: <FileText size={16} />, label: "Ubwanditsi", path: "/employee/workspace" },
-      { icon: <Newspaper size={16} />, label: "Profilyi", path: "/employee/profile" },
-    ],
-  },
-];
-
 function Dashboard({ onLogout }) {
-  const [posts, setPosts] = useState([]);
-  const [selectedDepartment, setSelectedDepartment] = useState("All");
+  const { user } = useAuth();
+  const { refresh } = useNotifications();
 
-  useEffect(() => {
-    fetchPosts();
+  const [posts, setPosts] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [notifLoading, setNotifLoading] = useState(true);
+
+  const loadPosts = useCallback(async () => {
+    try {
+      const data = await getMyPosts();
+      setPosts(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setPosts([]);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const fetchPosts = async () => {
+  const loadNotifications = useCallback(async () => {
     try {
-      const response = await api.get("/posts");
-      const data = Array.isArray(response.data)
-        ? response.data
-        : response.data?.posts || response.data?.data || [];
-      setPosts(data);
+      const data = await getNotifications();
+      setNotifications(Array.isArray(data) ? data : []);
+      refresh();
     } catch (err) {
-      console.error("Error fetching posts:", err);
-      setPosts([]);
+      setNotifications([]);
+    } finally {
+      setNotifLoading(false);
     }
+  }, [refresh]);
+
+  useEffect(() => {
+    Promise.all([loadPosts(), loadNotifications()]);
+  }, [loadPosts, loadNotifications]);
+
+  const userName = user?.full_name || user?.name || user?.email || "Umukozi";
+  const userInitial = String(userName).charAt(0).toUpperCase();
+
+  const todayLabel = new Date().toLocaleDateString("rw-RW", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+
+  const counts = {
+    draft: posts.filter((p) => getStatus(p) === "draft").length,
+    pending: posts.filter((p) => getStatus(p) === "pending").length,
+    approved: posts.filter((p) => getStatus(p) === "approved").length,
+    rejected: posts.filter((p) => getStatus(p) === "rejected").length,
   };
 
-  const totalPosts = posts.length;
+  const total = posts.length;
+  const submissionTotal = counts.pending + counts.approved + counts.rejected;
+  const approvalRate = submissionTotal > 0 ? Math.round((counts.approved / submissionTotal) * 100) : 0;
+  const totalViews = posts.reduce((sum, post) => sum + (Number(post.views) || 0), 0);
 
-  const departmentStats = useMemo(() => {
-    return departments.reduce((acc, dep) => {
-      acc[dep] = posts.filter((p) => p.category === dep).length;
-      return acc;
-    }, {});
-  }, [posts]);
+  const departmentStats = DEPARTMENTS.map((dep) => ({
+    department: dep,
+    count: posts.filter((p) => getCategory(p) === dep).length,
+  }));
+  const maxDepartment = Math.max(1, ...departmentStats.map((d) => d.count));
 
-  const filteredPosts = useMemo(() => {
-    if (selectedDepartment === "All") return posts;
-    return posts.filter((post) => post.category === selectedDepartment);
-  }, [posts, selectedDepartment]);
+  const recentPosts = [...posts]
+    .sort((a, b) => (b.createdDate || "").localeCompare(a.createdDate || ""))
+    .slice(0, 5);
+
+  const recentNotifications = notifications.slice(0, 3);
 
   return (
-    <DashboardLayout navigationSections={navSections} roleLabel="Employee" onLogout={onLogout}>
-      <div className="p-4 sm:p-6 lg:p-8 space-y-6">
-
-        <section className="rounded-3xl bg-gradient-to-r from-slate-900 via-sky-900 to-indigo-900 p-6 text-white shadow-lg">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+    <div className="space-y-6">
+      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-800 p-6 text-white shadow-lg sm:p-8">
+        <div className="absolute -right-10 -top-10 h-52 w-52 rounded-full bg-blue-500/20 blur-3xl" />
+        <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-start gap-4">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/15 text-xl font-black backdrop-blur-sm">
+              {userInitial}
+            </div>
             <div>
-              <p className="mb-2 text-xs font-black uppercase tracking-[0.2em] text-sky-200">Uwork place w'umukozi</p>
-              <h1 className="text-2xl font-black sm:text-3xl">Imbonerahamwe y'ubwanditsi bwawe</h1>
-              <p className="mt-2 max-w-2xl text-sm text-sky-100">
-                Komeza gukurikirana inkuru, ugenzure ingano yinkuru ku byiciro, kandi ukomeze gukora ku kazi k'ingenzi.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <button type="button" onClick={() => setSelectedDepartment("All")} className="rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-slate-900 shadow-md transition hover:bg-sky-50">Inkuru zose</button>
-              <button type="button" onClick={() => setSelectedDepartment("Amakuru")} className="rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-white/15">Aho wibanda</button>
+              <p className="mb-1 text-xs font-bold uppercase tracking-[0.18em] text-blue-200">{todayLabel}</p>
+              <h1 className="text-2xl font-black sm:text-3xl">Muraho, {userName}! 👋</h1>
             </div>
           </div>
-        </section>
-
-        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-          <StatCard label="Inkuru zose" value={totalPosts} icon={<FileText size={18} />} color="blue" />
-          <StatCard label="Ibyiciro" value={departments.length} icon={<BarChart3 size={18} />} color="emerald" />
-          <StatCard label="Inkuru iheruka" value={posts[0]?.title || "Nta nkuru"} icon={<Newspaper size={18} />} color="purple" />
-        </div>
-
-        <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-          {departments.map((department) => (
-            <button
-              key={department}
-              type="button"
-              onClick={() => setSelectedDepartment(department)}
-              className={`rounded-2xl border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md ${selectedDepartment === department ? "border-blue-200 bg-blue-50 shadow-sm" : "border-slate-200 bg-white"}`}
+          <div className="flex flex-wrap gap-2.5">
+            <Link
+              to="/employee/create"
+              className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-slate-900 shadow-md transition hover:bg-blue-50"
             >
-              <div className="mb-2 flex items-center justify-between">
-                <span className="text-xl">{department === "Amakuru" ? "📰" : department === "Ubukungu" ? "💼" : department === "Imikino" ? "⚽" : department === "Imyidagaduro" ? "🎭" : "🎓"}</span>
-                <span className={`rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-wide ${badgeColors[department]}`}>
-                  {department}
-                </span>
-              </div>
-              <p className="text-2xl font-black text-slate-900">{departmentStats[department]}</p>
-              <p className="mt-1 text-xs text-slate-500">Stories</p>
-            </button>
-          ))}
-        </section>
-
-        <div className="card p-5 sm:p-6">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <h2 className="text-lg font-semibold text-slate-800">Ibyiciro - Imbonerahamwe</h2>
-            <div className="flex flex-wrap gap-2">
-              <button type="button" onClick={() => setSelectedDepartment("All")} className={`rounded-full px-3 py-1.5 text-xs font-bold transition ${selectedDepartment === "All" ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>
-                Zose
-              </button>
-              {departments.map((department) => (
-                <button
-                  key={department}
-                  type="button"
-                  onClick={() => setSelectedDepartment(department)}
-                  className={`rounded-full px-3 py-1.5 text-xs font-bold transition ${selectedDepartment === department ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
-                >
-                  {department}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
-            {departments.map((department) => (
-              <div key={department} className="rounded-xl border border-slate-100 bg-slate-50 p-4 text-center">
-                <span className={`inline-block rounded-full px-2.5 py-1 text-xs font-semibold ${badgeColors[department]}`}>
-                  {department}
-                </span>
-                <p className="mt-3 text-2xl font-bold text-slate-800">{departmentStats[department]}</p>
-                <p className="text-xs text-slate-500 mt-1 uppercase font-medium">Inkuru</p>
-              </div>
-            ))}
+              <PenSquare className="h-4 w-4" />
+              Kora Inkuru
+            </Link>
+            <Link
+              to="/employee/articles"
+              className="inline-flex items-center gap-2 rounded-xl border border-white/25 bg-white/10 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-white/20"
+            >
+              <FileText className="h-4 w-4" />
+              Inkuru zanjye
+            </Link>
           </div>
         </div>
+      </section>
 
-        <div className="card overflow-hidden">
-          <div className="border-b border-slate-100 p-5">
-            <h2 className="text-lg font-semibold text-slate-800">
-              {selectedDepartment === "All" ? "Inkuru zose" : `Inkuru za ${selectedDepartment}`}
-            </h2>
+      {loading ? (
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {[0, 1, 2, 3].map((i) => <CardSkeleton key={i} />)}
+        </div>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <EmployeeStatCard
+            label="Inkuru zose"
+            value={total}
+            icon={<Newspaper className="h-5 w-5" />}
+            accent="blue"
+            hint={`${totalViews.toLocaleString()} views zose`}
+          />
+          <EmployeeStatCard
+            label="Drafts"
+            value={counts.draft}
+            icon={<FileText className="h-5 w-5" />}
+            accent="slate"
+            hint="Uzikoramo ukira"
+          />
+          <EmployeeStatCard
+            label="Zitegereje gusuzumwa"
+            value={counts.pending}
+            icon={<Clock className="h-5 w-5" />}
+            accent="amber"
+            hint="Chief Editor azi'i urugero gusuzuma"
+          />
+          <EmployeeStatCard
+            label="Approval rate"
+            value={`${approvalRate}%`}
+            icon={<TrendingUp className="h-5 w-5" />}
+            accent="emerald"
+            hint={`${counts.approved} zemejwe, ${counts.rejected} zanzwe`}
+          />
+        </div>
+      )}
+
+      <div className="grid gap-6 lg:grid-cols-3">
+        <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-2">
+          <div className="mb-5 flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-bold text-slate-900">Ibikorwa biheruka</h2>
+              <p className="text-xs text-slate-500">Inkuru 5 za nyuma z'ubwanditsi bwawe</p>
+            </div>
+            <Link to="/employee/articles" className="inline-flex items-center gap-1 text-sm font-semibold text-blue-600 hover:text-blue-700">
+              Reba zose <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
 
-          {filteredPosts.length === 0 ? (
-            <div className="p-12 text-center text-slate-400">
-              <p className="text-lg font-medium">Nta nkuru zabonetse.</p>
+          {loading ? (
+            <div className="space-y-3">
+              {[0, 1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-16 w-full" />)}
+            </div>
+          ) : recentPosts.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-14 text-center">
+              <p className="text-2xl">📝</p>
+              <h3 className="mt-3 text-base font-semibold text-slate-700">Urahano inkuru zawe</h3>
+              <p className="mt-1 text-sm text-slate-500">Tangira ukore inkuru ya mbere utangaze kuri Rubavu Today.</p>
+              <Link
+                to="/employee/create"
+                className="mt-5 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-blue-700"
+              >
+                <PenSquare className="h-4 w-4" /> Kora Inkuru
+              </Link>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left">
-                <thead className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider font-semibold">
-                  <tr>
-                    <th className="px-6 py-3">Umutwe</th>
-                    <th className="px-6 py-3">Ibyiciro</th>
-                    <th className="px-6 py-3">Byakozwe</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 text-sm">
-                  {filteredPosts.map((post) => (
-                    <tr key={post.id || post._id} className="hover:bg-slate-50/50 transition">
-                      <td className="px-6 py-3 font-medium text-slate-900">{post.title}</td>
-                      <td className="px-6 py-3 whitespace-nowrap">
-                        <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${badgeColors[post.category] || "bg-slate-100 text-slate-700"}`}>
-                          {post.category}
-                        </span>
-                      </td>
-                      <td className="px-6 py-3 text-slate-500 whitespace-nowrap">
-                        {post.createdDate ? new Date(post.createdDate).toLocaleString("rw-RW") : "Nta makuru"}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="divide-y divide-slate-100">
+              {recentPosts.map((post) => (
+                <div key={getPostId(post)} className="flex items-center gap-4 py-3.5">
+                  <span className="text-xl">{DEPARTMENT_ICONS[getCategory(post)] || "📰"}</span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-slate-900">{post.title}</p>
+                    <p className="mt-0.5 text-xs text-slate-400">{formatDate(post)}</p>
+                  </div>
+                  <EmployeeStatusBadge status={getStatus(post)} size="xs" />
+                </div>
+              ))}
             </div>
           )}
-        </div>
+        </section>
+
+        <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="mb-5 flex items-center justify-between">
+            <h2 className="text-lg font-bold text-slate-900">Amanotisi</h2>
+            <Link to="/employee/notifications" className="inline-flex items-center gap-1 text-sm font-semibold text-blue-600 hover:text-blue-700">
+              Zose <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+
+          {notifLoading ? (
+            <div className="space-y-3">
+              {[0, 1, 2].map((i) => <Skeleton key={i} className="h-16 w-full" />)}
+            </div>
+          ) : recentNotifications.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-12 text-center">
+              <Bell className="mx-auto h-7 w-7 text-slate-300" />
+              <p className="mt-3 text-sm font-semibold text-slate-600">Nta manotisi</p>
+              <p className="mt-1 text-xs text-slate-500">Nta sera yatanzwe ubu.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {recentNotifications.map((n) => (
+                <div key={n.id} className={`rounded-2xl border p-3.5 ${n.read_flag ? "border-slate-200 bg-white" : "border-blue-200 bg-blue-50/60"}`}>
+                  <div className="flex items-start gap-2.5">
+                    <Bell className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-slate-800">{n.title}</p>
+                      {n.message && <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">{n.message}</p>}
+                      <p className="mt-1.5 text-[10px] text-slate-400">{formatNotificationTime(n.created_at)}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
       </div>
-    </DashboardLayout>
+
+      <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="mb-5 flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-bold text-slate-900">Ubwanditsi ku byiciro</h2>
+            <p className="text-xs text-slate-500">Imigabane y'inkuru zawe muri buri cyiciro</p>
+          </div>
+          <div className="flex items-center gap-1.5 rounded-xl bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-600">
+            <LayoutDashboard className="h-4 w-4" /> {total} zose
+          </div>
+        </div>
+        <div className="space-y-5">
+          {departmentStats.map(({ department, count }) => (
+            <div key={department}>
+              <div className="mb-1.5 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-base">{DEPARTMENT_ICONS[department]}</span>
+                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-wide ${DEPARTMENT_COLORS[department]}`}>
+                    {department}
+                  </span>
+                </div>
+                <span className="text-sm font-bold text-slate-700">{count}</span>
+              </div>
+              <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
+                <div
+                  className="h-full rounded-full bg-blue-600 transition-all duration-700"
+                  style={{ width: `${Math.max((count / maxDepartment) * 100, count > 0 ? 6 : 0)}%` }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        {Object.keys(STATUS_META).map((key) => {
+          const meta = STATUS_META[key];
+          const Icon = meta.icon;
+          return (
+            <Link
+              key={key}
+              to={`/employee/articles?status=${key}`}
+              className="rounded-2xl border border-slate-200 bg-white p-4 transition hover:-translate-y-0.5 hover:shadow-md"
+            >
+              <div className="mb-2 flex items-center justify-between">
+                <span className={`flex h-9 w-9 items-center justify-center rounded-xl transition ${key === "approved" ? "bg-sky-50 text-sky-600" : ""}`}>
+                  <Icon className="h-[18px] w-[18px]" />
+                </span>
+                <ArrowRight className="h-4 w-4 text-slate-300" />
+              </div>
+              <p className="text-2xl font-black text-slate-900">{counts[key]}</p>
+              <p className="mt-0.5 text-xs font-medium text-slate-500">{meta.label}</p>
+            </Link>
+          );
+        })}
+      </section>
+    </div>
   );
+}
+
+function formatNotificationTime(value) {
+  const date = value ? new Date(value) : null;
+  return date && !isNaN(date.getTime())
+    ? date.toLocaleString("rw-RW", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })
+    : "";
 }
 
 export default Dashboard;
