@@ -16,8 +16,6 @@ const DEPT_NAMES_EN = {
 };
 
 const OFFICE_LOCATION = "Rubavu, Rwanda";
-const MAPS_EMBED_URL =
-  "https://maps.google.com/maps?q=Rubavu%2C%20Rwanda&t=m&z=13&ie=UTF8&iwloc=&output=embed";
 const MAPS_DIRECTIONS_URL =
   "https://www.google.com/maps/search/?api=1&query=Rubavu%2C+Rwanda";
 
@@ -261,27 +259,13 @@ const Footer = () => {
             </div>
 
             <div className="lg:col-span-8">
-              <div className="w-full max-w-[400px] lg:ml-auto">
-                <div className="overflow-hidden rounded-2xl border border-slate-700 bg-slate-900 shadow-lg">
-                  <iframe
-                    title="Rubavu Today location on Google Maps"
-                    src={MAPS_EMBED_URL}
-                    className="block h-[300px] w-full"
-                    style={{ border: 0 }}
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                    allowFullScreen
-                  />
-                </div>
-
-                <p className="mt-2.5 flex items-center gap-2 font-body text-[11px] font-medium text-slate-400">
-                  <span
-                    aria-hidden="true"
-                    className="h-2 w-2 shrink-0 rounded-full bg-red-600"
-                  />
-                  Find Us: Rubavu Today — {OFFICE_LOCATION}
-                </p>
-              </div>
+              <p className="ml-auto flex max-w-[400px] items-center gap-2 font-body text-[11px] font-medium text-slate-400 lg:ml-auto">
+                <span
+                  aria-hidden="true"
+                  className="h-2 w-2 shrink-0 rounded-full bg-red-600"
+                />
+                Find Us: Rubavu Today — {OFFICE_LOCATION}
+              </p>
             </div>
           </div>
         </div>

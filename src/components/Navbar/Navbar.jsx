@@ -266,22 +266,6 @@ const AdCarousel = ({ ads = [] }) => {
     }
   }, [visibleAds.length, currentIndex]);
 
-  useEffect(() => {
-    if (visibleAds.length <= 1) {
-      return undefined;
-    }
-
-    const interval = setInterval(() => {
-      setCurrentIndex((previous) =>
-        previous >= visibleAds.length - 1
-          ? 0
-          : previous + 1
-      );
-    }, 6000);
-
-    return () => clearInterval(interval);
-  }, [visibleAds.length]);
-
   if (!visibleAds.length) {
     return null;
   }
@@ -290,22 +274,6 @@ const AdCarousel = ({ ads = [] }) => {
     currentIndex >= visibleAds.length
       ? 0
       : currentIndex;
-
-  const goPrevious = () => {
-    setCurrentIndex((previous) =>
-      previous === 0
-        ? visibleAds.length - 1
-        : previous - 1
-    );
-  };
-
-  const goNext = () => {
-    setCurrentIndex(
-      (previous) =>
-        (previous + 1) %
-        visibleAds.length
-    );
-  };
 
   const handleImageError = (ad) => {
     const key =
@@ -333,7 +301,7 @@ const AdCarousel = ({ ads = [] }) => {
     const reducedMotion = prefersReducedMotion();
 
     const content = (
-      <div className="relative w-full overflow-hidden rounded-none border border-slate-200 bg-slate-100 aspect-[728/90]">
+      <div className="relative w-full overflow-hidden rounded-none border border-slate-200 bg-slate-100 aspect-[728/60]">
         <OptimizedImage
           src={ad.image}
           alt={title}
@@ -383,100 +351,7 @@ const AdCarousel = ({ ads = [] }) => {
         className="relative w-full bg-white border-b-0 shadow-none mt-0 pt-0"
       >
         <div className="relative w-full overflow-hidden">
-          {renderAd(visibleAds[safeIndex], safeIndex)}
-
-          {visibleAds.length > 1 && (
-            <>
-              <button
-                type="button"
-                onClick={goPrevious}
-                aria-label="Marketing kwabanje"
-                className="
-                  absolute
-                  left-1
-                  top-1/2
-                  z-30
-                  flex
-                  h-8
-                  w-8
-                  -translate-y-1/2
-                  items-center
-                  justify-center
-                  rounded-full
-                  bg-black/50
-                  text-xl
-                  leading-none
-                  text-white
-                  shadow-md
-                  transition
-                  hover:bg-black/80
-                "
-              >
-                ‹
-              </button>
-
-              <button
-                type="button"
-                onClick={goNext}
-                aria-label="Marketing gukurikira"
-                className="
-                  absolute
-                  right-1
-                  top-1/2
-                  z-30
-                  flex
-                  h-8
-                  w-8
-                  -translate-y-1/2
-                  items-center
-                  justify-center
-                  rounded-full
-                  bg-black/50
-                  text-xl
-                  leading-none
-                  text-white
-                  shadow-md
-                  transition
-                  hover:bg-black/80
-                "
-              >
-                ›
-              </button>
-
-              <div
-                className="
-                  absolute
-                  bottom-1
-                  left-1/2
-                  z-30
-                  flex
-                  -translate-x-1/2
-                  gap-1.5
-                  rounded-full
-                  bg-black/30
-                  px-2
-                  py-1
-                "
-              >
-                {visibleAds.map((ad, index) => (
-                  <button
-                    key={`dot-${ad.id || ad._id || index}`}
-                    type="button"
-                    onClick={() => setCurrentIndex(index)}
-                    aria-label={`Marketing ${index + 1}`}
-                    className={`
-                      rounded-full
-                      transition-all
-                      ${safeIndex === index
-                        ? "h-1.5 w-5 bg-white"
-                        : "h-1.5 w-1.5 bg-white/60"
-                      }
-                    `}
-                  />
-                ))}
-              </div>
-            </>
-          )}
+          {renderAd(visibleAds[0], 0)}
         </div>
       </section>
     </>
@@ -1092,7 +967,7 @@ const TopFiveSlider = ({
               : previous + 1
         );
       },
-      7000
+      30000
     );
 
     return () =>
@@ -1180,7 +1055,7 @@ const TopFiveSlider = ({
 
       <div className="relative overflow-hidden">
         <div
-          className="flex transition-transform duration-700 ease-out"
+          className="flex transition-transform duration-[6000ms] ease-in-out"
           style={{
             transform: `translateX(-${currentIndex * 100
               }%)`,
@@ -2058,6 +1933,10 @@ const Navbar = ({ showHomeContent = true }) => {
         );
 
       if (category === "All") {
+        if (location.pathname !== "/") {
+          navigate("/", { replace: true });
+        }
+
         next.delete("category");
       } else {
         next.set(
