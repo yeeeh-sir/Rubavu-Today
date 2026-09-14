@@ -16,8 +16,6 @@ const DEPT_NAMES_EN = {
 };
 
 const OFFICE_LOCATION = "Rubavu, Rwanda";
-const MAPS_DIRECTIONS_URL =
-  "https://www.google.com/maps/search/?api=1&query=Rubavu%2C+Rwanda";
 
 const SOCIAL_LINKS = [
   {
@@ -207,66 +205,6 @@ const Footer = () => {
             >
               Contact Us →
             </Link>
-          </div>
-        </div>
-
-        {/* FIND US */}
-        <div className="mt-12 border-t border-slate-800 pt-10">
-          <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12 lg:gap-8">
-            <div className="lg:col-span-4">
-              <FooterHeading>Find Us</FooterHeading>
-
-              <div className="mt-5 flex items-center gap-3 text-slate-300">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-red-600 bg-slate-800 text-red-500">
-                  <MapPin size={16} aria-hidden="true" />
-                </span>
-                <span>
-                  <span className="block font-post-title text-sm font-bold text-white">
-                    Rubavu Today
-                  </span>
-                  <span className="text-[12px] text-slate-400">
-                    {OFFICE_LOCATION}
-                  </span>
-                </span>
-              </div>
-
-              <p className="mt-4 max-w-sm text-[13px] leading-relaxed text-slate-400">
-                Our newsroom is located in Rubavu, Rwanda.
-              </p>
-
-              <a
-                href={MAPS_DIRECTIONS_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-5 inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2.5 text-[12px] font-bold uppercase tracking-wider text-white transition hover:bg-red-700"
-                aria-label="Open in Google Maps"
-              >
-                Open in Google Maps
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  className="h-3.5 w-3.5 fill-none stroke-current"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M14 5h5v5" />
-                  <path d="M20 4l-9 9" />
-                  <path d="M19 13v5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" />
-                </svg>
-              </a>
-            </div>
-
-            <div className="lg:col-span-8">
-              <p className="ml-auto flex max-w-[400px] items-center gap-2 font-body text-[11px] font-medium text-slate-400 lg:ml-auto">
-                <span
-                  aria-hidden="true"
-                  className="h-2 w-2 shrink-0 rounded-full bg-red-600"
-                />
-                Find Us: Rubavu Today — {OFFICE_LOCATION}
-              </p>
-            </div>
           </div>
         </div>
       </div>

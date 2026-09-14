@@ -196,6 +196,8 @@ export default function PostDetails() {
         let postData = null;
         let all = [];
 
+        const listPromise = getPosts().catch(() => []);
+
         if (numericId) {
           postData = await getPostById(numericId);
           if (cancelled) return;
@@ -219,7 +221,7 @@ export default function PostDetails() {
         }
 
         if (postData) {
-          const list = await getPosts();
+          const list = await listPromise;
           if (cancelled) return;
           all = Array.isArray(list) ? list : [];
         }

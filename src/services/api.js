@@ -458,9 +458,30 @@ let cachedPostsAt = 0;
 
 const POSTS_CACHE_TTL_MS = 45 * 1000;
 
+const postDetailCache = new Map();
+
+const POST_DETAIL_CACHE_TTL_MS = 60 * 1000;
+
+const cachePostDetail = (key, post) => {
+  postDetailCache.set(key, { at: Date.now(), post });
+};
+
+const readPostDetailCache = (key) => {
+  const entry = postDetailCache.get(key);
+
+  if (entry && Date.now() - entry.at < POST_DETAIL_CACHE_TTL_MS) {
+    return entry.post;
+  }
+
+  postDetailCache.delete(key);
+
+  return null;
+};
+
 export const invalidatePostsCache = () => {
   cachedPosts = null;
   cachedPostsAt = 0;
+  postDetailCache.clear();
 };
 
 export const getPosts = async () => {
@@ -509,6 +530,14 @@ export const getPosts = async () => {
 };
 
 export const getPostById = async (id) => {
+  const cacheKey = `id:${id}`;
+
+  const cached = readPostDetailCache(cacheKey);
+
+  if (cached) {
+    return cached;
+  }
+
   const response = await fetch(
     `${API_BASE_URL}/posts/${id}`
   );
@@ -534,7 +563,11 @@ export const getPostById = async (id) => {
     return null;
   }
 
-  return normalizePost(data);
+  const post = normalizePost(data);
+
+  cachePostDetail(cacheKey, post);
+
+  return post;
 };
 
 export const getPostBySlug = async (slug) => {
@@ -545,6 +578,14 @@ export const getPostBySlug = async (slug) => {
 
   if (!safeSlug) {
     return null;
+  }
+
+  const cacheKey = `slug:${safeSlug}`;
+
+  const cached = readPostDetailCache(cacheKey);
+
+  if (cached) {
+    return cached;
   }
 
   const response = await fetch(
@@ -572,7 +613,11 @@ export const getPostBySlug = async (slug) => {
     return null;
   }
 
-  return normalizePost(data);
+  const post = normalizePost(data);
+
+  cachePostDetail(cacheKey, post);
+
+  return post;
 };
 
 export async function getPublicPosts() {
