@@ -6,6 +6,8 @@ import AuthorProfilePopup, {
   PROFILE_POPUP_EVENT,
   getAuthorKey,
 } from "../common/AuthorProfilePopup";
+import OptimizedImage from "../common/OptimizedImage";
+import { RESOLUTION_WIDTHS } from "../../utils/images";
 
 const FALLBACK_IMAGE =
   "https://images.unsplash.com/photo-1495020689067-958852a7765e?auto=format&fit=crop&w=900&q=80";
@@ -117,9 +119,11 @@ const PostCard = ({ post }) => {
       <div>
 
         <Link to={getPostSlugPath(post)} className="relative block aspect-[16/10] bg-[#F1EFE8] overflow-hidden">
-          <img
+          <OptimizedImage
             src={post.image || FALLBACK_IMAGE}
             alt={post.title}
+            widths={RESOLUTION_WIDTHS.CARD}
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 400px"
             loading="lazy"
             onError={(e) => {
               e.currentTarget.onerror = null;

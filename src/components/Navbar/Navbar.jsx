@@ -26,9 +26,11 @@ import {
 
 import SearchBar from "../SearchBar/SearchBar";
 import AdBanner from "../common/AdBanner";
+import OptimizedImage from "../common/OptimizedImage";
 import { getArticleUrl } from "../../utils/slug";
 import { formatRelativeTime } from "../../utils/time";
 import { useLanguage, translateCategory } from "../../context/LanguageContext";
+import { RESOLUTION_WIDTHS, getCloudinaryUrl, isCloudinaryUrl } from "../../utils/images";
 
 
 
@@ -148,23 +150,14 @@ const preloadAdImages = (ads = []) => {
       const image = new Image();
 
       image.decoding = "async";
-      image.src = ad.image;
+
+      /* Warm the cache with the optimized derivative that the rendered
+         banner will actually use - never the full-size original. */
+      image.src = isCloudinaryUrl(ad.image)
+        ? getCloudinaryUrl(ad.image, { width: 1280 })
+        : ad.image;
     }
   });
-};
-
-const getHighQualityAdImage = (image) => {
-  if (
-    typeof image !== "string" ||
-    !image.includes("res.cloudinary.com")
-  ) {
-    return image;
-  }
-
-  return image.replace(
-    "/upload/",
-    "/upload/f_auto,q_auto:best/"
-  );
 };
 
 const normalizeAdTargetUrl = (ad) => {
@@ -341,11 +334,13 @@ const AdCarousel = ({ ads = [] }) => {
 
     const content = (
       <div className="relative w-full overflow-hidden rounded-none border border-slate-200 bg-slate-100 aspect-[728/90]">
-        <img
-          src={getHighQualityAdImage(ad.image)}
+        <OptimizedImage
+          src={ad.image}
           alt={title}
+          widths={RESOLUTION_WIDTHS.HERO}
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 1100px"
           loading="eager"
-          fetchPriority={index === safeIndex ? "high" : "auto"}
+          priority={index === safeIndex}
           decoding="async"
           draggable="false"
           onError={() => handleImageError(ad)}
@@ -653,12 +648,14 @@ const FeaturedStory = ({ post, matchedPostId, postRefs }) => {
       <Link to={getArticleUrl(post)} className="block">
         <div className="relative aspect-[16/11] overflow-hidden bg-slate-100 sm:aspect-[16/9]">
           {post.image ? (
-            <img
+            <OptimizedImage
               src={post.image}
               alt={post.title || "Inkuru"}
+              widths={RESOLUTION_WIDTHS.HERO}
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 1280px"
               className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
               loading="eager"
-              fetchPriority="high"
+              priority
               decoding="async"
               onError={(e) => {
                 e.currentTarget.onerror = null;
@@ -708,9 +705,11 @@ const ImportantStory = ({ post, matchedPostId, postRefs }) => {
       >
         <div className="aspect-video sm:aspect-square overflow-hidden">
           {post.image ? (
-            <img
+            <OptimizedImage
               src={post.image}
               alt={post.title || "Inkuru"}
+              widths={RESOLUTION_WIDTHS.CARD}
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 400px"
               className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
               loading="lazy"
               decoding="async"
@@ -776,9 +775,11 @@ const CompactCard = ({ post, matchedPostId, postRefs, variant = "default" }) => 
           }`}
       >
         {post.image ? (
-          <img
+          <OptimizedImage
             src={post.image}
             alt={post.title || "Inkuru"}
+            widths={RESOLUTION_WIDTHS.GALLERY}
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 600px"
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
             loading="lazy"
             decoding="async"
@@ -899,9 +900,11 @@ const LatestWidget = ({ posts = [], matchedPostId, postRefs }) => {
             >
               <div className="h-14 w-20 shrink-0 overflow-hidden rounded-md bg-slate-100">
                 {post.image ? (
-                  <img
+                  <OptimizedImage
                     src={post.image}
                     alt={post.title || "Inkuru"}
+                    widths={RESOLUTION_WIDTHS.THUMB}
+                    sizes="80px"
                     className="h-full w-full object-cover"
                     loading="lazy"
                     decoding="async"
@@ -1089,7 +1092,7 @@ const TopFiveSlider = ({
               : previous + 1
         );
       },
-      3000
+      7000
     );
 
     return () =>
@@ -1220,20 +1223,13 @@ const TopFiveSlider = ({
                   >
                     <div className="relative h-[150px] w-full shrink-0 overflow-hidden bg-slate-100 sm:h-[190px] sm:w-[42%] md:w-[35%]">
                       {post.image ? (
-                        <img
-                          src={
-                            post.image
-                          }
-                          alt={
-                            post.title ||
-                            "Inkuru"
-                          }
+                        <OptimizedImage
+                          src={post.image}
+                          alt={post.title || "Inkuru"}
+                          widths={RESOLUTION_WIDTHS.GALLERY}
+                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 42vw, 600px"
                           className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                          loading={
-                            index === 0
-                              ? "eager"
-                              : "lazy"
-                          }
+                          loading={index === 0 ? "eager" : "lazy"}
                         />
                       ) : (
                         <div className="flex h-full items-center justify-center text-6xl opacity-30">

@@ -9,6 +9,8 @@ import {
 import { deleteMedia, getMediaLibrary } from "../../services/api";
 import { useToast, ConfirmModal, CardSkeleton } from "../../components/employee/EmployeeUI";
 import { errorMessage, formatShortDate } from "./employeeHelpers";
+import OptimizedImage from "../../components/common/OptimizedImage";
+import { RESOLUTION_WIDTHS } from "../../utils/images";
 
 const MAX_PREVIEW = 24;
 
@@ -96,7 +98,7 @@ export default function MediaLibrary() {
                   selected?.id === item.id ? "ring-2 ring-blue-500" : "hover:-translate-y-0.5 hover:shadow-md"
                 }`}
               >
-                <img src={item.image_url} alt={item.filename} className="h-32 w-full object-cover sm:h-36" />
+                <OptimizedImage src={item.image_url} alt={item.filename} widths={RESOLUTION_WIDTHS.CARD} sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 250px" loading="lazy" className="h-32 w-full object-cover sm:h-36" />
                 <div className="p-2.5">
                   <p className="truncate text-xs font-semibold text-slate-700">{item.filename}</p>
                   <p className="mt-0.5 text-[10px] text-slate-400">{formatShortDate(item.created_at)}</p>
@@ -151,7 +153,7 @@ function MediaDetailsModal({ item, onClose, onDelete, onCopy, copiedId }) {
       <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" onClick={onClose} />
       <div className="relative z-10 max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto rounded-3xl bg-white shadow-2xl animate-slide-up">
         <div className="relative">
-          <img src={item.image_url} alt={item.filename} className="h-64 w-full object-cover" />
+          <OptimizedImage src={item.image_url} alt={item.filename} widths={RESOLUTION_WIDTHS.HERO} sizes="(max-width: 640px) 100vw, 512px" loading="eager" className="h-64 w-full object-cover" />
           <button
             onClick={onClose}
             className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-slate-900/70 text-white transition hover:bg-slate-900"

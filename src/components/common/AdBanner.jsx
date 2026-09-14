@@ -1,4 +1,6 @@
 import React from "react";
+import OptimizedImage from "./OptimizedImage";
+import { RESOLUTION_WIDTHS } from "../../utils/images";
 
 const SIZE_CLASSES = {
     "728x250": "aspect-[728/250] w-full",
@@ -32,14 +34,6 @@ const normalizeAdUrl = (ad) => {
     return "";
 };
 
-const getHighQualityAdImage = (image) => {
-    if (typeof image !== "string" || !image.includes("res.cloudinary.com")) {
-        return image;
-    }
-
-    return image.replace("/upload/", "/upload/f_auto,q_auto:best/");
-};
-
 const prefersReducedMotion = () => {
     if (typeof window === "undefined" || !window.matchMedia) {
         return false;
@@ -64,9 +58,11 @@ const AdBanner = ({
 
     const content = hasAdImage ? (
         <div className="relative h-full w-full overflow-hidden bg-slate-100">
-            <img
-                src={getHighQualityAdImage(ad.image)}
+            <OptimizedImage
+                src={ad.image}
                 alt={title}
+                widths={RESOLUTION_WIDTHS.GALLERY}
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 728px"
                 loading={loading}
                 decoding="async"
                 className="absolute inset-0 h-full w-full select-none object-cover"

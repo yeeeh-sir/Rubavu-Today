@@ -4,6 +4,8 @@ import { getPosts, API_ROOT } from "../services/api";
 import { getArticleUrl } from "../utils/slug";
 import { SiteSEO } from "../components/SEO/SEO";
 import { useLanguage } from "../context/LanguageContext";
+import OptimizedImage from "../components/common/OptimizedImage";
+import { RESOLUTION_WIDTHS, isCloudinaryUrl } from "../utils/images";
 
 
 const getImageUrl = (image) => {
@@ -11,8 +13,9 @@ const getImageUrl = (image) => {
   const value = String(image).trim();
   if (/^https?:\/\//i.test(value)) {
     const https = value.replace(/^http:\/\//i, "https://");
-    if (/res\.cloudinary\.com/i.test(https) && https.includes("/upload/")) {
-      return https.replace("/upload/", "/upload/f_auto,q_auto:best,w_900,c_limit/");
+    if (isCloudinaryUrl(https)) {
+      /* OptimizedImage applies the responsive transformations on render. */
+      return https;
     }
     return https;
   }
@@ -196,9 +199,11 @@ const Media = () => {
                   >
                     <Link to={post.href} className="group relative block overflow-hidden bg-slate-100">
                       {cover ? (
-                        <img
+                        <OptimizedImage
                           src={cover}
                           alt={post.title}
+                          widths={RESOLUTION_WIDTHS.CARD}
+                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 400px"
                           className="aspect-[16/10] h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                           loading="lazy"
                         />

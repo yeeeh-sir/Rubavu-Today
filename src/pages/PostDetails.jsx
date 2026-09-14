@@ -9,6 +9,8 @@ import { getPostSlug, getArticleUrl } from "../utils/slug";
 import { formatRelativeTime } from "../utils/time";
 import { getYouTubeEmbedUrl } from "../utils/video";
 import { useLanguage, translateCategory } from "../context/LanguageContext";
+import OptimizedImage from "../components/common/OptimizedImage";
+import { RESOLUTION_WIDTHS, isCloudinaryUrl } from "../utils/images";
 import AuthorProfilePopup, {
   PROFILE_POPUP_EVENT,
   getAuthorKey,
@@ -311,11 +313,10 @@ export default function PostDetails() {
     if (/^https?:\/\//i.test(value)) {
       const https = value.replace(/^http:\/\//i, "https://");
 
-      if (/res\.cloudinary\.com/i.test(https) && https.includes("/upload/")) {
-        return https.replace(
-          "/upload/",
-          "/upload/f_auto,q_auto:best,w_1920,c_limit/"
-        );
+      /* Leave Cloudinary URLs untouched here: OptimizedImage applies the
+         responsive f_auto/q_auto/width transformations on render. */
+      if (isCloudinaryUrl(https)) {
+        return https;
       }
 
       return https;
@@ -1025,17 +1026,18 @@ export default function PostDetails() {
                     onContextMenu={handleImageContextMenu}
                     className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
                   >
-                    <img
+                    <OptimizedImage
                       src={getImageUrl(post.image)}
                       alt={post.title || "Rubavu Today article image"}
+                      widths={RESOLUTION_WIDTHS.HERO}
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 900px"
                       className="block h-auto w-full max-w-full select-none object-contain"
                       draggable="false"
                       loading="eager"
-                      fetchPriority="high"
+                      priority
                       decoding="async"
                       width="1200"
                       height="675"
-                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 900px"
                       onError={(e) => {
                         e.currentTarget.onerror = null;
                         e.currentTarget.src = rubavuLogo;
@@ -1086,9 +1088,11 @@ export default function PostDetails() {
                             onContextMenu={handleGalleryContextMenu(block.url)}
                             className="relative mx-auto max-w-[720px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
                           >
-                            <img
+                            <OptimizedImage
                               src={getImageUrl(block.url)}
                               alt={post?.title || "Rubavu Today article photo"}
+                              widths={RESOLUTION_WIDTHS.GALLERY}
+                              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 720px"
                               className="block h-auto w-full max-w-full select-none object-contain"
                               draggable="false"
                               loading="lazy"
@@ -1395,9 +1399,11 @@ export default function PostDetails() {
                       >
                         <div className="h-20 w-24 shrink-0 overflow-hidden rounded-lg bg-slate-100 sm:h-24 sm:w-28">
                           {p.image ? (
-                            <img
+                            <OptimizedImage
                               src={getImageUrl(p.image)}
                               alt={p.title}
+                              widths={RESOLUTION_WIDTHS.THUMB}
+                              sizes="112px"
                               loading="lazy"
                               decoding="async"
                               className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
@@ -1449,9 +1455,11 @@ export default function PostDetails() {
                       >
                         <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
                           {p.image ? (
-                            <img
+                            <OptimizedImage
                               src={getImageUrl(p.image)}
                               alt={p.title}
+                              widths={RESOLUTION_WIDTHS.CARD}
+                              sizes="(max-width: 640px) 50vw, (max-width: 1280px) 33vw, 320px"
                               loading="lazy"
                               decoding="async"
                               className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
@@ -1506,9 +1514,11 @@ export default function PostDetails() {
                       >
                         <div className="h-16 w-24 shrink-0 overflow-hidden rounded-md bg-slate-100">
                           {p.image ? (
-                            <img
+                            <OptimizedImage
                               src={getImageUrl(p.image)}
                               alt={p.title}
+                              widths={RESOLUTION_WIDTHS.THUMB}
+                              sizes="96px"
                               loading="lazy"
                               decoding="async"
                               className="h-full w-full object-cover"

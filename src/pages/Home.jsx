@@ -5,6 +5,8 @@ import { SiteSEO } from "../components/SEO/SEO";
 import { getArticleUrl } from "../utils/slug";
 import { useLanguage } from "../context/LanguageContext";
 import AdBanner from "../components/common/AdBanner";
+import OptimizedImage from "../components/common/OptimizedImage";
+import { RESOLUTION_WIDTHS } from "../utils/images";
 
 
 const summarize = (text, maxWords = 10) => {
@@ -164,15 +166,17 @@ const Home = () => {
           <div className="relative overflow-hidden bg-slate-100">
             <div className="aspect-[16/13] overflow-hidden">
               {post.image ? (
-                <img
+                <OptimizedImage
                   src={imageUrl}
                   alt={post.title}
-                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  widths={RESOLUTION_WIDTHS.CARD}
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 400px"
                   loading="lazy"
                   onError={(e) => {
                     e.currentTarget.onerror = null;
                     e.currentTarget.src = "https://images.unsplash.com/photo-1495020689067-958852a7765e?auto=format&fit=crop&w=1200&q=80";
                   }}
+                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                 />
               ) : (
                 <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-200 via-slate-100 to-slate-300">
@@ -266,11 +270,13 @@ const Home = () => {
                     >
                       <Link to={post.articleHref} className="block overflow-hidden bg-slate-100">
                         <div className="aspect-[4/3] overflow-hidden">
-                          <img
+                          <OptimizedImage
                             src={post.image || "https://images.unsplash.com/photo-1495020689067-958852a7765e?auto=format&fit=crop&w=900&q=80"}
                             alt={post.title}
-                            className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
+                            widths={RESOLUTION_WIDTHS.THUMB}
+                            sizes="(max-width: 1024px) 40vw, 300px"
                             loading="lazy"
+                            className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
                           />
                         </div>
                       </Link>

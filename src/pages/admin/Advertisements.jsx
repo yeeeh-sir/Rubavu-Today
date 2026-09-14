@@ -9,6 +9,8 @@ import {
 } from "../../services/api";
 import { DashboardLayout, ModalShell, ModalHeader, ModalFooter, FormField } from "../../components/dashboard";
 import { ADMIN_NAV_SECTIONS } from "./adminNav";
+import OptimizedImage from "../../components/common/OptimizedImage";
+import { RESOLUTION_WIDTHS } from "../../utils/images";
 
 const DEFAULT_AD_POSITIONS = ["header", "sidebar", "footer", "inline", "between-posts"];
 
@@ -175,7 +177,7 @@ function Advertisements() {
                                 <li key={a.id} className="grid grid-cols-1 gap-2 px-5 py-3.5 sm:grid-cols-2 md:grid-cols-12 md:items-center">
                                     <span className="col-span-3">
                                         {a.image ? (
-                                            <img src={a.image} alt={a.title || "ad"} className="h-12 w-24 rounded-lg object-cover" />
+                                            <OptimizedImage src={a.image} alt={a.title || "ad"} widths={RESOLUTION_WIDTHS.THUMB} sizes="96px" loading="lazy" className="h-12 w-24 rounded-lg object-cover" />
                                         ) : (
                                             <div className="flex h-12 w-24 items-center justify-center rounded-lg bg-slate-100 text-xs text-slate-400">n/a</div>
                                         )}

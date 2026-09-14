@@ -10,6 +10,8 @@ import {
 } from "../../services/api";
 import { DashboardLayout } from "../../components/dashboard";
 import { ADMIN_NAV_SECTIONS } from "./adminNav";
+import OptimizedImage from "../../components/common/OptimizedImage";
+import { RESOLUTION_WIDTHS } from "../../utils/images";
 
 const DEPARTMENTS = [
     "Amakuru",
@@ -182,7 +184,7 @@ function PostListPage() {
                                 <article key={post.id} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                                     <div className="relative h-40 bg-slate-100">
                                         {post.image ? (
-                                            <img src={post.image} alt={post.title || "story"} className="h-full w-full object-cover" />
+                                            <OptimizedImage src={post.image} alt={post.title || "story"} widths={RESOLUTION_WIDTHS.CARD} sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 400px" loading="lazy" className="h-full w-full object-cover" />
                                         ) : (
                                             <div className="flex h-full items-center justify-center text-4xl">📰</div>
                                         )}

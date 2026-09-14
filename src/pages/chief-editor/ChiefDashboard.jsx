@@ -24,6 +24,8 @@ import LoadingScreen from "../../components/common/LoadingScreen";
 import { DashboardLayout, StatusBadge as SharedStatusBadge } from "../../components/dashboard";
 import ArticleEditor from "../../components/article/ArticleEditor";
 import AuthorProfileTrigger from "../../components/common/AuthorProfileTrigger";
+import OptimizedImage from "../../components/common/OptimizedImage";
+import { RESOLUTION_WIDTHS } from "../../utils/images";
 
 export default function ChiefDashboard({ onLogout }) {
 
@@ -1497,11 +1499,14 @@ export default function ChiefDashboard({ onLogout }) {
 
                       {imageUrl ? (
 
-                        <img
+                        <OptimizedImage
                           src={imageUrl}
                           alt={
                             post.title
                           }
+                          widths={RESOLUTION_WIDTHS.CARD}
+                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 400px"
+                          loading="lazy"
                           className="h-full w-full object-cover"
                         />
 
@@ -1821,13 +1826,16 @@ export default function ChiefDashboard({ onLogout }) {
                 selectedPost
               ) && (
 
-                  <img
+                  <OptimizedImage
                     src={getImageUrl(
                       selectedPost
                     )}
                     alt={
                       selectedPost.title
                     }
+                    widths={RESOLUTION_WIDTHS.GALLERY}
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 800px"
+                    loading="lazy"
                     className="mt-6 max-h-[500px] w-full rounded-2xl object-cover"
                   />
 

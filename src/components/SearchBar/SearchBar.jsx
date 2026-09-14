@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../../context/LanguageContext';
+import OptimizedImage from '../common/OptimizedImage';
+import { RESOLUTION_WIDTHS } from '../../utils/images';
 
 const SearchBar = ({ value, onChange, searchHistory, onSelectHistory, isLoading, posts, onSelectPost }) => {
   const { t } = useLanguage();
@@ -124,9 +126,11 @@ const SearchBar = ({ value, onChange, searchHistory, onSelectHistory, isLoading,
                   className="w-full text-left px-3 py-2 hover:bg-gray-50 transition flex items-center gap-3 rounded-lg"
                 >
                   {post.image && (
-                    <img
+                    <OptimizedImage
                       src={post.image}
                       alt=""
+                      widths={RESOLUTION_WIDTHS.THUMB}
+                      sizes="40px"
                       className="h-10 w-10 rounded-md object-cover shrink-0 bg-gray-100"
                       loading="lazy"
                     />

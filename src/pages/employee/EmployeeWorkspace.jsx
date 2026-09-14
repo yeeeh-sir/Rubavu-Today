@@ -21,6 +21,8 @@ import api, { API_ROOT } from "../../services/api";
 import rubavuLogo from "../../Rubavu.jpeg";
 import ArticleEditor from "../../components/article/ArticleEditor";
 import AuthorProfileTrigger from "../../components/common/AuthorProfileTrigger";
+import OptimizedImage from "../../components/common/OptimizedImage";
+import { RESOLUTION_WIDTHS } from "../../utils/images";
 
 function Employee() {
 
@@ -703,12 +705,15 @@ function Employee() {
 
                     {imageUrl ? (
 
-                      <img
+                      <OptimizedImage
                         src={imageUrl}
                         alt={
                           post.title ||
                           "News image"
                         }
+                        widths={RESOLUTION_WIDTHS.CARD}
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 400px"
+                        loading="lazy"
                         className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
                         onError={(e) => {
                           e.currentTarget.style.display =
@@ -887,7 +892,7 @@ function Employee() {
 
                   <div className="mb-6 overflow-hidden rounded-2xl bg-slate-100">
 
-                    <img
+                    <OptimizedImage
                       src={getImageUrl(
                         selectedPost
                       )}
@@ -895,6 +900,9 @@ function Employee() {
                         selectedPost.title ||
                         "News"
                       }
+                      widths={RESOLUTION_WIDTHS.GALLERY}
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 800px"
+                      loading="lazy"
                       className="max-h-[500px] w-full object-cover"
                     />
 

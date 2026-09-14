@@ -41,6 +41,8 @@ import {
 import { DashboardLayout } from "../../components/dashboard";
 import AuthorProfileTrigger from "../../components/common/AuthorProfileTrigger";
 import ArticleEditor from "../../components/article/ArticleEditor";
+import OptimizedImage from "../../components/common/OptimizedImage";
+import { RESOLUTION_WIDTHS } from "../../utils/images";
 import { MessageSquare, Eye, EyeOff, ChevronDown, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -3104,7 +3106,7 @@ const AccountsPanel = ({
                         <div className="min-w-0 flex-1">
                             <div className="flex items-start gap-3">
                                 {item.image ? (
-                                    <img src={item.image} alt={item.title || 'ad'} className="h-12 w-12 flex-none rounded-md object-cover sm:h-14 sm:w-14 md:h-20 md:w-20" />
+                                    <OptimizedImage src={item.image} alt={item.title || 'ad'} widths={RESOLUTION_WIDTHS.THUMB} sizes="80px" loading="lazy" className="h-12 w-12 flex-none rounded-md object-cover sm:h-14 sm:w-14 md:h-20 md:w-20" />
                                 ) : (
                                     <div className="h-12 w-12 flex-none rounded-md bg-slate-200 text-xs text-slate-500 flex items-center justify-center sm:h-14 sm:w-14 md:h-20 md:w-20">Nta
                                         ifoto</div>
@@ -3356,11 +3358,13 @@ const PostCard = ({
                 `}
             >
                 {imageUrl ? (
-                    <img
+                    <OptimizedImage
                         src={imageUrl}
                         alt={post.title || "Story"}
-                        className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                        widths={RESOLUTION_WIDTHS.CARD}
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 400px"
                         loading="lazy"
+                        className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                     />
                 ) : (
                     <div className="flex h-full items-center justify-center text-4xl text-slate-300">
@@ -3735,9 +3739,12 @@ const AdPreview = ({
 
             <div className="flex min-w-0 flex-col gap-3 sm:flex-row">
                 {previewUrl ? (
-                    <img
+                    <OptimizedImage
                         src={previewUrl}
                         alt="Iherezo ry'itangazo"
+                        widths={RESOLUTION_WIDTHS.THUMB}
+                        sizes="80px"
+                        loading="lazy"
                         className="h-20 w-full shrink-0 rounded-lg object-cover sm:w-20"
                     />
                 ) : (
@@ -3837,9 +3844,12 @@ const PostDetailModal = ({
                     </div>
 
                     {imageUrl && (
-                        <img
+                        <OptimizedImage
                             src={imageUrl}
                             alt={post.title}
+                            widths={RESOLUTION_WIDTHS.GALLERY}
+                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 800px"
+                            loading="lazy"
                             className="mt-6 max-h-[500px] w-full rounded-2xl object-cover"
                         />
                     )}

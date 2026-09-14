@@ -29,6 +29,8 @@ import {
   getImageUrl,
   formatDate,
 } from "./employeeHelpers";
+import OptimizedImage from "../../components/common/OptimizedImage";
+import { RESOLUTION_WIDTHS } from "../../utils/images";
 
 const PAGE_SIZE = 8;
 
@@ -252,7 +254,7 @@ export default function MyArticles() {
                         <div className="flex items-center gap-3">
                           <div className="h-12 w-16 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-slate-100">
                             {getImageUrl(post) ? (
-                              <img src={getImageUrl(post)} alt="" className="h-full w-full object-cover" />
+                              <OptimizedImage src={getImageUrl(post)} alt="" widths={RESOLUTION_WIDTHS.THUMB} sizes="64px" loading="lazy" className="h-full w-full object-cover" />
                             ) : (
                               <div className="flex h-full w-full items-center justify-center text-slate-300">
                                 <FileText className="h-4 w-4" />
@@ -316,7 +318,7 @@ export default function MyArticles() {
                     <div className="flex min-w-0 items-center gap-2.5">
                       <div className="h-11 w-14 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-slate-100">
                         {getImageUrl(post) ? (
-                          <img src={getImageUrl(post)} alt="" className="h-full w-full object-cover" />
+                          <OptimizedImage src={getImageUrl(post)} alt="" widths={RESOLUTION_WIDTHS.THUMB} sizes="56px" loading="lazy" className="h-full w-full object-cover" />
                         ) : (
                           <div className="flex h-full w-full items-center justify-center text-slate-300"><FileText className="h-4 w-4" /></div>
                         )}
@@ -428,7 +430,7 @@ function PostDetailsModal({ open, post, onClose }) {
         <div className="flex flex-col gap-4 p-5 sm:flex-row">
           <div className="h-28 w-full shrink-0 overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 sm:h-32 sm:w-48">
             {getImageUrl(post) ? (
-              <img src={getImageUrl(post)} alt="" className="h-full w-full object-cover" />
+              <OptimizedImage src={getImageUrl(post)} alt="" widths={RESOLUTION_WIDTHS.THUMB} sizes="192px" loading="lazy" className="h-full w-full object-cover" />
             ) : (
               <div className="flex h-full w-full items-center justify-center text-slate-300"><FileText className="h-8 w-8" /></div>
             )}
@@ -462,7 +464,7 @@ function PostDetailsModal({ open, post, onClose }) {
             <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Inkuru yuzuye</p>
             <div className="mt-2 max-h-96 space-y-4 overflow-y-auto rounded-2xl border border-slate-100 bg-slate-50/60 p-4">
               {hero && (
-                <img src={hero} alt="" className="w-full rounded-xl border border-slate-200 object-cover" />
+                <OptimizedImage src={hero} alt="" widths={RESOLUTION_WIDTHS.GALLERY} sizes="(max-width: 640px) 100vw, 600px" loading="lazy" className="w-full rounded-xl border border-slate-200 object-cover" />
               )}
               {!hasParagraphs && post.description && (
                 <p className="whitespace-pre-line text-sm leading-7 text-slate-700">{post.description}</p>
@@ -478,7 +480,7 @@ function PostDetailsModal({ open, post, onClose }) {
                 if (block.type === "image" && block.url) {
                   return (
                     <figure key={i}>
-                      <img src={block.url} alt="" className="w-full rounded-xl border border-slate-200 object-cover" />
+                      <OptimizedImage src={block.url} alt="" widths={RESOLUTION_WIDTHS.GALLERY} sizes="(max-width: 640px) 100vw, 600px" loading="lazy" className="w-full rounded-xl border border-slate-200 object-cover" />
                       {block.caption && (
                         <figcaption className="mt-1.5 text-center text-xs text-slate-400">{block.caption}</figcaption>
                       )}

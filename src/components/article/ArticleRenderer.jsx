@@ -1,6 +1,8 @@
 import React from "react";
 import { useLanguage } from "../../context/LanguageContext";
 import { getYouTubeEmbedUrl } from "../../utils/video";
+import OptimizedImage from "../common/OptimizedImage";
+import { RESOLUTION_WIDTHS, isCloudinaryUrl } from "../../utils/images";
 
 const normalizeImageUrl = (url) => {
   if (!url) return null;
@@ -10,11 +12,10 @@ const normalizeImageUrl = (url) => {
   if (/^https?:\/\//i.test(value)) {
     const https = value.replace(/^http:\/\//i, "https://");
 
-    if (/res\.cloudinary\.com/i.test(https) && https.includes("/upload/")) {
-      return https.replace(
-        "/upload/",
-        "/upload/f_auto,q_auto:best,w_1600,c_limit/"
-      );
+    /* Cloudinary optimization is handled by OptimizedImage at render time;
+       just normalize to https here. */
+    if (isCloudinaryUrl(https)) {
+      return https;
     }
 
     return https;
@@ -45,9 +46,11 @@ const GalleryFigure = ({ block, onImageDownload }) => {
   return (
     <figure className="min-w-0 flex-1 basis-[45%] md:basis-[30%]">
       <div className="relative overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-        <img
+        <OptimizedImage
           src={src}
           alt={block.alt || "Rubavu Today article photo"}
+          widths={RESOLUTION_WIDTHS.GALLERY}
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 45vw, 400px"
           loading="lazy"
           decoding="async"
           className="block aspect-[4/3] h-auto w-full object-cover"
@@ -87,9 +90,11 @@ const ImageFigure = ({ block, onImageDownload }) => {
       className={`${positionClasses[block.position] || positionClasses.center} max-w-full`}
     >
       <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <img
+        <OptimizedImage
           src={src}
           alt={block.alt || "Rubavu Today article photo"}
+          widths={RESOLUTION_WIDTHS.GALLERY}
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 720px"
           loading="lazy"
           decoding="async"
           width="1200"
@@ -313,9 +318,13 @@ const ArticleRenderer = ({
       {showHero && heroSource && (
         <figure className="mt-7">
           <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <img
+            <OptimizedImage
               src={heroSource}
               alt={post?.title || "Rubavu Today article image"}
+              widths={RESOLUTION_WIDTHS.HERO}
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 900px"
+              loading="eager"
+              priority
               decoding="async"
               width="1200"
               height="675"

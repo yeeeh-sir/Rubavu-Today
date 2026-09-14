@@ -453,12 +453,29 @@ export const isEmployee = () => {
 };
 
 let postsInFlightPromise = null;
+let cachedPosts = null;
+let cachedPostsAt = 0;
+
+const POSTS_CACHE_TTL_MS = 45 * 1000;
+
+export const invalidatePostsCache = () => {
+  cachedPosts = null;
+  cachedPostsAt = 0;
+};
 
 export const getPosts = async () => {
-  // Deduplicate concurrent/rapid calls (Navbar, Home, WebsiteChat all
-  // call getPosts on mount simultaneously). The same resolved promise
-  // is returned to all callers; the entry is dropped once it settles
-  // so later navigation re-fetches fresh data.
+  // Return a short-TTL snapshot of the last successful fetch so
+  // repeated mounts (Navbar, Home, WebsiteChat, related posts) don't
+  // hammer the backend. The same resolved promise is shared between
+  // concurrent callers while a request is in flight; both layers are
+  // dropped once the data is stale or explicitly invalidated.
+  if (
+    cachedPosts &&
+    Date.now() - cachedPostsAt < POSTS_CACHE_TTL_MS
+  ) {
+    return cachedPosts;
+  }
+
   if (postsInFlightPromise) return postsInFlightPromise;
 
   const load = async () => {
@@ -474,9 +491,14 @@ export const getPosts = async () => {
       return [];
     }
 
-    return data
+    const posts = data
       .filter((post) => String(post.status || "").toLowerCase() === "approved")
       .map(normalizePost);
+
+    cachedPosts = posts;
+    cachedPostsAt = Date.now();
+
+    return posts;
   };
 
   postsInFlightPromise = load().finally(() => {
@@ -589,10 +611,14 @@ export async function approvePost(postId) {
     throw new Error("Post ID is required.");
   }
 
-  return request(
+  const result = await request(
     `/api/chief-editor/posts/${postId}/approve`,
     { method: "PUT" }
   );
+
+  invalidatePostsCache();
+
+  return result;
 }
 
 export async function rejectPost(
@@ -603,7 +629,7 @@ export async function rejectPost(
     throw new Error("Post ID is required.");
   }
 
-  return request(
+  const result = await request(
     `/api/chief-editor/posts/${postId}/reject`,
     {
       method: "PUT",
@@ -615,6 +641,10 @@ export async function rejectPost(
       body: JSON.stringify({ reason }),
     }
   );
+
+  invalidatePostsCache();
+
+  return result;
 }
 
 export async function reviewPost(postId) {
@@ -622,10 +652,14 @@ export async function reviewPost(postId) {
     throw new Error("Post ID is required.");
   }
 
-  return request(
+  const result = await request(
     `/api/chief-editor/posts/${postId}/review`,
     { method: "PUT" }
   );
+
+  invalidatePostsCache();
+
+  return result;
 }
 
 export async function updatePostStatus(
@@ -763,7 +797,11 @@ export async function addPost(postData) {
     }
   );
 
-  return handleResponse(response);
+  const result = await handleResponse(response);
+
+  invalidatePostsCache();
+
+  return result;
 }
 
 export async function updatePost(
@@ -786,13 +824,21 @@ export async function updatePost(
     }
   );
 
-  return handleResponse(response);
+  const result = await handleResponse(response);
+
+  invalidatePostsCache();
+
+  return result;
 }
 
 export async function deletePost(id) {
-  return request(`/api/posts/${id}`, {
+  const result = await request(`/api/posts/${id}`, {
     method: "DELETE",
   });
+
+  invalidatePostsCache();
+
+  return result;
 }
 
 export async function getDashboard() {
@@ -1035,7 +1081,25 @@ export async function deleteChiefEditor(id) {
   });
 }
 
+let cachedAdvertisements = null;
+let cachedAdvertisementsAt = 0;
+
+const ADVERTISEMENTS_CACHE_TTL_MS = 60 * 1000;
+
+export const invalidateAdvertisementsCache = () => {
+  cachedAdvertisements = null;
+  cachedAdvertisementsAt = 0;
+};
+
 export async function getAdvertisements() {
+  if (
+    cachedAdvertisements &&
+    Date.now() - cachedAdvertisementsAt <
+      ADVERTISEMENTS_CACHE_TTL_MS
+  ) {
+    return cachedAdvertisements;
+  }
+
   const data = await request(
     "/api/advertisements"
   );
@@ -1044,10 +1108,15 @@ export async function getAdvertisements() {
     ? data
     : [];
 
-  return list.map((ad) => ({
+  const ads = list.map((ad) => ({
     ...ad,
     image: normalizeImageUrl(ad.image),
   }));
+
+  cachedAdvertisements = ads;
+  cachedAdvertisementsAt = Date.now();
+
+  return ads;
 }
 
 const appendAdvertisementFields = (
@@ -1156,7 +1225,11 @@ export async function addAdvertisement(
     }
   );
 
-  return handleResponse(response);
+  const result = await handleResponse(response);
+
+  invalidateAdvertisementsCache();
+
+  return result;
 }
 
 export async function updateAdvertisement(
@@ -1179,13 +1252,21 @@ export async function updateAdvertisement(
     }
   );
 
-  return handleResponse(response);
+  const result = await handleResponse(response);
+
+  invalidateAdvertisementsCache();
+
+  return result;
 }
 
 export async function deleteAdvertisement(id) {
-  return request(`/api/advertisements/${id}`, {
+  const result = await request(`/api/advertisements/${id}`, {
     method: "DELETE",
   });
+
+  invalidateAdvertisementsCache();
+
+  return result;
 }
 
 export async function healthCheck() {

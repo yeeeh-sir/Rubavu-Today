@@ -10,6 +10,8 @@ import {
 } from "../../services/api";
 import { DashboardLayout } from "../../components/dashboard";
 import ArticleRenderer from "../../components/article/ArticleRenderer";
+import OptimizedImage from "../../components/common/OptimizedImage";
+import { RESOLUTION_WIDTHS, isCloudinaryUrl } from "../../utils/images";
 
 const DEPARTMENTS_NAV = [
     { label: "Dashboard", items: [{ icon: <span>▦</span>, label: "Imbonerahamwe", path: "/admin/dashboard" }] },
@@ -169,9 +171,8 @@ function PostPreview() {
         const value = String(image).trim();
         if (/^https?:\/\//i.test(value)) {
             const https = value.replace(/^http:\/\//i, "https://");
-            if (/res\.cloudinary\.com/i.test(https) && https.includes("/upload/")) {
-                return https.replace("/upload/", "/upload/f_auto,q_auto:best,w_1920,c_limit/");
-            }
+            /* OptimizedImage applies responsive Cloudinary transformations. */
+            if (isCloudinaryUrl(https)) return https;
             return https;
         }
         if (value.startsWith("/")) return `${window.location.origin}${value}`;
@@ -332,9 +333,11 @@ function PostPreview() {
                         {post.image && (
                             <figure className="mt-7">
                                 <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                                    <img
+                                    <OptimizedImage
                                         src={getImageUrl(post.image)}
                                         alt={post.title || "Rubavu Today article image"}
+                                        widths={RESOLUTION_WIDTHS.HERO}
+                                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 900px"
                                         className="block h-auto w-full max-w-full select-none object-contain"
                                         loading="eager"
                                         onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = ""; }}
@@ -371,9 +374,11 @@ function PostPreview() {
                                         ) : (
                                             <figure key={`img-${index}`} className="my-10">
                                                 <div className="relative mx-auto max-w-[720px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                                                    <img
+                                                    <OptimizedImage
                                                         src={getImageUrl(block.url)}
                                                         alt={post?.title || "Rubavu Today article photo"}
+                                                        widths={RESOLUTION_WIDTHS.GALLERY}
+                                                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 720px"
                                                         className="block h-auto w-full max-w-full select-none object-contain"
                                                         loading="lazy"
                                                         onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = ""; }}
