@@ -130,7 +130,12 @@ function Performance() {
   const loadDailyData = useCallback(async () => {
     try {
       setLoadingDaily(true);
-      const payload = await getAdminDailyPerformance({ role });
+      const payload = await Promise.race([
+        getAdminDailyPerformance({ role }),
+        new Promise((_, reject) => {
+          window.setTimeout(() => reject(new Error("Daily performance request timed out.")), 15000);
+        }),
+      ]);
       setDailyData(payload);
     } catch (err) {
       console.error("Failed to load admin daily performance:", err);
@@ -145,7 +150,12 @@ function Performance() {
       setLoading(true);
       try {
         const { start, end } = periodRange(period, from, to);
-        const payload = await getAdminWeeklyPerformance({ role, start, end });
+        const payload = await Promise.race([
+          getAdminWeeklyPerformance({ role, start, end }),
+          new Promise((_, reject) => {
+            window.setTimeout(() => reject(new Error("Weekly performance request timed out.")), 15000);
+          }),
+        ]);
         if (active) {
           setData(payload);
           setError("");

@@ -12,7 +12,12 @@ export default function WeeklyPerformance() {
     let active = true;
     (async () => {
       try {
-        const report = await getMyPerformance();
+        const report = await Promise.race([
+          getMyPerformance(),
+          new Promise((_, reject) => {
+            window.setTimeout(() => reject(new Error("Weekly performance request timed out.")), 15000);
+          }),
+        ]);
         if (active) setData(report);
       } catch (err) {
         if (active) setError(true);
