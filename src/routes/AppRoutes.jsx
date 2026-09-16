@@ -55,6 +55,8 @@ const Employees = lazy(() => import("../pages/admin/Employees"));
 const ChiefEditors = lazy(() => import("../pages/admin/ChiefEditors"));
 const Advertisements = lazy(() => import("../pages/admin/Advertisements"));
 const Reports = lazy(() => import("../pages/admin/Reports"));
+const Performance = lazy(() => import("../pages/admin/Performance"));
+const Accounts = lazy(() => import("../pages/admin/Accounts"));
 
 const PublicLayout = ({ children, showHomeContent = true }) => (
     <>
@@ -90,7 +92,7 @@ function EmployeeShellLayout() {
 }
 
 function ProtectedRoute({ roles, loginPath, children }) {
-    const { user, refreshUser } = useAuth();
+    const { user, loading, refreshUser } = useAuth();
     const storedUser = getStoredUser();
     const effectiveUser = user || storedUser;
 
@@ -102,6 +104,10 @@ function ProtectedRoute({ roles, loginPath, children }) {
 
     if (!isAuthenticated()) {
         return <Navigate to={loginPath} replace />;
+    }
+
+    if (loading) {
+        return <LoadingScreen message="Checking authentication..." />;
     }
 
     if (!effectiveUser) {
@@ -222,6 +228,8 @@ function AppRoutes() {
                 <Route path="/admin/chief-editors" element={<ProtectedRoute roles={["admin"]} loginPath="/admin/login"><ChiefEditors /></ProtectedRoute>} />
                 <Route path="/admin/advertisements" element={<ProtectedRoute roles={["admin"]} loginPath="/admin/login"><Advertisements /></ProtectedRoute>} />
                 <Route path="/admin/reports" element={<ProtectedRoute roles={["admin"]} loginPath="/admin/login"><Reports /></ProtectedRoute>} />
+                <Route path="/admin/performance" element={<ProtectedRoute roles={["admin"]} loginPath="/admin/login"><Performance /></ProtectedRoute>} />
+                <Route path="/admin/accounts" element={<ProtectedRoute roles={["admin"]} loginPath="/admin/login"><Accounts /></ProtectedRoute>} />
 
                 <Route path="/chief/login" element={<PublicOnlyRoute role="chief_editor" redirectTo="/chief-editor/dashboard"><ChiefLogin /></PublicOnlyRoute>} />
                 <Route path="/chief" element={<Navigate to="/chief-editor/dashboard" replace />} />

@@ -24,6 +24,7 @@ import {
   CardSkeleton,
   Skeleton,
 } from "../../components/employee/EmployeeUI";
+import { DailyTaskCard, WeeklyPerformance } from "../../components/dashboard";
 import {
   DEPARTMENTS,
   DEPARTMENT_COLORS,
@@ -143,6 +144,10 @@ function Dashboard({ onLogout }) {
           </div>
         </div>
       </section>
+
+      <DailyTaskCard writePath="/employee/create" />
+
+      <WeeklyPerformance />
 
       {loading ? (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

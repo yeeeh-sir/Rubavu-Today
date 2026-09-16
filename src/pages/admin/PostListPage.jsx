@@ -27,6 +27,11 @@ const normalizeStatus = (post) =>
     String(post?.status || post?.approval_status || post?.publication_status || "pending").toLowerCase();
 
 const MODE_CONFIG = {
+    all: {
+        title: "Inkuru zose",
+        desc: "Inkuru zose zanditswe, zemejwe cyangwa zanzwe.",
+        status: null,
+    },
     pending: {
         title: "Zitegereje gusuzumwa",
         desc: "Inkuru zitegereje gusuzumwa n'abayobozi.",
@@ -87,7 +92,9 @@ function PostListPage() {
     useEffect(() => { loadPosts(); }, [loadPosts]);
 
     const filtered = useMemo(() => {
-        let result = posts.filter((p) => normalizeStatus(p) === config.status);
+        let result = config.status
+            ? posts.filter((p) => normalizeStatus(p) === config.status)
+            : [...posts];
         if (category !== "All") result = result.filter((p) => p.category === category);
         if (search.trim()) {
             const q = search.toLowerCase();
@@ -246,7 +253,7 @@ function PostListPage() {
                                                     ↩ Subiza pending
                                                 </button>
                                             )}
-<button onClick={() => handleDelete(post)}
+                                            <button onClick={() => handleDelete(post)}
                                                 title="Siba inkuru"
                                                 className="rounded-lg border border-red-200 px-2.5 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-50">
                                                 🗑 Siba

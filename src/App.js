@@ -3,6 +3,7 @@ import { BrowserRouter } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 import { AuthProvider } from "./context/AuthContext";
 import { LanguageProvider } from "./context/LanguageContext";
+import { ThemeProvider } from "./context/ThemeContext";
 import AppRoutes from "./routes/AppRoutes";
 
 function App() {
@@ -11,7 +12,9 @@ function App() {
       <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <AuthProvider>
           <LanguageProvider>
-            <AppRoutes />
+            <ThemeProvider>
+              <AppRoutes />
+            </ThemeProvider>
           </LanguageProvider>
         </AuthProvider>
       </BrowserRouter>

@@ -8,15 +8,14 @@
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-J25JBHTZ8D"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
+    function gtag() { dataLayer.push(arguments); }
     gtag('js', new Date());
 
     gtag('config', 'G-J25JBHTZ8D');
   </script>
 
   <!-- Google AdSense -->
-  <script async
-    src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7689552425434555"
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7689552425434555"
     crossorigin="anonymous"></script>
 
   <link rel="shortcut icon" href="%PUBLIC_URL%/favicon.ico?v=3" />
@@ -30,10 +29,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#B3261E" />
 
-  <meta
-    name="description"
-    content="Rubavu Today ni urubuga rw'itangazamakuru rutanga amakuru agezweho, yizewe kandi afitiye akamaro abasomyi bo mu Rwanda, muri Afurika no ku isi hose. Dutangaza amakuru n'inkuru zitandukanye zirimo politiki, ubukungu, ubucuruzi, imikino, imyidagaduro, uburezi, ikoranabuhanga, ubuzima, umuco, sosiyete, ubukerarugendo, ibidukikije ndetse n'amakuru mpuzamahanga. Rubavu Today igamije kugeza ku basomyi amakuru y'ingenzi ku gihe, mu buryo bwumvikana kandi bw'umwuga, kugira ngo buri wese abashe gukurikirana ibibera mu gihugu, muri Afurika no hirya no hino ku isi."
-  />
+  <script>
+    (function () {
+      try {
+        var savedTheme = window.localStorage.getItem('rubavu_theme');
+        if (savedTheme === 'dark') {
+          document.documentElement.dataset.theme = 'dark';
+          document.documentElement.style.colorScheme = 'dark';
+        }
+      } catch (error) {
+        // Continue with the light theme when storage is unavailable.
+      }
+    }());
+  </script>
+
+  <meta name="description"
+    content="Rubavu Today ni urubuga rw'itangazamakuru rutanga amakuru agezweho, yizewe kandi afitiye akamaro abasomyi bo mu Rwanda, muri Afurika no ku isi hose. Dutangaza amakuru n'inkuru zitandukanye zirimo politiki, ubukungu, ubucuruzi, imikino, imyidagaduro, uburezi, ikoranabuhanga, ubuzima, umuco, sosiyete, ubukerarugendo, ibidukikije ndetse n'amakuru mpuzamahanga. Rubavu Today igamije kugeza ku basomyi amakuru y'ingenzi ku gihe, mu buryo bwumvikana kandi bw'umwuga, kugira ngo buri wese abashe gukurikirana ibibera mu gihugu, muri Afurika no hirya no hino ku isi." />
 
   <meta name="robots" content="index, follow" />
   <meta name="author" content="Rubavu Today" />
@@ -45,26 +56,12 @@
 
   <meta property="og:type" content="website" />
   <meta property="og:title" content="Rubavu Today" />
-  <meta
-    property="og:description"
-    content="Rubavu Today ni urubuga rw'itangazamakuru rutanga amakuru agezweho, yizewe kandi afitiye akamaro abasomyi bo mu Rwanda, muri Afurika no ku isi hose."
-  />
-  <meta
-    property="og:image"
-    content="https://www.rubavutoday.com/Rubavu.jpeg"
-  />
-  <meta
-    property="og:image:secure_url"
-    content="https://www.rubavutoday.com/Rubavu.jpeg"
-  />
-  <meta
-    property="og:url"
-    content="https://www.rubavutoday.com/"
-  />
-  <meta
-    property="og:site_name"
-    content="Rubavu Today"
-  />
+  <meta property="og:description"
+    content="Rubavu Today ni urubuga rw'itangazamakuru rutanga amakuru agezweho, yizewe kandi afitiye akamaro abasomyi bo mu Rwanda, muri Afurika no ku isi hose." />
+  <meta property="og:image" content="https://www.rubavutoday.com/Rubavu.jpeg" />
+  <meta property="og:image:secure_url" content="https://www.rubavutoday.com/Rubavu.jpeg" />
+  <meta property="og:url" content="https://www.rubavutoday.com/" />
+  <meta property="og:site_name" content="Rubavu Today" />
 
   <script type="application/ld+json">
     {
@@ -93,15 +90,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
-  <link
-    rel="canonical"
-    href="https://www.rubavutoday.com/"
-  />
+  <link rel="canonical" href="https://www.rubavutoday.com/" />
 
-  <link
-    rel="manifest"
-    href="%PUBLIC_URL%/manifest.json"
-  />
+  <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
 
   <title>Rubavu Today</title>
 </head>

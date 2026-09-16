@@ -13,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { useNotifications } from "../../context/NotificationsContext";
+import ThemeToggle from "../common/ThemeToggle";
 import logo from "../../Rubavu.jpeg";
 
 const NAV_ITEMS = [
@@ -57,10 +58,9 @@ export default function EmployeeSidebar({ mobileOpen, onClose, onLogout }) {
               to={item.to}
               onClick={onClose}
               className={({ isActive }) =>
-                `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition ${
-                  isActive
-                    ? "bg-blue-600 text-white shadow-md shadow-blue-950/40"
-                    : "text-slate-400 hover:bg-white/5 hover:text-white"
+                `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition ${isActive
+                  ? "bg-blue-600 text-white shadow-md shadow-blue-950/40"
+                  : "text-slate-400 hover:bg-white/5 hover:text-white"
                 }`
               }
             >
@@ -77,6 +77,7 @@ export default function EmployeeSidebar({ mobileOpen, onClose, onLogout }) {
       </nav>
 
       <div className="border-t border-white/10 p-3">
+        <ThemeToggle />
         <button
           type="button"
           className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-400 transition hover:bg-white/5 hover:text-white"
@@ -106,9 +107,8 @@ export default function EmployeeSidebar({ mobileOpen, onClose, onLogout }) {
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-72 transform bg-slate-950 transition-transform duration-300 lg:static lg:translate-x-0 ${
-          mobileOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+        className={`fixed inset-y-0 left-0 z-50 w-72 transform bg-slate-950 transition-transform duration-300 lg:static lg:translate-x-0 ${mobileOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
       >
         {content}
       </aside>

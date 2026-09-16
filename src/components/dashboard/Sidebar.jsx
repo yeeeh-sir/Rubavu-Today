@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import ThemeToggle from "../common/ThemeToggle";
 import logo from "../../Rubavu.jpeg";
 
-const SIDEBAR_WIDTH_EXPANDED = 260;
+const SIDEBAR_WIDTH_EXPANDED = 288;
 const SIDEBAR_WIDTH_COLLAPSED = 72;
 
 function Sidebar({ navigationSections, roleLabel, collapsed: controlledCollapsed, onToggleCollapse, onLogout }) {
@@ -96,7 +97,7 @@ function Sidebar({ navigationSections, roleLabel, collapsed: controlledCollapsed
                   to={item.path}
                   onClick={() => { if (isMobile) setMobileOpen(false); if (item.onClick) item.onClick(); }}
                   title={collapsed && !isMobile ? item.label : undefined}
-                  className={`mb-0.5 flex items-center gap-2.5 rounded-lg text-sm font-medium transition ${collapsed && !isMobile ? "justify-center px-2 py-2.5" : "px-3 py-2.5"
+                  className={`mb-0.5 flex min-h-11 items-center gap-2.5 rounded-lg text-sm font-medium leading-5 transition ${collapsed && !isMobile ? "justify-center px-2 py-2.5" : "px-3 py-2.5"
                     } ${isActive
                       ? "bg-brand-600 text-white shadow-sm"
                       : "text-slate-400 hover:bg-white/5 hover:text-white"
@@ -106,7 +107,7 @@ function Sidebar({ navigationSections, roleLabel, collapsed: controlledCollapsed
                     {item.icon}
                   </span>
                   {(!collapsed || isMobile) && (
-                    <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                    <span className="min-w-0 flex-1 whitespace-normal break-words">{item.label}</span>
                   )}
                   {(!collapsed || isMobile) && item.badge !== undefined && item.badge !== null && (
                     <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-bold ${isActive ? "bg-white/20 text-white" : "bg-white/5 text-slate-400"
@@ -125,6 +126,8 @@ function Sidebar({ navigationSections, roleLabel, collapsed: controlledCollapsed
       </nav>
 
       <div className={`shrink-0 border-t border-white/5 p-3 ${collapsed && !isMobile ? "px-2" : ""}`}>
+        {(!collapsed || isMobile) && <ThemeToggle />}
+        {collapsed && !isMobile && <ThemeToggle compact />}
         <NavLink
           to={profilePath}
           onClick={() => { if (isMobile) setMobileOpen(false); }}
@@ -179,7 +182,7 @@ function Sidebar({ navigationSections, roleLabel, collapsed: controlledCollapsed
       <aside
         className={`fixed inset-y-0 left-0 z-50 flex flex-col transition-all duration-300 lg:translate-x-0 ${mobileOpen ? "translate-x-0" : "-translate-x-full"
           }`}
-        style={{ width: window.innerWidth >= 1024 ? sidebarWidth : "min(280px, 85vw)" }}
+        style={{ width: window.innerWidth >= 1024 ? sidebarWidth : "min(320px, calc(100vw - 24px))" }}
       >
         <SidebarContent isMobile={mobileOpen && window.innerWidth < 1024} />
       </aside>

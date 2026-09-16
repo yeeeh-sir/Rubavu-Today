@@ -8,6 +8,16 @@
   color-scheme: light;
 }
 
+html[data-theme="dark"] {
+  color-scheme: dark;
+  background: #0b1220;
+}
+
+html[data-theme="dark"] body {
+  background-color: #0b1220;
+  color: #e2e8f0;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -200,4 +210,99 @@ a {
 
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
+}
+
+/* Dashboard dark theme: scoped overrides preserve the existing light design. */
+.dashboard-theme.theme-dark {
+  background-color: #0b1220 !important;
+  color: #e2e8f0 !important;
+}
+
+.dashboard-theme.theme-dark .bg-white,
+.dashboard-theme.theme-dark [class~="bg-white/95"],
+.dashboard-theme.theme-dark [class~="bg-white/30"] {
+  background-color: #172235 !important;
+}
+
+.dashboard-theme.theme-dark .bg-slate-50,
+.dashboard-theme.theme-dark .bg-slate-100,
+.dashboard-theme.theme-dark .bg-slate-200,
+.dashboard-theme.theme-dark [class~="bg-slate-50/60"] {
+  background-color: #111b2d !important;
+}
+
+.dashboard-theme.theme-dark .text-slate-900,
+.dashboard-theme.theme-dark .text-slate-800,
+.dashboard-theme.theme-dark .text-slate-700 {
+  color: #f1f5f9 !important;
+}
+
+.dashboard-theme.theme-dark .text-slate-600,
+.dashboard-theme.theme-dark .text-slate-500,
+.dashboard-theme.theme-dark .text-slate-400 {
+  color: #a9b8cc !important;
+}
+
+.dashboard-theme.theme-dark .text-slate-300 {
+  color: #cbd5e1 !important;
+}
+
+.dashboard-theme.theme-dark .bg-blue-50,
+.dashboard-theme.theme-dark .bg-amber-50,
+.dashboard-theme.theme-dark .bg-emerald-50,
+.dashboard-theme.theme-dark .bg-red-50,
+.dashboard-theme.theme-dark .bg-purple-50 {
+  background-color: #1d3048 !important;
+}
+
+.dashboard-theme.theme-dark .border-slate-100,
+.dashboard-theme.theme-dark .border-slate-200,
+.dashboard-theme.theme-dark .border-slate-300,
+.dashboard-theme.theme-dark .border-dashed {
+  border-color: #2a3a52 !important;
+}
+
+.dashboard-theme.theme-dark input,
+.dashboard-theme.theme-dark select,
+.dashboard-theme.theme-dark textarea {
+  background-color: #101a2b !important;
+  border-color: #334766 !important;
+  color: #f1f5f9 !important;
+}
+
+.dashboard-theme.theme-dark input::placeholder,
+.dashboard-theme.theme-dark textarea::placeholder {
+  color: #8292aa !important;
+}
+
+.dashboard-theme.theme-dark [class~="hover:bg-slate-50"]:hover,
+.dashboard-theme.theme-dark [class~="hover:bg-slate-100"]:hover,
+.dashboard-theme.theme-dark [class~="focus:bg-white"]:focus {
+  background-color: #22324a !important;
+}
+
+.dashboard-theme.theme-dark table thead,
+.dashboard-theme.theme-dark [class~="bg-slate-50"] {
+  background-color: #111b2d !important;
+}
+
+.dashboard-theme.theme-dark .shadow-sm,
+.dashboard-theme.theme-dark .shadow-md,
+.dashboard-theme.theme-dark .shadow-lg,
+.dashboard-theme.theme-dark .shadow-xl,
+.dashboard-theme.theme-dark .shadow-2xl {
+  --tw-shadow-color: rgb(0 0 0 / 0.35);
+}
+
+.dashboard-theme.theme-dark .scrollbar-thin {
+  scrollbar-color: #526580 #111b2d;
+}
+
+.dashboard-theme.theme-dark .scrollbar-thin::-webkit-scrollbar-track {
+  background: #111b2d;
+}
+
+.dashboard-theme.theme-dark .scrollbar-thin::-webkit-scrollbar-thumb,
+.dashboard-theme.theme-dark .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background-color: #526580;
 }

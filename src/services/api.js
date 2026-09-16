@@ -632,6 +632,24 @@ export async function getAdminPosts() {
   return request("/api/admin/posts");
 }
 
+export async function getAdminAccounts({ page = 1, limit = 20, search = "" } = {}) {
+  const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+  if (search) params.set("search", search);
+  return request(`/api/admin/accounts?${params.toString()}`);
+}
+
+export async function getAdminAccountPosts(role, accountId, { page = 1, limit = 20, search = "", status = "", category = "" } = {}) {
+  const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+  if (search) params.set("search", search);
+  if (status) params.set("status", status);
+  if (category) params.set("category", category);
+  return request(`/api/admin/accounts/${encodeURIComponent(role)}/${encodeURIComponent(accountId)}/posts?${params.toString()}`);
+}
+
+export async function getAdminVisitorAnalytics(preset = "today") {
+  return request(`/api/admin/analytics/visitors?preset=${encodeURIComponent(preset)}`);
+}
+
 export async function getAdminPostById(id) {
   const data = await request(`/api/admin/posts/${id}`);
   return data ? normalizePost(data) : null;
@@ -898,6 +916,39 @@ export async function getMyPosts() {
   return request("/api/my-posts");
 }
 
+export async function getDailyTaskState() {
+  return request("/api/tasks/daily");
+}
+
+export async function getMyPerformance() {
+  return request("/api/tasks/my-performance");
+}
+
+export async function getAdminDailyPerformance({ role } = {}) {
+  const params = new URLSearchParams();
+  if (role) params.set("role", role);
+  const qs = params.toString();
+  return request(`/api/admin/performance/daily${qs ? `?${qs}` : ""}`);
+}
+
+export async function getAdminWeeklyPerformance({ role, start, end } = {}) {
+  const params = new URLSearchParams();
+  if (role) params.set("role", role);
+  if (start) params.set("start", start);
+  if (end) params.set("end", end);
+  const qs = params.toString();
+  return request(`/api/admin/performance/weekly${qs ? `?${qs}` : ""}`);
+}
+
+export async function getAdminPerformanceSummary({ role, start, end } = {}) {
+  const params = new URLSearchParams();
+  if (role) params.set("role", role);
+  if (start) params.set("start", start);
+  if (end) params.set("end", end);
+  const qs = params.toString();
+  return request(`/api/admin/performance/summary${qs ? `?${qs}` : ""}`);
+}
+
 export async function getNotifications() {
   return request("/api/notifications");
 }
@@ -1140,7 +1191,7 @@ export async function getAdvertisements() {
   if (
     cachedAdvertisements &&
     Date.now() - cachedAdvertisementsAt <
-      ADVERTISEMENTS_CACHE_TTL_MS
+    ADVERTISEMENTS_CACHE_TTL_MS
   ) {
     return cachedAdvertisements;
   }
@@ -1433,6 +1484,9 @@ const api = {
   getPost,
   getPublicPosts,
   getAdminPosts,
+  getAdminAccounts,
+  getAdminAccountPosts,
+  getAdminVisitorAnalytics,
   getAdminPostById,
   getPendingPosts,
   getChiefEditorPosts,
@@ -1447,6 +1501,11 @@ const api = {
   getDashboard,
   getChiefEditorDashboard,
   getMyPosts,
+
+  getDailyTaskState,
+  getMyPerformance,
+  getAdminWeeklyPerformance,
+  getAdminPerformanceSummary,
 
   getNotifications,
   getUnreadNotificationsCount,

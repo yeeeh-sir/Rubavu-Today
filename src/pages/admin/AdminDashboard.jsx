@@ -38,7 +38,7 @@ import {
     updatePostStatus,
 } from "../../services/api";
 
-import { DashboardLayout } from "../../components/dashboard";
+import { DashboardLayout, VisitorAnalytics } from "../../components/dashboard";
 import AuthorProfileTrigger from "../../components/common/AuthorProfileTrigger";
 import ArticleEditor from "../../components/article/ArticleEditor";
 import OptimizedImage from "../../components/common/OptimizedImage";
@@ -1316,61 +1316,35 @@ const AdminDashboard = ({
     };
 
 
-
-
-
-    const openEmployeeManager = () => {
-        if (onCreateEmployee) {
-            quickAction(
-                onCreateEmployee,
-                "Kongera umukozi birabonetse."
-            );
-        } else {
-            setShowCreateEmployee(true);
-        }
-    };
-
-    const openChiefManager = () => {
-        if (onNavigateToChiefEditors) {
-            onNavigateToChiefEditors();
-        } else if (onCreateChiefEditor) {
-            quickAction(
-                onCreateChiefEditor,
-                "Kongera umwanditsi mukuru birabonetse."
-            );
-        } else {
-            setShowCreateChief(true);
-        }
-    };
-
-    const openAdvertisementManager = () => {
-        if (onPostAdvertisement) {
-            quickAction(
-                onPostAdvertisement,
-                "Kongera itangazo birabonetse."
-            );
-        } else {
-            setShowCreateAd(true);
-        }
-    };
-
     const navSections = [
         {
-            label: "Imbonerahamwe",
+            label: "MAIN",
             items: [
                 { icon: <span>▦</span>, label: "Imbonerahamwe", path: "/admin/dashboard" },
-                { icon: <span>⏳</span>, label: "Zitegereje gusuzumwa", badge: statistics.pending, onClick: () => { setSelectedStatus(POST_STATUSES.PENDING); } },
-                { icon: <span>✓</span>, label: "Inkuru zasohotse", onClick: () => { setSelectedStatus(POST_STATUSES.APPROVED); } },
-                { icon: <span>✕</span>, label: "Zanzwe", onClick: () => { setSelectedStatus(POST_STATUSES.REJECTED); } },
             ],
         },
         {
-            label: "Imicungire",
+            label: "INKURU",
             items: [
-                { icon: <span>👤</span>, label: "Abakozi", onClick: openEmployeeManager },
-                { icon: <span>🛡️</span>, label: "Abanditsi Bakuru", onClick: openChiefManager },
-                { icon: <span>📢</span>, label: "Kwamamaza", onClick: openAdvertisementManager },
-                { icon: <span>📥</span>, label: "Kuramo raporo", onClick: () => { exportPosts(); } },
+                { icon: <span>⏳</span>, label: "Zitegereje gusuzumwa", path: "/admin/posts/pending", badge: statistics.pending },
+                { icon: <span>✓</span>, label: "Inkuru zasohotse", path: "/admin/posts/published" },
+                { icon: <span>✕</span>, label: "Zanzwe", path: "/admin/posts/rejected" },
+            ],
+        },
+        {
+            label: "IMICUNGIRE",
+            items: [
+                { icon: <span>👤</span>, label: "Abakozi", path: "/admin/employees" },
+                { icon: <span>🛡️</span>, label: "Abanditsi Bakuru", path: "/admin/chief-editors" },
+                { icon: <span>👥</span>, label: "Konti n'Inkuru", path: "/admin/accounts" },
+                { icon: <span>📊</span>, label: "Imikorere y'Abakozi", path: "/admin/performance" },
+            ],
+        },
+        {
+            label: "IBINDI",
+            items: [
+                { icon: <span>📢</span>, label: "Kwamamaza", path: "/admin/advertisements" },
+                { icon: <span>📥</span>, label: "Kuramo raporo", path: "/admin/reports" },
                 { icon: <span>🧹</span>, label: "Text Cleaner", path: "/admin/text-cleaner" },
             ],
         },
@@ -2033,6 +2007,39 @@ const AdminDashboard = ({
                             icon="💬"
                             color="purple"
                         />
+                    </section>
+
+                    <VisitorAnalytics />
+
+                    <section className="mb-5 grid gap-4 md:grid-cols-2">
+                        <button
+                            type="button"
+                            onClick={() => navigate("/admin/performance")}
+                            className="group rounded-2xl border border-blue-200 bg-blue-50 p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md"
+                        >
+                            <div className="flex items-start justify-between gap-4">
+                                <div>
+                                    <p className="text-xs font-bold uppercase tracking-wide text-blue-600">Imicungire</p>
+                                    <h2 className="mt-1 text-lg font-black text-slate-900">📊 Imikorere y'Abakozi</h2>
+                                    <p className="mt-1 text-sm text-slate-600">Reba imikorere y'abakozi n'abanditsi bakuru.</p>
+                                </div>
+                                <span className="shrink-0 rounded-xl bg-blue-600 px-3 py-2 text-xs font-bold text-white">Reba Imikorere →</span>
+                            </div>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => navigate("/admin/accounts")}
+                            className="group rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-md"
+                        >
+                            <div className="flex items-start justify-between gap-4">
+                                <div>
+                                    <p className="text-xs font-bold uppercase tracking-wide text-emerald-600">Imicungire</p>
+                                    <h2 className="mt-1 text-lg font-black text-slate-900">👥 Konti n'Inkuru</h2>
+                                    <p className="mt-1 text-sm text-slate-600">Genzura konti n'amateka yuzuye y'inkuru.</p>
+                                </div>
+                                <span className="shrink-0 rounded-xl bg-emerald-600 px-3 py-2 text-xs font-bold text-white">Fungura →</span>
+                            </div>
+                        </button>
                     </section>
 
 
@@ -2824,19 +2831,6 @@ const AdminDashboard = ({
                                 </div>
                             </div>
 
-
-                            <div className="rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 p-5 text-white shadow-lg">
-                                <div className="text-xl">💡</div>
-
-                                <h3 className="mt-3 font-black">
-                                    Ikimburo
-                                </h3>
-
-                                <p className="mt-2 text-sm leading-6 text-blue-100">
-                                    Menya imvangano, utwe, amafoto n'amakuru
-                                    y'inkuru mbere yo kuyemera.
-                                </p>
-                            </div>
                         </aside>
                     </div>
                 </main>

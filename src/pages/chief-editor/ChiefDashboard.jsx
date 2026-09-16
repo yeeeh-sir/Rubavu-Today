@@ -21,7 +21,7 @@ import {
 
 import { API_ROOT as SERVER_URL } from "../../services/api";
 import LoadingScreen from "../../components/common/LoadingScreen";
-import { DashboardLayout, StatusBadge as SharedStatusBadge } from "../../components/dashboard";
+import { DashboardLayout, StatusBadge as SharedStatusBadge, DailyTaskCard, WeeklyPerformance } from "../../components/dashboard";
 import ArticleEditor from "../../components/article/ArticleEditor";
 import AuthorProfileTrigger from "../../components/common/AuthorProfileTrigger";
 import OptimizedImage from "../../components/common/OptimizedImage";
@@ -1036,7 +1036,9 @@ export default function ChiefDashboard({ onLogout }) {
 
         </section>
 
+        <DailyTaskCard writePath="/chief-editor/posts" />
 
+        <WeeklyPerformance />
 
         {message && (
           <div className="mb-5 flex items-start justify-between gap-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700">

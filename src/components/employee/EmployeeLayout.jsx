@@ -3,9 +3,11 @@ import { NotificationsProvider } from "../../context/NotificationsContext";
 import { EmployeeUIProvider } from "./EmployeeUI";
 import EmployeeNavbar from "./EmployeeNavbar";
 import EmployeeSidebar from "./EmployeeSidebar";
+import { useTheme } from "../../context/ThemeContext";
 
 export default function EmployeeLayout({ children, onLogout }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { isDark } = useTheme();
 
   const handleLogout = () => {
     setMobileOpen(false);
@@ -15,7 +17,7 @@ export default function EmployeeLayout({ children, onLogout }) {
   return (
     <NotificationsProvider>
       <EmployeeUIProvider>
-        <div className="flex min-h-screen bg-slate-100 text-slate-900">
+        <div className={`dashboard-theme ${isDark ? "theme-dark" : "theme-light"} flex min-h-screen bg-slate-100 text-slate-900`}>
           <EmployeeSidebar
             mobileOpen={mobileOpen}
             onClose={() => setMobileOpen(false)}

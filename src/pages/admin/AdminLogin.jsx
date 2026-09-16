@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { login } from "../../services/api";
+import { clearAuthStorage, login } from "../../services/api";
 import { useLanguage } from "../../context/LanguageContext";
 import logo from "../../Rubavu.jpeg";
 
@@ -29,6 +29,7 @@ const AdminLogin = ({ onLogin }) => {
     setStatus("");
 
     try {
+      clearAuthStorage();
 
 
 
@@ -59,6 +60,7 @@ const AdminLogin = ({ onLogin }) => {
         user.account_type;
 
       if (String(role).toLowerCase() !== "admin") {
+        clearAuthStorage();
         throw new Error(
           "This account does not have administrator access."
         );
