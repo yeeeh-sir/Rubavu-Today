@@ -1,6 +1,6 @@
 import React from "react";
 
-const SITE_URL = "https://rubavutoday.com";
+const SITE_URL = "https://www.rubavutoday.com";
 
 function getShareUrl(post) {
   if (!post) return window.location.href;

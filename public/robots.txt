@@ -6,4 +6,4 @@ Disallow: /chief-editor/
 Disallow: /employee/
 Disallow: /dashboard/
 
-Sitemap: https://rubavutoday.com/sitemap.xml
+Sitemap: https://www.rubavutoday.com/sitemap.xml

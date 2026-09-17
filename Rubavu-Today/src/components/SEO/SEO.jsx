@@ -1,7 +1,7 @@
 import React from "react";
 import { Helmet } from "react-helmet-async";
 
-const SITE_URL = "https://rubavutoday.com";
+const SITE_URL = "https://www.rubavutoday.com";
 const SITE_NAME = "Rubavu Today";
 const LOGO_URL = `${SITE_URL}/Rubavu.jpeg`;
 const DEFAULT_IMAGE = LOGO_URL;
