@@ -701,6 +701,15 @@ export default function PostDetails() {
       .slice(0, 12);
   })();
 
+  // Sequential article navigation so every published article is linked
+  // from its chronological neighbours (older/newer), keeping older posts
+  // reachable via internal links rather than only through the sitemap.
+  const currentIndex = sortedOthers.findIndex(
+    (p) => String(p._id || p.id || "") === String(post?._id || post?.id || "")
+  );
+  const olderPost = currentIndex >= 0 ? sortedOthers[currentIndex + 1] : null;
+  const newerPost = currentIndex > 0 ? sortedOthers[currentIndex - 1] : null;
+
   const rightSidePosts = moreNews.length
     ? moreNews
     : sortedOthers.slice(0, 6);
@@ -1380,6 +1389,43 @@ export default function PostDetails() {
                   )}
                 </div>
               </section>
+
+              {/* PREVIOUS / NEXT ARTICLE — internal link chain */}
+              {(olderPost || newerPost) && (
+                <nav
+                  aria-label={language === "rw" ? "Inzira y'inkuru" : "Article navigation"}
+                  className="mt-14 grid grid-cols-1 gap-4 sm:grid-cols-2"
+                >
+                  {olderPost && (
+                    <Link
+                      to={getArticleUrl(olderPost)}
+                      onClick={openPostFull(olderPost)}
+                      className="group flex flex-col rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-red-200 hover:shadow-md"
+                    >
+                      <span className="font-body text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                        {language === "rw" ? "Inkuru Yabanje" : "Previous story"}
+                      </span>
+                      <span className="mt-1 line-clamp-2 font-post-title text-sm font-bold leading-snug text-slate-950 transition-colors group-hover:text-red-600">
+                        {olderPost.title}
+                      </span>
+                    </Link>
+                  )}
+                  {newerPost && (
+                    <Link
+                      to={getArticleUrl(newerPost)}
+                      onClick={openPostFull(newerPost)}
+                      className="group flex flex-col rounded-xl border border-slate-200 bg-white p-4 text-right shadow-sm transition hover:border-red-200 hover:shadow-md"
+                    >
+                      <span className="font-body text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                        {language === "rw" ? "Inkuru Ikurikira" : "Next story"}
+                      </span>
+                      <span className="mt-1 line-clamp-2 font-post-title text-sm font-bold leading-snug text-slate-950 transition-colors group-hover:text-red-600">
+                        {newerPost.title}
+                      </span>
+                    </Link>
+                  )}
+                </nav>
+              )}
 
               {/* RELATED ARTICLES */}
               {relatedPosts.length > 0 && (

@@ -1,6 +1,9 @@
 # Dynamic sitemap generated from approved database posts
 /sitemap.xml  https://rubavu-today-backend.onrender.com/sitemap.xml  200
 
+# The apostrophe-normalized legacy slug for the existing Nezerwa Family Choir article.
+/Nezerwa-Family-Choir-imaze-imyaka-25-mu-murimo-wImana-yateguje-indirimbo-nshya.html  /nezerwa-family-choir-imaze-imyaka-25-mu-murimo-w-imana-yateguje-indirimbo-nshya.html  301
+
 # Proxy /post/* to backend for server-rendered OG meta tags (crawlers)
 /post/*  https://rubavu-today-backend.onrender.com/post/:splat  200
 
