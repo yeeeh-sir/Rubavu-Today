@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef, useMemo } from "react";
-import { Link, useParams, useNavigate } from "react-router-dom";
+import { Link, useLocation, useParams, useNavigate } from "react-router-dom";
 import { ThumbsUp, ThumbsDown } from "lucide-react";
 import rubavuLogo from "../Rubavu.jpeg";
 import { API_ROOT as API_URL, getPostById, getPostBySlug, getPosts, commitCommentReaction } from "../services/api";
@@ -32,6 +32,7 @@ const TimeLabel = ({ date, className = "" }) => {
 
 export default function PostDetails() {
   const { id, slug } = useParams();
+  const location = useLocation();
   const navigate = useNavigate();
   const { language, t } = useLanguage();
 
@@ -188,10 +189,21 @@ export default function PostDetails() {
           ? String(id).trim()
           : null;
 
-        const slugValue = String(slug || "")
+        const pathnameSlug = location.pathname
+          .split("/")
+          .filter(Boolean)
+          .pop() || "";
+        const rawSlug = slug || pathnameSlug;
+        let slugValue = String(rawSlug || "")
           .replace(/\.html$/i, "")
           .trim()
           .replace(/\/+$/, "");
+
+        try {
+          slugValue = decodeURIComponent(slugValue);
+        } catch {
+          // Keep the original route value when a malformed URL is supplied.
+        }
 
         let postData = null;
         let all = [];
@@ -215,7 +227,7 @@ export default function PostDetails() {
           }
         }
 
-        if (slugValue) {
+        if (slugValue && !numericId) {
           postData = await getPostBySlug(slugValue);
           if (cancelled) return;
         }
@@ -232,6 +244,7 @@ export default function PostDetails() {
           setPost(null);
           setComments([]);
           setLoading(false);
+          setError("Iyi nkuru ntiyabonetse cyangwa ntikiri hanze.");
           return;
         }
 
@@ -240,12 +253,19 @@ export default function PostDetails() {
 
         const postId = postData.id ?? postData._id;
 
-        const commentsRes = await fetch(
-          `${API_URL}/api/comments/${postId}?device_id=${encodeURIComponent(
-            myDeviceId
-          )}`
-        );
-        const commentsData = await commentsRes.json();
+        let commentsData = [];
+        try {
+          const commentsRes = await fetch(
+            `${API_URL}/api/comments/${postId}?device_id=${encodeURIComponent(
+              myDeviceId
+            )}`
+          );
+          if (commentsRes.ok) {
+            commentsData = await commentsRes.json();
+          }
+        } catch (commentsError) {
+          console.warn("Comments could not be loaded:", commentsError);
+        }
 
         if (cancelled) return;
 
@@ -264,6 +284,7 @@ export default function PostDetails() {
 
         setOriginalAllPosts(all);
         setAllPosts(all);
+        setError("");
         setLoading(false);
 
         window.scrollTo({
@@ -275,7 +296,6 @@ export default function PostDetails() {
 
         if (cancelled) return;
 
-        setPost(null);
         setComments([]);
         setLoading(false);
         setError(
@@ -290,7 +310,7 @@ export default function PostDetails() {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, slug, reloadKey]);
+  }, [id, slug, location.pathname, reloadKey]);
 
 
 
@@ -750,7 +770,22 @@ export default function PostDetails() {
 
 
   if (!post || post.error) {
-    return null;
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 px-6 text-center">
+        <h2 className="text-2xl font-bold text-gray-800 mb-4">
+          {language === "rw" ? "Inkuru ntiyabonetse" : "Article not found"}
+        </h2>
+        <p className="text-gray-600 mb-6">
+          {error || "Ntabwo twashoboye kubona iyi nkuru."}
+        </p>
+        <Link
+          to="/"
+          className="rounded border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-100"
+        >
+          {language === "rw" ? "Subira ku Ahabanza" : t("backHome")}
+        </Link>
+      </div>
+    );
   }
 
 
