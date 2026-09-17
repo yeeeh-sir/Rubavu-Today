@@ -88,6 +88,8 @@ const Footer = () => {
     { label: "About Us", to: "/about" },
     { label: "Contact Us", to: "/contact" },
     { label: "Advertise With Us", to: "/contact" },
+    { label: "Privacy Policy", to: "/privacy-policy" },
+    { label: "Terms", to: "/terms" },
   ];
 
   return (

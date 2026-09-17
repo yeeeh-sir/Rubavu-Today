@@ -59,24 +59,36 @@ const InfoList = ({ items }) => (
   </ul>
 );
 
-const InfoPage = ({ title, lede, description, children }) => (
-  <div className="min-h-screen bg-slate-50 pb-14 pt-2 font-body text-slate-900">
-    <Helmet>
-      <title>{title} | Rubavu Today</title>
-      <meta name="description" content={description || lede} />
-      <meta property="og:type" content="website" />
-      <meta property="og:title" content={`${title} | Rubavu Today`} />
-      <meta property="og:description" content={description || lede} />
-      <meta property="og:site_name" content="Rubavu Today" />
-    </Helmet>
+const InfoPage = ({ title, lede, description, children }) => {
+  const pathname =
+    typeof window !== "undefined" ? window.location.pathname : "/";
+  const canonical = `https://www.rubavutoday.com${pathname}`.replace(
+    /\/$/,
+    ""
+  );
 
-    <InfoPageHeader title={title} lede={lede} />
+  return (
+    <div className="min-h-screen bg-slate-50 pb-14 pt-2 font-body text-slate-900">
+      <Helmet>
+        <html lang="rw" />
+        <title>{title} | Rubavu Today</title>
+        <meta name="description" content={description || lede} />
+        <link rel="canonical" href={canonical} />
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content={`${title} | Rubavu Today`} />
+        <meta property="og:description" content={description || lede} />
+        <meta property="og:url" content={canonical} />
+        <meta property="og:site_name" content="Rubavu Today" />
+      </Helmet>
 
-    <div className="mx-auto mt-6 max-w-7xl space-y-5 px-4 sm:px-6 lg:px-10">
-      {children}
+      <InfoPageHeader title={title} lede={lede} />
+
+      <div className="mx-auto mt-6 max-w-7xl space-y-5 px-4 sm:px-6 lg:px-10">
+        {children}
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 export default InfoPage;
 export { InfoPageHeader, InfoSection, InfoParagraph, InfoList };

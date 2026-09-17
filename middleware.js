@@ -12,6 +12,9 @@ const CRAWLER_RE =
 const RESERVED_PATH_RE =
   /^\/(admin|dashboard|employee|chief|chief-editor|profile|login|signin|signup)(\/|$)|\/api\/|\/sitemap\.xml$|\.(json|ico|png|jpe?g|svg|webp|gif|css|js|map|txt|xml|webmanifest|woff2?|ttf)$/i;
 
+const PUBLIC_ROUTE_RE =
+  /^\/(about|contact|privacy-policy|terms|media)(\/|$)/i;
+
 function cleanSlug(value) {
   return String(value || "")
     .replace(/\.html$/i, "")
@@ -66,7 +69,7 @@ export default async function middleware(request) {
       }
     }
 
-    if (!isReserved && CRAWLER_RE.test(ua)) {
+    if (!isReserved && !PUBLIC_ROUTE_RE.test(pathname) && CRAWLER_RE.test(ua)) {
       const segments = pathname.split("/").filter(Boolean);
       const isSingleSegment = segments.length === 1;
       const looksLikeSlug =

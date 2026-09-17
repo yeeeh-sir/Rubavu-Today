@@ -1,0 +1,28 @@
+[35mRubavu-Today/.env.production[m[36m:[m[32m2[m[36m:[mREACT_APP_SITE_URL=https://www.[1;31mrubavutoday.com[m  
+[35mRubavu-Today/public/index.html[m[36m:[m[32m26[m[36m:[m  <meta property="og:image" content="https://www.[1;31mrubavutoday.com[m/Rubavu.jpeg" />
+[35mRubavu-Today/public/index.html[m[36m:[m[32m27[m[36m:[m  <meta property="og:image:secure_url" content="https://www.[1;31mrubavutoday.com[m/Rubavu.jpeg" />
+[35mRubavu-Today/public/index.html[m[36m:[m[32m28[m[36m:[m  <meta property="og:url" content="https://www.[1;31mrubavutoday.com[m/" />
+[35mRubavu-Today/public/index.html[m[36m:[m[32m36[m[36m:[m      "url": "https://www.[1;31mrubavutoday.com[m/",
+[35mRubavu-Today/public/index.html[m[36m:[m[32m37[m[36m:[m      "logo": "https://www.[1;31mrubavutoday.com[m/Rubavu.jpeg"
+[35mRubavu-Today/public/index.html[m[36m:[m[32m45[m[36m:[m      "url": "https://www.[1;31mrubavutoday.com[m/",
+[35mRubavu-Today/public/index.html[m[36m:[m[32m48[m[36m:[m        "target": "https://www.[1;31mrubavutoday.com[m/?q={search_term_string}",
+[35mRubavu-Today/public/index.html[m[36m:[m[32m56[m[36m:[m  <link rel="canonical" href="https://www.[1;31mrubavutoday.com[m/" />
+[35mRubavu-Today/public/robots.txt[m[36m:[m[32m9[m[36m:[mSitemap: https://www.[1;31mrubavutoday.com[m/sitemap.xml
+[35mRubavu-Today/src/components/SEO/SEO.jsx[m[36m:[m[32m4[m[36m:[mconst SITE_URL = "https://www.[1;31mrubavutoday.com[m";
+[35mRubavu-Today/src/components/SocialShare/SocialShare.jsx[m[36m:[m[32m3[m[36m:[mconst SITE_URL = "https://www.[1;31mrubavutoday.com[m";
+[35mapi/og.js[m[36m:[m[32m4[m[36m:[mconst SITE_URL = "https://www.[1;31mrubavutoday.com[m";
+[35mapi/og.js[m[36m:[m[32m5[m[36m:[mconst LOGO_URL = "https://www.[1;31mrubavutoday.com[m/Rubavu.jpeg";
+[35mmiddleware.js[m[36m:[m[32m5[m[36m:[mconst SITE_URL = "https://www.[1;31mrubavutoday.com[m";
+[35mpublic/index.html[m[36m:[m[32m61[m[36m:[m  <meta property="og:image" content="https://www.[1;31mrubavutoday.com[m/Rubavu.jpeg" />
+[35mpublic/index.html[m[36m:[m[32m62[m[36m:[m  <meta property="og:image:secure_url" content="https://www.[1;31mrubavutoday.com[m/Rubavu.jpeg" />
+[35mpublic/index.html[m[36m:[m[32m63[m[36m:[m  <meta property="og:url" content="https://www.[1;31mrubavutoday.com[m/" />
+[35mpublic/index.html[m[36m:[m[32m71[m[36m:[m      "url": "https://www.[1;31mrubavutoday.com[m/",
+[35mpublic/index.html[m[36m:[m[32m72[m[36m:[m      "logo": "https://www.[1;31mrubavutoday.com[m/Rubavu.jpeg"
+[35mpublic/index.html[m[36m:[m[32m81[m[36m:[m      "url": "https://www.[1;31mrubavutoday.com[m/",
+[35mpublic/index.html[m[36m:[m[32m84[m[36m:[m        "target": "https://www.[1;31mrubavutoday.com[m/?q={search_term_string}",
+[35mpublic/index.html[m[36m:[m[32m93[m[36m:[m  <link rel="canonical" href="https://www.[1;31mrubavutoday.com[m/" />
+[35mpublic/robots.txt[m[36m:[m[32m9[m[36m:[mSitemap: https://www.[1;31mrubavutoday.com[m/sitemap.xml
+[35msrc/components/SEO/SEO.jsx[m[36m:[m[32m5[m[36m:[mconst SITE_URL = "https://www.[1;31mrubavutoday.com[m";
+[35msrc/components/SocialShare/SocialShare.jsx[m[36m:[m[32m4[m[36m:[mconst SITE_URL = "https://www.[1;31mrubavutoday.com[m";
+[35msrc/components/employee/EmployeeNavbar.jsx[m[36m:[m[32m145[m[36m:[m                  <p className="mt-0.5 text-xs text-slate-400">{user?.email || "umukozi@[1;31mrubavutoday.com[m"}</p>
+[35msrc/pages/employee/EmployeeProfile.jsx[m[36m:[m[32m122[m[36m:[m            <p className="mt-1 text-xs text-slate-500">{user?.email || "umukozi@[1;31mrubavutoday.com[m"}</p>
