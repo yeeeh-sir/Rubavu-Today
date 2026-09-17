@@ -37,6 +37,12 @@ export default function VisitorAnalytics() {
         try {
             setData(await getAdminVisitorAnalytics(preset));
         } catch (err) {
+            console.error("Failed to load Google Analytics visitor data:", {
+                message: err?.message,
+                status: err?.status || err?.response?.status,
+                code: err?.response?.data?.code,
+                diagnostic: err?.response?.data?.diagnostic,
+            });
             setData(null);
             setError(err?.message || "Google Analytics ntiboneka ubu.");
         } finally {
