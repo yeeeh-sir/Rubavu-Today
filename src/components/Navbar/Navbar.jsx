@@ -26,6 +26,7 @@ import {
 
 import SearchBar from "../SearchBar/SearchBar";
 import AdBanner from "../common/AdBanner";
+import AdSense from "../common/AdSense";
 import OptimizedImage from "../common/OptimizedImage";
 import { getArticleUrl } from "../../utils/slug";
 import { formatRelativeTime } from "../../utils/time";
@@ -1237,13 +1238,15 @@ const NewsPostsLayout = ({
           />
 
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-            {sortedNewest.map((post) => (
-              <CompactCard
-                key={getPostId(post)}
-                post={post}
-                matchedPostId={matchedPostId}
-                postRefs={postRefs}
-              />
+            {sortedNewest.map((post, index) => (
+              <React.Fragment key={getPostId(post)}>
+                <CompactCard
+                  post={post}
+                  matchedPostId={matchedPostId}
+                  postRefs={postRefs}
+                />
+                {index === 2 && sortedNewest.length > 3 && <AdSense />}
+              </React.Fragment>
             ))}
           </div>
 

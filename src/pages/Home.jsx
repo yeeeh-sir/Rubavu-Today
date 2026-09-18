@@ -5,6 +5,7 @@ import { SiteSEO } from "../components/SEO/SEO";
 import { getArticleUrl } from "../utils/slug";
 import { useLanguage } from "../context/LanguageContext";
 import AdBanner from "../components/common/AdBanner";
+import AdSense from "../components/common/AdSense";
 import OptimizedImage from "../components/common/OptimizedImage";
 import { RESOLUTION_WIDTHS } from "../utils/images";
 
@@ -386,8 +387,11 @@ const Home = () => {
                   )}
 
                   <div className="grid grid-cols-1 gap-2.5 xs:gap-3 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3 lg:gap-4 xl:grid-cols-4 xl:gap-4">
-                    {visiblePosts.map((post) => (
-                      <PostCard key={post.id || post._id} post={post} />
+                    {visiblePosts.map((post, index) => (
+                      <React.Fragment key={post.id || post._id}>
+                        <PostCard post={post} />
+                        {index === 2 && visiblePosts.length > 3 && <AdSense />}
+                      </React.Fragment>
                     ))}
                   </div>
 
