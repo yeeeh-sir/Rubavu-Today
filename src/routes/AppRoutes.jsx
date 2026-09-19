@@ -190,7 +190,7 @@ function AppRoutes() {
 
     useEffect(() => {
         if (typeof window.gtag === "function") {
-            window.gtag("config", "G-J25JBHTZ8D", {
+            window.gtag("config", "G-3PD3XPEQSQ", {
                 page_path: location.pathname + location.search + location.hash,
             });
         }
