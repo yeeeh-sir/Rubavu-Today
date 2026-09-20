@@ -529,6 +529,25 @@ export const getPosts = async () => {
   return postsInFlightPromise;
 };
 
+export const searchPosts = async (query, { page = 1, limit = 12, signal } = {}) => {
+  const params = new URLSearchParams({
+    q: String(query || '').trim(),
+    page: String(page),
+    limit: String(limit),
+  });
+  const response = await fetch(`${API_BASE_URL}/search?${params.toString()}`, { signal });
+
+  if (!response.ok) {
+    throw new Error("Unable to search posts from the server.");
+  }
+
+  const data = await response.json();
+  return {
+    ...data,
+    posts: Array.isArray(data.posts) ? data.posts.map(normalizePost) : [],
+  };
+};
+
 export const getPostById = async (id) => {
   const cacheKey = `id:${id}`;
 

@@ -15,6 +15,7 @@ export default function PostDetails() {
   const [allPosts, setAllPosts] = useState([]);
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [commentStatus, setCommentStatus] = useState("");
 
   const [name, setName] = useState("");
@@ -38,6 +39,7 @@ export default function PostDetails() {
 
     const loadData = async () => {
       setLoading(true);
+      setLoadError("");
 
       try {
         const targetSlug = slug || id;
@@ -45,20 +47,49 @@ export default function PostDetails() {
           ? `${API_URL}/api/posts/slug/${encodeURIComponent(String(targetSlug).replace(/\.html$/i, ''))}`
           : `${API_URL}/api/posts/${id}`;
 
-        const [postRes, postsRes] = await Promise.all([
-          fetch(endpoint),
-          fetch(`${API_URL}/api/posts`),
-        ]);
+        const postRes = await fetch(endpoint);
+        let postData = null;
 
-        const postData = await postRes.json();
-        const allPostsData = await postsRes.json();
-        const postId = postData?._id || postData?.id || id || slug;
-        const commentsRes = await fetch(`${API_URL}/api/comments/${postId}`);
-        const commentsData = await commentsRes.json();
+        try {
+          postData = await postRes.json();
+        } catch (parseError) {
+          console.error("Article response could not be parsed:", parseError);
+        }
+
+        if (!postRes.ok || !postData || postData.error) {
+          const notFoundError = new Error(`Article request failed with ${postRes.status}`);
+          console.error("Article request failed:", endpoint, notFoundError);
+          if (mounted) {
+            setLoadError("Iyi nkuru ntishoboye gufunguka.");
+            setLoading(false);
+          }
+          return;
+        }
 
         if (!mounted) return;
 
         setPost(postData);
+        setLoading(false);
+
+        const postId = postData?._id || postData?.id || id || slug;
+
+        /* Secondary content must never delay the article itself. */
+        Promise.all([
+          fetch(`${API_URL}/api/posts`),
+          fetch(`${API_URL}/api/comments/${postId}`),
+        ])
+          .then(async ([postsRes, commentsRes]) => {
+            const [allPostsData, commentsData] = await Promise.all([
+              postsRes.ok ? postsRes.json() : [],
+              commentsRes.ok ? commentsRes.json() : [],
+            ]);
+            if (!mounted) return;
+            setComments(Array.isArray(commentsData) ? commentsData : []);
+            setAllPosts(Array.isArray(allPostsData) ? allPostsData : []);
+          })
+          .catch((secondaryError) => {
+            console.error("Secondary article data failed to load:", secondaryError);
+          });
 
         if (
           !slug &&
@@ -71,16 +102,6 @@ export default function PostDetails() {
           return;
         }
 
-        setComments(
-          Array.isArray(commentsData) ? commentsData : []
-        );
-
-        setAllPosts(
-          Array.isArray(allPostsData) ? allPostsData : []
-        );
-
-        setLoading(false);
-
         window.scrollTo({
           top: 0,
           behavior: "smooth",
@@ -89,6 +110,7 @@ export default function PostDetails() {
         console.error("Ikibazo mu gushaka amakuru:", error);
 
         if (mounted) {
+          setLoadError("Iyi nkuru ntishoboye gufunguka.");
           setLoading(false);
         }
       }
@@ -429,18 +451,18 @@ export default function PostDetails() {
 
 
 
-  if (!post || post.error) {
+  if (loadError || !post || post.error) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
         <h2 className="text-2xl font-bold text-gray-800 mb-4">
-          Inkuru ntiyabonetse
+          {loadError || "Iyi nkuru ntishoboye gufunguka."}
         </h2>
 
         <Link
           to="/"
           className="text-blue-600 hover:text-blue-800 font-semibold"
         >
-          ← Subira ku Ahabanza
+          Subira ku nkuru
         </Link>
       </div>
     );
@@ -858,6 +880,10 @@ export default function PostDetails() {
                     decoding="async"
                     width="1200"
                     height="675"
+                    onError={(event) => {
+                      event.currentTarget.onerror = null;
+                      event.currentTarget.src = "/Rubavu.jpeg";
+                    }}
                   />
 
                   <div className="absolute bottom-3 left-3 bg-black/75 text-white text-xs px-2 py-1 rounded">
@@ -1168,7 +1194,10 @@ export default function PostDetails() {
                               p.image
                             )}
                             alt={p.title}
-                            className="mb-2 h-24 w-full rounded object-cover"
+                            className="mb-2 aspect-video w-full rounded object-cover"
+                            loading="lazy"
+                            width="480"
+                            height="270"
                           />
                         )}
 
@@ -1230,12 +1259,13 @@ export default function PostDetails() {
                           p.image
                         )}
                         alt={p.title}
-                        className="w-full h-40 object-cover"
+                        className="aspect-video w-full object-cover"
+                        loading="lazy"
+                        width="640"
+                        height="360"
                       />
                     ) : (
-                      <div className="w-full h-40 bg-gray-100 flex items-center justify-center text-xs text-gray-400">
-                        Nta foto
-                      </div>
+                      <img src="/Rubavu.jpeg" alt="" className="aspect-video w-full object-cover" loading="lazy" width="640" height="360" />
                     )}
 
                     <div className="p-3">

@@ -121,14 +121,20 @@ const SearchBar = ({ value, onChange, searchHistory, onSelectHistory, isLoading,
                   }}
                   className="w-full text-left px-3 py-2 hover:bg-gray-50 transition flex items-center gap-3 rounded-lg"
                 >
-                  {post.image && (
+                  <div className="aspect-video h-10 w-[72px] shrink-0 overflow-hidden rounded-md bg-gray-100">
                     <img
-                      src={post.image}
+                      src={post.image || "/Rubavu.jpeg"}
                       alt=""
-                      className="h-10 w-10 rounded-md object-cover shrink-0 bg-gray-100"
+                      className="h-full w-full object-cover"
                       loading="lazy"
+                      width="160"
+                      height="90"
+                      onError={(event) => {
+                        event.currentTarget.onerror = null;
+                        event.currentTarget.src = "/Rubavu.jpeg";
+                      }}
                     />
-                  )}
+                  </div>
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-gray-900 truncate">{post.title}</p>
                     <p className="text-xs text-gray-500 capitalize">{post.category}</p>

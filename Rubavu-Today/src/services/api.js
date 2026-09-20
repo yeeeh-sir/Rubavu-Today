@@ -370,30 +370,51 @@ export const isEmployee = () => {
   );
 };
 
+let publicPostsCache = null;
+let publicPostsCacheAt = 0;
+let publicPostsRequest = null;
+const PUBLIC_POSTS_CACHE_TTL = 45 * 1000;
+
 export const getPosts = async () => {
-  const response = await fetch(
-    `${API_BASE_URL}/posts`
-  );
+  if (publicPostsCache && Date.now() - publicPostsCacheAt < PUBLIC_POSTS_CACHE_TTL) {
+    return publicPostsCache;
+  }
 
-  if (!response.ok) {
-    throw new Error(
-      "Unable to load posts from the server."
+  if (publicPostsRequest) return publicPostsRequest;
+
+  publicPostsRequest = (async () => {
+    const response = await fetch(
+      `${API_BASE_URL}/posts`
     );
-  }
 
-  const data = await response.json();
+    if (!response.ok) {
+      throw new Error(
+        "Unable to load posts from the server."
+      );
+    }
 
-  if (!Array.isArray(data)) {
-    return [];
-  }
+    const data = await response.json();
 
-  return data
-    .filter(
-      (post) =>
-        String(post.status || "").toLowerCase() ===
-        "approved"
-    )
-    .map(normalizePost);
+    if (!Array.isArray(data)) {
+      return [];
+    }
+
+    const posts = data
+      .filter(
+        (post) =>
+          String(post.status || "").toLowerCase() ===
+          "approved"
+      )
+      .map(normalizePost);
+
+    publicPostsCache = posts;
+    publicPostsCacheAt = Date.now();
+    return posts;
+  })().finally(() => {
+    publicPostsRequest = null;
+  });
+
+  return publicPostsRequest;
 };
 
 export const getPostById = async (id) => {

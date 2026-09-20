@@ -2,7 +2,9 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, Link } from "react-router-dom";
 import { getPosts } from "../services/api";
 import { SiteSEO } from "../components/SEO/SEO";
+import rubavuLogo from "../Rubavu.jpeg";
 
+const FALLBACK_IMAGE = rubavuLogo;
 
 const summarize = (text, maxWords = 10) => {
   if (!text) return "";
@@ -85,35 +87,44 @@ const Home = () => {
     const articleHref = post.slug ? `/${post.slug}.html` : `/post/${postId}`;
     return (
       <Link to={articleHref} className="group block">
-        <article className="flex flex-col h-full bg-white border border-slate-200 rounded-sm overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-          <div className="relative overflow-hidden bg-slate-100 h-40 sm:h-44">
+        <article className="flex h-24 flex-row overflow-hidden rounded-sm border border-slate-200 bg-white shadow-sm transition-colors hover:bg-slate-50 hover:shadow-md">
+          <div className="relative h-full w-20 shrink-0 overflow-hidden bg-slate-100 sm:w-24">
             {post.image ? (
               <img
                 src={post.image}
                 alt={post.title}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 loading="lazy"
+                decoding="async"
+                width="320"
+                height="180"
+                onError={(event) => {
+                  event.currentTarget.onerror = null;
+                  event.currentTarget.src = FALLBACK_IMAGE;
+                }}
               />
             ) : (
-              <div className="w-full h-full bg-slate-200 flex items-center justify-center">
-                <span className="text-slate-400 text-[10px]">Nta ishusho</span>
-              </div>
+              <img
+                src={FALLBACK_IMAGE}
+                alt=""
+                className="h-full w-full object-cover"
+                loading="lazy"
+                width="320"
+                height="180"
+              />
             )}
           </div>
-          <div className="p-3 flex flex-col flex-grow">
-            <span className="text-red-600 text-[9px] font-bold uppercase tracking-widest">
-              {post.category}
-            </span>
+          <div className="flex min-w-0 flex-1 flex-col justify-center px-2.5 py-2">
+            {post.category && (
+              <span className="text-red-600 text-[9px] font-bold uppercase tracking-widest">
+                {post.category}
+              </span>
+            )}
             <h4 className="font-masthead text-sm font-bold text-slate-900 leading-snug group-hover:text-red-600 transition-colors line-clamp-2 mt-1">
               {post.title}
             </h4>
-            <p className="text-slate-600 text-[11px] leading-relaxed line-clamp-2 mt-1">
-              {summarize(post.summary || post.content, 12)}
-            </p>
-            <div className="mt-auto pt-2 flex items-center gap-2 text-[10px] text-slate-400 font-mono">
-              <span>Rubavu Today</span>
-              <span>•</span>
-              <span>{formatDate(post.createdDate)}</span>
+            <div className="pt-1 flex items-center gap-2 text-[9px] text-slate-400 font-mono">
+              {post.createdDate && <span>{formatDate(post.createdDate)}</span>}
             </div>
           </div>
         </article>
@@ -161,13 +172,13 @@ const Home = () => {
         </section>
 
 
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+        <section className="max-w-7xl mx-auto px-4 py-4 sm:px-6 sm:py-5">
           {loading ? (
             /* Loading Skeleton */
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
               {Array.from({ length: 8 }).map((_, i) => (
                 <div key={i} className="animate-pulse">
-                  <div className="bg-slate-200 h-40 sm:h-44 rounded-sm"></div>
+                  <div className="aspect-video rounded-sm bg-slate-200"></div>
                   <div className="mt-2 space-y-2">
                     <div className="bg-slate-200 h-3 w-16"></div>
                     <div className="bg-slate-200 h-4 w-full"></div>
@@ -203,7 +214,7 @@ const Home = () => {
               </div>
 
               {sortedPosts.length > 0 ? (
-                <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3 xl:grid-cols-4">
                   {sortedPosts.map((post) => (
                     <PostCard key={post.id || post._id} post={post} />
                   ))}
@@ -221,7 +232,7 @@ const Home = () => {
             </div>
           ) : sortedPosts.length > 0 ? (
 
-            <div className="space-y-14">
+            <div className="space-y-6">
 
               <SectionHeader
                 title={query.trim() ? "Ibyavuye mu gushakisha" : "Amakuru agezweho"}
@@ -229,7 +240,7 @@ const Home = () => {
               />
 
 
-              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3 xl:grid-cols-4">
                 {visiblePosts.map((post) => (
                   <PostCard key={post.id || post._id} post={post} />
                 ))}

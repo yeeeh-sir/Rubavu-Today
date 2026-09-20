@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getAdminDailyPerformance, getAdminWeeklyPerformance, logout } from "../../services/api";
-import { DashboardLayout, StatCard } from "../../components/dashboard";
+import { DashboardLayout, StatCard, VisitorAnalytics } from "../../components/dashboard";
 import { ADMIN_NAV_SECTIONS } from "./adminNav";
 
 const DAY_LABELS = ["Kumwe", "Mbere", "Kabiri", "Gatatu", "Kane", "Gatanu", "Gatandatu"];
@@ -246,6 +246,7 @@ function Performance() {
       }}
     >
       <div className="mx-auto max-w-7xl px-3 py-6 sm:px-6 lg:px-8">
+        <VisitorAnalytics />
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-xl font-black text-slate-900 sm:text-2xl">Imikorere y'abakozi</h1>

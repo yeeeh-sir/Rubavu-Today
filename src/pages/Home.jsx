@@ -163,49 +163,34 @@ const Home = () => {
 
     return (
       <Link to={articleHref} className="group block h-full">
-        <article className="flex h-full flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm ring-1 ring-slate-900/5 transition-all duration-300 hover:-translate-y-1 hover:border-red-200 hover:shadow-lg">
-          <div className="relative overflow-hidden bg-slate-100">
-            <div className="aspect-[16/13] overflow-hidden">
+        <article className="flex h-24 flex-row overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition-colors hover:bg-slate-50 hover:shadow-md">
+          <div className="relative h-full w-20 shrink-0 overflow-hidden bg-slate-100 sm:w-24">
               {post.image ? (
                 <OptimizedImage
                   src={imageUrl}
                   alt={post.title}
                   widths={RESOLUTION_WIDTHS.CARD}
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 400px"
+                  sizes="96px"
                   loading="lazy"
                   onError={(e) => {
                     e.currentTarget.onerror = null;
                     e.currentTarget.src = "https://images.unsplash.com/photo-1495020689067-958852a7765e?auto=format&fit=crop&w=1200&q=80";
                   }}
-                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                 />
               ) : (
-                <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-200 via-slate-100 to-slate-300">
-                  <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-slate-500">{language === "rw" ? "Nta ishusho" : "News"}</span>
-                </div>
+                <img src="/Rubavu.jpeg" alt="" className="h-full w-full object-cover" loading="lazy" width="320" height="180" />
               )}
-            </div>
           </div>
 
-          <div className="flex flex-1 flex-col p-2 sm:p-2.5">
-            <div className="mb-1 flex items-center gap-1 text-[7.5px] font-medium uppercase tracking-[0.08em] text-slate-500 sm:text-[8px]">
-              <span>{formatDate(post.createdDate, language)}</span>
-            </div>
+          <div className="flex min-w-0 flex-1 flex-col justify-center px-2.5 py-2">
+            {post.category && <span className="mb-0.5 truncate text-[8px] font-bold uppercase tracking-wider text-red-600">{post.category}</span>}
 
-            <h4 className="font-masthead text-[12px] font-extrabold leading-snug text-slate-900 transition-colors group-hover:text-red-600 sm:text-[13px] md:text-[14px]">
+            <h4 className="line-clamp-2 font-masthead text-[12px] font-extrabold leading-tight text-slate-900 transition-colors group-hover:text-red-600 sm:text-[13px]">
               {post.title}
             </h4>
 
-            <p className="mt-1 line-clamp-2 text-[10px] leading-[1.35rem] text-slate-600 sm:text-[10.5px]">
-              {summarize(post.summary || post.content, 8)}
-            </p>
-
-            <div className="mt-auto pt-2">
-              <span className="inline-flex items-center gap-1 text-[8.5px] font-black uppercase tracking-[0.08em] text-slate-900 transition-colors group-hover:text-red-600 sm:text-[9px]">
-                Read More
-                <span aria-hidden="true">→</span>
-              </span>
-            </div>
+            {post.createdDate && <time className="mt-1 text-[8px] font-medium text-slate-400">{formatDate(post.createdDate, language)}</time>}
           </div>
         </article>
       </Link>

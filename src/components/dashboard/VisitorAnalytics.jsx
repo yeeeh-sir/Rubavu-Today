@@ -3,18 +3,45 @@ import { getAdminVisitorAnalytics } from "../../services/api";
 
 const RANGES = [
     { value: "today", label: "Uyu munsi" },
-    { value: "yesterday", label: "Ejo" },
     { value: "last7", label: "Iminsi 7 ishize" },
-    { value: "last30", label: "Iminsi 30 ishize" },
+    { value: "last28", label: "Iminsi 28 ishize" },
     { value: "last90", label: "Iminsi 90 ishize" },
 ];
 
 function Stat({ icon, label, value }) {
+    const displayValue = typeof value === "string"
+        ? value
+        : value === null || value === undefined
+            ? "-"
+            : Number(value || 0).toLocaleString();
     return (
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <p className="text-xs font-bold text-slate-500">{icon} {label}</p>
-            <p className="mt-2 text-2xl font-black text-slate-900">{value === null ? "-" : Number(value || 0).toLocaleString()}</p>
+            <p className="mt-2 text-2xl font-black text-slate-900">{displayValue}</p>
             <p className="mt-1 text-[11px] text-slate-400">GA4 active users</p>
+        </div>
+    );
+}
+
+function AnalyticsList({ title, rows = [], labelKey, valueKey, valueLabel, secondaryKey }) {
+    return (
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <h3 className="mb-3 text-sm font-black text-slate-900">{title}</h3>
+            {rows.length === 0 ? (
+                <p className="text-sm text-slate-500">Nta mibare ibonetse.</p>
+            ) : (
+                <div className="space-y-2">
+                    {rows.map((row, index) => (
+                        <div key={`${row[labelKey]}-${index}`} className="flex items-start justify-between gap-3 border-b border-slate-100 pb-2 last:border-0 last:pb-0">
+                            <div className="min-w-0">
+                                <p className="truncate text-xs font-bold text-slate-700">{row[labelKey] || "-"}</p>
+                                {secondaryKey && row[secondaryKey] && <p className="truncate text-[11px] text-slate-400">{row[secondaryKey]}</p>}
+                            </div>
+                            <span className="shrink-0 text-xs font-black text-slate-900">{Number(row[valueKey] || 0).toLocaleString()} {valueLabel}</span>
+                        </div>
+                    ))}
+                </div>
+            )}
         </div>
     );
 }
@@ -23,6 +50,11 @@ function formatChartDate(value) {
     const raw = String(value || "");
     if (/^\d{8}$/.test(raw)) return `${raw.slice(4, 6)}/${raw.slice(6, 8)}`;
     return raw.slice(5);
+}
+
+function formatDuration(seconds) {
+    const total = Math.max(0, Math.round(Number(seconds) || 0));
+    return `${Math.floor(total / 60)}m ${total % 60}s`;
 }
 
 export default function VisitorAnalytics() {
@@ -61,7 +93,7 @@ export default function VisitorAnalytics() {
                 <div>
                     <h2 className="text-lg font-black text-slate-900">👥 Abasura Urubuga</h2>
                     <p className="mt-1 text-sm text-slate-500">Imibare y'abasuye Rubavu Today</p>
-                    {data && <p className="mt-1 text-[11px] text-slate-400">GA4 active users • {data.timeZone} • {data.startDate} — {data.endDate}</p>}
+                    {data && <p className="mt-1 text-[11px] text-slate-400">GA4 • {data.timeZone} • {data.startDate} — {data.endDate}</p>}
                 </div>
                 <div className="flex gap-2">
                     <select value={preset} onChange={(event) => setPreset(event.target.value)} className="form-select min-w-0 sm:w-44" aria-label="Analytics date range">
@@ -83,10 +115,14 @@ export default function VisitorAnalytics() {
             ) : (
                 <>
                     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                        <Stat icon="👥" label="Abasura uyu munsi" value={data.visitorsToday} />
-                        <Stat icon="📅" label="Abasura muri iki cyumweru" value={data.visitorsThisWeek} />
-                        <Stat icon="📆" label="Abasura muri uku kwezi" value={data.visitorsThisMonth} />
-                        <Stat icon="📊" label="Impuzandengo y'abasura ku munsi" value={data.averageVisitorsPerDay} />
+                        <Stat icon="👥" label="Active users" value={data.activeUsers} />
+                        <Stat icon="🧑" label="Total users" value={data.totalUsers} />
+                        <Stat icon="↔" label="Sessions" value={data.sessions} />
+                        <Stat icon="👁" label="Page views" value={data.pageViews} />
+                        <Stat icon="✨" label="New users" value={data.newUsers} />
+                        <Stat icon="⏱" label="Avg. engagement" value={formatDuration(data.averageEngagementTime)} />
+                        <Stat icon="⚡" label="Realtime users" value={data.realtimeActiveUsers} />
+                        <Stat icon="📊" label="Users per day" value={data.averageVisitorsPerDay} />
                     </div>
                     <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
                         <h3 className="text-sm font-black text-slate-900">Abasura buri munsi</h3>
@@ -100,6 +136,11 @@ export default function VisitorAnalytics() {
                                 })}
                             </div>
                         )}
+                    </div>
+                    <div className="mt-5 grid gap-4 lg:grid-cols-3">
+                        <AnalyticsList title="Users by country" rows={data.usersByCountry} labelKey="country" valueKey="users" valueLabel="users" />
+                        <AnalyticsList title="Top pages / articles" rows={data.topPages} labelKey="path" valueKey="pageViews" valueLabel="views" secondaryKey="title" />
+                        <AnalyticsList title="Traffic sources" rows={data.trafficSources} labelKey="source" valueKey="sessions" valueLabel="sessions" secondaryKey="medium" />
                     </div>
                 </>
             )}

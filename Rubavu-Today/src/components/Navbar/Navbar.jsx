@@ -623,6 +623,8 @@ const SmallPostCard = ({
       }}
       className={`
         group
+        flex
+        h-24
         w-full
         overflow-hidden
         rounded-lg
@@ -644,7 +646,7 @@ const SmallPostCard = ({
         to={articleHref}
         className="block"
       >
-        <div className="relative h-[85px] w-full overflow-hidden bg-slate-100 sm:h-[95px]">
+        <div className="relative h-full w-20 shrink-0 overflow-hidden bg-slate-100 sm:w-24">
           {post.image ? (
             <img
               src={post.image}
@@ -660,25 +662,24 @@ const SmallPostCard = ({
                 group-hover:scale-105
               "
               loading="lazy"
+              width="320"
+              height="180"
+              onError={(event) => {
+                event.currentTarget.onerror = null;
+                event.currentTarget.src = logo;
+              }}
             />
           ) : (
-            <div className="flex h-full items-center justify-center text-2xl opacity-30">
-              📰
-            </div>
+            <img src={logo} alt="" className="h-full w-full object-cover" loading="lazy" width="320" height="180" />
           )}
         </div>
 
-        <div className="p-2">
-          <h3 className="line-clamp-3 font-post-title text-[10px] font-bold leading-[1.3] text-slate-900 transition-colors group-hover:text-red-600 sm:text-[11px]">
+        <div className="flex min-w-0 flex-1 flex-col justify-center px-2.5 py-1.5">
+          <h3 className="line-clamp-2 font-post-title text-[10px] font-bold leading-[1.25] text-slate-900 transition-colors group-hover:text-red-600 sm:text-[11px]">
             {post.title}
           </h3>
 
-          <p className="mt-1.5 font-body text-[7px] font-medium text-slate-400 sm:text-[8px]">
-            {formatDate(
-              getPostDate(post),
-              true
-            )}
-          </p>
+          {getPostDate(post) && <p className="mt-1 font-body text-[7px] font-medium text-slate-400 sm:text-[8px]">{formatDate(getPostDate(post), true)}</p>}
         </div>
       </Link>
     </article>
@@ -904,7 +905,7 @@ const TopFiveSlider = ({
   return (
     <section
       className="
-        mt-6
+        mt-4
         w-full
         overflow-hidden
         rounded-2xl
@@ -997,9 +998,9 @@ const TopFiveSlider = ({
                 >
                   <Link
                     to={post?.slug ? `/${post.slug}.html` : `/post/${postId}`}
-                    className="group flex min-h-[150px] flex-col sm:min-h-[190px] sm:flex-row"
+                    className="group flex h-24"
                   >
-                    <div className="relative h-[150px] w-full shrink-0 overflow-hidden bg-slate-100 sm:h-[190px] sm:w-[42%] md:w-[35%]">
+                    <div className="relative h-full w-20 shrink-0 overflow-hidden bg-slate-100 sm:w-24">
                       {post.image ? (
                         <img
                           src={
@@ -1015,11 +1016,15 @@ const TopFiveSlider = ({
                               ? "eager"
                               : "lazy"
                           }
+                          width="320"
+                          height="180"
+                          onError={(event) => {
+                            event.currentTarget.onerror = null;
+                            event.currentTarget.src = logo;
+                          }}
                         />
                       ) : (
-                        <div className="flex h-full items-center justify-center text-6xl opacity-30">
-                          📰
-                        </div>
+                        <img src={logo} alt="" className="h-full w-full object-cover" loading={index === 0 ? "eager" : "lazy"} width="320" height="180" />
                       )}
 
                       <div className="absolute left-3 top-3 rounded-full bg-red-600 px-2.5 py-1 font-body text-[8px] font-bold uppercase tracking-wider text-white shadow-lg">
@@ -1027,14 +1032,14 @@ const TopFiveSlider = ({
                       </div>
                     </div>
 
-                    <div className="flex min-w-0 flex-1 flex-col justify-center p-4 sm:p-6">
+                    <div className="flex min-w-0 flex-1 flex-col justify-center px-3 py-2">
                       {post.category && (
-                        <span className="mb-2 w-fit rounded bg-red-600 px-2 py-1 font-body text-[8px] font-bold uppercase tracking-wider text-white">
+                        <span className="mb-1 w-fit rounded bg-red-600 px-2 py-0.5 font-body text-[8px] font-bold uppercase tracking-wider text-white">
                           {post.category}
                         </span>
                       )}
 
-                      <h3 className="line-clamp-3 font-post-title text-lg font-black leading-snug text-slate-950 transition-colors group-hover:text-red-600 sm:text-xl md:text-2xl">
+                      <h3 className="line-clamp-2 font-post-title text-sm font-black leading-tight text-slate-950 transition-colors group-hover:text-red-600 sm:text-base">
                         {post.title}
                       </h3>
 
@@ -1144,7 +1149,7 @@ const NewsPostsLayout = ({
         </span>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-7">
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-12 lg:gap-4">
         <div className="order-1 min-w-0 lg:col-span-7">
           <article
             ref={(element) => {
@@ -1159,6 +1164,8 @@ const NewsPostsLayout = ({
             }}
             className={`
               group
+              flex
+              h-24
               overflow-hidden
               rounded-2xl
               border
@@ -1177,7 +1184,7 @@ const NewsPostsLayout = ({
           >
             <Link
               to={recentPost?.slug ? `/${recentPost.slug}.html` : `/post/${recentId}`}
-              className="relative block h-[230px] overflow-hidden bg-slate-100 sm:h-[320px] md:h-[380px] lg:h-[390px]"
+              className="relative block h-full w-24 shrink-0 overflow-hidden bg-slate-100"
             >
               {recentPost.image ? (
                 <img
@@ -1189,25 +1196,23 @@ const NewsPostsLayout = ({
                     "Inkuru nshya"
                   }
                   className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
+                  width="320"
+                  height="180"
+                  loading="eager"
+                  fetchPriority="high"
+                  onError={(event) => {
+                    event.currentTarget.onerror = null;
+                    event.currentTarget.src = logo;
+                  }}
                 />
               ) : (
-                <div className="flex h-full items-center justify-center text-7xl opacity-30">
-                  📰
-                </div>
+                <img src={logo} alt="" className="h-full w-full object-cover" loading="eager" width="320" height="180" />
               )}
-
-              <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/70 to-transparent" />
-
-              <div className="absolute bottom-4 left-4 right-4 sm:bottom-5 sm:left-5 sm:right-5">
-                <span className="font-body text-[8px] font-bold uppercase tracking-[0.2em] text-white/80">
-                  Rubavu Today
-                </span>
-              </div>
             </Link>
 
-            <div className="p-4 sm:p-5 md:p-6">
+            <div className="flex min-w-0 flex-1 flex-col justify-center px-3 py-2">
               {recentPost.category && (
-                <span className="mb-3 inline-block rounded bg-red-600 px-2.5 py-1 font-body text-[8px] font-bold uppercase tracking-wider text-white">
+                <span className="mb-1 inline-block w-fit rounded bg-red-600 px-2 py-0.5 font-body text-[8px] font-bold uppercase tracking-wider text-white">
                   {recentPost.category}
                 </span>
               )}
@@ -1215,13 +1220,13 @@ const NewsPostsLayout = ({
               <Link
                 to={recentPost?.slug ? `/${recentPost.slug}.html` : `/post/${recentId}`}
               >
-                <h2 className="font-post-title text-xl font-black leading-[1.18] text-slate-950 transition-colors group-hover:text-red-600 sm:text-2xl md:text-3xl">
+                <h2 className="line-clamp-2 font-post-title text-sm font-black leading-tight text-slate-950 transition-colors group-hover:text-red-600 sm:text-base">
                   {recentPost.title}
                 </h2>
               </Link>
 
-              <div className="mt-3 flex items-center justify-between gap-3">
-                <p className="font-body text-[9px] font-medium text-slate-400 sm:text-[10px]">
+              <div className="mt-1 flex items-center justify-between gap-2">
+                <p className="font-body text-[8px] font-medium text-slate-400 sm:text-[9px]">
                   {formatDate(
                     getPostDate(
                       recentPost
@@ -1232,7 +1237,7 @@ const NewsPostsLayout = ({
 
                 <Link
                   to={recentPost?.slug ? `/${recentPost.slug}.html` : `/post/${recentId}`}
-                  className="font-body text-[9px] font-bold uppercase tracking-wider text-red-600 transition hover:text-red-800"
+                  className="font-body text-[8px] font-bold uppercase tracking-wider text-red-600 transition hover:text-red-800"
                 >
                   Soma →
                 </Link>
@@ -1957,10 +1962,6 @@ const Navbar = ({ showHomeContent = true }) => {
                     key={`ticker1-${index}`}
                     className="mx-8 inline-flex items-center"
                   >
-                    <span className="mr-2 text-yellow-300">
-                      ▪
-                    </span>
-
                     {title}
                   </span>
                 )
@@ -1975,10 +1976,6 @@ const Navbar = ({ showHomeContent = true }) => {
                     key={`ticker2-${index}`}
                     className="mx-8 inline-flex items-center"
                   >
-                    <span className="mr-2 text-yellow-300">
-                      ▪
-                    </span>
-
                     {title}
                   </span>
                 )
@@ -2284,7 +2281,7 @@ const Navbar = ({ showHomeContent = true }) => {
 
 
       {showHomeContent && (
-        <main className="relative z-20 mx-auto w-full max-w-7xl px-0 pb-5 pt-0 sm:pb-6">
+        <main className="relative z-20 mx-auto w-full max-w-7xl px-0 pb-4 pt-0 sm:pb-5">
 
 
 
@@ -2300,16 +2297,16 @@ const Navbar = ({ showHomeContent = true }) => {
 
 
 
-          <div className="px-3 pt-5 sm:px-6 sm:pt-6 lg:px-10">
+          <div className="px-3 pt-3 sm:px-6 sm:pt-4 lg:px-10">
             {loading ? (
-              <div className="py-20 text-center font-body text-slate-500">
+              <div className="py-10 text-center font-body text-slate-500">
                 Tegereza gato,
                 amakuru arimo
                 gushakwa...
               </div>
             ) : sortedPosts.length ===
               0 ? (
-              <div className="py-20 text-center font-body text-slate-500">
+              <div className="py-10 text-center font-body text-slate-500">
                 Nta makuru aboneka
                 muri iki cyiciro.
               </div>
