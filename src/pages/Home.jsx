@@ -10,14 +10,6 @@ import OptimizedImage from "../components/common/OptimizedImage";
 import { RESOLUTION_WIDTHS } from "../utils/images";
 
 
-const summarize = (text, maxWords = 10) => {
-  if (!text) return "";
-  const words = text.trim().split(/\s+/);
-  if (words.length <= maxWords) return text;
-  return words.slice(0, maxWords).join(" ") + "...";
-};
-
-
 const formatDate = (dateStr, language) => {
   if (!dateStr) return "";
   const locale = language === "fr" ? "fr-FR" : language === "sw" ? "sw-KE" : language === "en" ? "en-US" : "rw-RW";
