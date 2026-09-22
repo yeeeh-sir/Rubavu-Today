@@ -27,7 +27,7 @@ const ChiefLogin = lazy(() => import("../pages/chief-editor/ChiefLogin"));
 const ChiefDashboard = lazy(() => import("../pages/chief-editor/ChiefDashboard"));
 const EmployeeLogin = lazy(() => import("../pages/employee/EmployeeLogin"));
 const EmployeeDashboard = lazy(() => import("../pages/employee/EmployeeDashboard"));
-const EmployeeWorkspace = lazy(() => import("../pages/employee/EmployeeWorkspace"));
+const EmployeeWorkspace = lazy(() => import("../pages/e8mployee/EmployeeWorkspace"));
 const Profile = lazy(() => import("../pages/employee/Profile"));
 
 const PublicLayout = ({ children, showHomeContent = true }) => (

@@ -6,6 +6,7 @@ import {
   ChevronRight,
   Eye,
   FileText,
+  Pencil,
   Plus,
   Search,
   Trash2,
@@ -294,6 +295,15 @@ export default function MyArticles() {
                           >
                             <Eye className="h-4 w-4" />
                           </button>
+                          {getStatus(post) === "pending" && (
+                            <Link
+                              to={`/employee/posts/${getPostId(post)}/edit`}
+                              title="Hindura"
+                              className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-blue-50 hover:text-blue-600"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Link>
+                          )}
                           {getStatus(post) !== "approved" && (
                             <button
                               onClick={() => setDeleteTarget(post)}
@@ -334,6 +344,11 @@ export default function MyArticles() {
                     <button onClick={() => openDetails(post)} className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-slate-200 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-50">
                       <Eye className="h-3.5 w-3.5" /> Reba
                     </button>
+                    {getStatus(post) === "pending" && (
+                      <Link to={`/employee/posts/${getPostId(post)}/edit`} className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 py-2 text-xs font-semibold text-blue-600 transition hover:bg-blue-100">
+                        <Pencil className="h-3.5 w-3.5" /> Hindura
+                      </Link>
+                    )}
                     {getStatus(post) !== "approved" && (
                       <button onClick={() => setDeleteTarget(post)} className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-red-50 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-100">
                         <Trash2 className="h-3.5 w-3.5" /> Kuraho

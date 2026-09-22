@@ -39,6 +39,7 @@ const EmployeeWorkspace = lazy(() => import("../pages/employee/EmployeeWorkspace
 const Profile = lazy(() => import("../pages/employee/Profile"));
 const CreateArticle = lazy(() => import("../pages/employee/CreateArticle"));
 const MyArticles = lazy(() => import("../pages/employee/MyArticles"));
+const EditArticle = lazy(() => import("../pages/employee/EditArticle"));
 const EmployeeMediaLibrary = lazy(() => import("../pages/employee/MediaLibrary"));
 const EmployeeNotifications = lazy(() => import("../pages/employee/EmployeeNotifications"));
 const EmployeeStatistics = lazy(() => import("../pages/employee/EmployeeStatistics"));
@@ -242,6 +243,7 @@ function AppRoutes() {
                     <Route path="dashboard" element={<EmployeeDashboard />} />
                     <Route path="create" element={<CreateArticle />} />
                     <Route path="articles" element={<MyArticles />} />
+                    <Route path="posts/:id/edit" element={<EditArticle />} />
                     <Route path="media" element={<EmployeeMediaLibrary />} />
                     <Route path="notifications" element={<EmployeeNotifications />} />
                     <Route path="statistics" element={<EmployeeStatistics />} />

@@ -669,6 +669,14 @@ export async function getAdminVisitorAnalytics(preset = "today") {
   return request(`/api/admin/analytics/visitors?preset=${encodeURIComponent(preset)}`);
 }
 
+export async function getAdminAnalytics({ startDate, endDate } = {}) {
+  const params = new URLSearchParams();
+  if (startDate) params.set("startDate", startDate);
+  if (endDate) params.set("endDate", endDate);
+  const qs = params.toString();
+  return request(`/api/admin/analytics${qs ? `?${qs}` : ""}`);
+}
+
 export async function getAdminPostById(id) {
   const data = await request(`/api/admin/posts/${id}`);
   return data ? normalizePost(data) : null;
@@ -1506,6 +1514,7 @@ const api = {
   getAdminAccounts,
   getAdminAccountPosts,
   getAdminVisitorAnalytics,
+  getAdminAnalytics,
   getAdminPostById,
   getPendingPosts,
   getChiefEditorPosts,

@@ -1,110 +1,76 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getAdminDailyPerformance, getAdminWeeklyPerformance, logout } from "../../services/api";
-import { DashboardLayout, StatCard, VisitorAnalytics } from "../../components/dashboard";
+import { getAdminAnalytics, logout } from "../../services/api";
+import { DashboardLayout, StatCard } from "../../components/dashboard";
 import { ADMIN_NAV_SECTIONS } from "./adminNav";
 
-const DAY_LABELS = ["Kumwe", "Mbere", "Kabiri", "Gatatu", "Kane", "Gatanu", "Gatandatu"];
-const ROLE_LABELS = { all: "Bose", employee: "Abakozi", chief_editor: "Abanditsi Bakuru" };
-
-const PERIODS = [
-  { value: "current", label: "Icyumweru kiki" },
-  { value: "previous", label: "Icyumweru gishize" },
-  { value: "month", label: "Uku kwezi" },
-  { value: "custom", label: "Custom" },
+const RANGES = [
+  { value: "today", label: "Today", startDate: "today", endDate: "today" },
+  { value: "7", label: "7 Days", startDate: "6daysAgo", endDate: "today" },
+  { value: "28", label: "28 Days", startDate: "27daysAgo", endDate: "today" },
+  { value: "90", label: "90 Days", startDate: "89daysAgo", endDate: "today" },
 ];
 
-function toDateStr(d) {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
+const REALTIME_INTERVAL_MS = 60000;
+
+function formatCount(value) {
+  const number = Number(value || 0);
+  if (!isFinite(number)) return "0";
+  return number.toLocaleString();
 }
 
-function mondayOf(date) {
-  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-  const dow = (d.getDay() + 6) % 7;
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate() - dow);
+function formatDuration(seconds) {
+  const total = Math.max(0, Math.round(Number(seconds) || 0));
+  const hours = Math.floor(total / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+  const secs = total % 60;
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  if (minutes > 0) return `${minutes}m ${secs}s`;
+  return `${secs}s`;
 }
 
-function sundayOf(date) {
-  const monday = mondayOf(date);
-  return new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 6);
+function formatTick(value) {
+  const raw = String(value || "");
+  if (/^\d{8}$/.test(raw)) return `${raw.slice(4, 6)}/${raw.slice(6, 8)}`;
+  return raw.slice(5);
 }
 
-function addDays(date, days) {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
-}
-
-function periodRange(period, from, to) {
-  const today = new Date();
-  if (period === "previous") {
-    const end = sundayOf(addDays(today, -7));
-    const start = addDays(mondayOf(addDays(today, -7)), -7);
-    return { start: toDateStr(start), end: toDateStr(end) };
-  }
-  if (period === "month") {
-    const start = new Date(today.getFullYear(), today.getMonth(), 1);
-    return { start: toDateStr(start), end: toDateStr(today) };
-  }
-  if (period === "custom") {
-    if (from && to) return { start: from, end: to };
-    return { start: null, end: null };
-  }
-  return { start: null, end: null };
-}
-
-function levelInfo(rate) {
-  if (rate >= 100)
-    return { label: "Excellent", cls: "bg-emerald-100 text-emerald-700" };
-  if (rate >= 90)
-    return { label: "Very Good", cls: "bg-blue-100 text-blue-700" };
-  if (rate >= 75) return { label: "Good", cls: "bg-sky-100 text-sky-700" };
-  if (rate >= 50)
-    return { label: "Needs Improvement", cls: "bg-amber-100 text-amber-700" };
-  return { label: "Low Performance", cls: "bg-red-100 text-red-700" };
-}
-
-function pad(value) {
-  return String(value).padStart(2, "0");
-}
-
-function formatRemaining(ms) {
-  const totalSeconds = Math.max(0, Math.floor(ms / 1000));
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
-  return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
-}
-
-function getStatusBadge(status) {
-  const map = {
-    "NOT STARTED": "bg-slate-100 text-slate-600",
-    "IN PROGRESS": "bg-amber-100 text-amber-700",
-    "TARGET COMPLETED": "bg-emerald-100 text-emerald-700",
-    "TARGET EXCEEDED": "bg-blue-100 text-blue-700",
-  };
-  return map[status] || "bg-slate-100 text-slate-600";
-}
-
-function PerformanceBarChart({ days, dayTotals, max }) {
-  const safeMax = Math.max(max, 1);
+function Section({ title, subtitle, children }) {
   return (
-    <div className="flex items-end justify-between gap-2 overflow-x-auto pb-1">
-      {days.map((day) => {
-        const value = dayTotals[day.date] || 0;
-        const height = Math.max(4, Math.round((value / safeMax) * 100));
+    <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div className="border-b border-slate-100 px-4 py-3">
+        <h3 className="text-sm font-black text-slate-900">{title}</h3>
+        {subtitle && <p className="mt-0.5 text-xs text-slate-400">{subtitle}</p>}
+      </div>
+      <div className="p-4">{children}</div>
+    </div>
+  );
+}
+
+function TimeChart({ items, valueKey, colorClass = "bg-brand-500" }) {
+  if (!items || items.length === 0) {
+    return <p className="py-8 text-center text-sm text-slate-400">Nta mibare ibonetse.</p>;
+  }
+
+  const max = Math.max(1, ...items.map((item) => Number(item[valueKey]) || 0));
+
+  return (
+    <div className="mt-2 flex h-44 items-end gap-1 overflow-x-auto pb-5" role="img">
+      {items.map((item, index) => {
+        const value = Number(item[valueKey]) || 0;
+        const height = Math.max(3, Math.round((value / max) * 100));
         return (
-          <div key={day.date} className="flex min-w-[34px] flex-1 flex-col items-center gap-1.5">
-            <span className="text-xs font-bold text-slate-600">{value}</span>
-            <div className="flex h-32 w-full max-w-[30px] items-end rounded-md bg-slate-100">
-              <div
-                className={`w-full rounded-md ${value >= 10 ? "bg-emerald-400" : "bg-blue-400"}`}
-                style={{ height: `${Math.min(height, 100)}%` }}
-              />
-            </div>
-            <span className="text-[10px] font-semibold text-slate-400">
-              {DAY_LABELS[day.weekday] || day.label}
+          <div
+            key={index}
+            className="group flex h-full min-w-6 flex-1 flex-col justify-end"
+            title={`${item.date}: ${formatCount(value)}`}
+          >
+            <div
+              className={`w-full rounded-t-md ${colorClass} transition group-hover:opacity-80`}
+              style={{ height: `${height}%` }}
+            />
+            <span className="mt-1 -rotate-45 origin-top-left whitespace-nowrap text-[9px] text-slate-400">
+              {formatTick(item.date)}
             </span>
           </div>
         );
@@ -113,128 +79,176 @@ function PerformanceBarChart({ days, dayTotals, max }) {
   );
 }
 
+function DataTable({ columns, rows, emptyText = "Nta mibare ibonetse." }) {
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-left text-sm">
+        <thead className="border-b border-slate-200 bg-slate-50 text-[11px] uppercase tracking-wide text-slate-500">
+          <tr>
+            {columns.map((column) => (
+              <th key={column.key} className={`px-4 py-2.5 font-bold ${column.align === "right" ? "text-right" : ""}`}>
+                {column.label}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-100">
+          {rows.length === 0 ? (
+            <tr>
+              <td colSpan={columns.length} className="px-4 py-8 text-center text-sm text-slate-400">
+                {emptyText}
+              </td>
+            </tr>
+          ) : (
+            rows.map((row, index) => (
+              <tr key={`${row.key || index}-${index}`} className="transition hover:bg-slate-50/70">
+                {columns.map((column) => (
+                  <td key={column.key} className={`px-4 py-2.5 ${column.align === "right" ? "text-right" : ""}`}>
+                    {column.render ? column.render(row) : row[column.key]}
+                  </td>
+                ))}
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function CellText({ children, className }) {
+  return <span className={className || "text-slate-700"}>{children}</span>;
+}
+
+function PublicPageLink({ path, fallback }) {
+  if (!path || !String(path).startsWith("/")) {
+    return <span className="block truncate text-xs text-slate-500">{fallback}</span>;
+  }
+  return (
+    <a
+      href={`${window.location.origin}${path}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="block truncate text-xs font-semibold text-brand-600 underline decoration-dotted underline-offset-2 hover:text-brand-800"
+    >
+      {path}
+    </a>
+  );
+}
+
+function LiveNow({ realtime, updatedAt, refreshing }) {
+  const rows = realtime?.byCountry || [];
+
+  return (
+    <div className="mb-5 overflow-hidden rounded-2xl border border-red-200 bg-gradient-to-r from-red-600 to-rose-600 shadow-md">
+      <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+        <div className="flex items-center gap-4">
+          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/20 text-2xl" aria-hidden="true">
+            🔴
+          </span>
+          <div>
+            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-white/80">LIVE NOW</p>
+            <p className="text-xl font-black text-white">
+              {formatCount(realtime?.activeUsers)} Active Users
+            </p>
+          </div>
+        </div>
+        <div className="text-right text-[11px] text-white/90">
+          <p>{refreshing ? "Refreshing..." : "Auto-refreshes every 60s"}</p>
+          {updatedAt && <p>Updated {updatedAt.toLocaleTimeString()}</p>}
+        </div>
+      </div>
+
+      {(rows.length > 0 || realtime?.activeUsers > 0) && (
+        <div className="bg-white/95 px-4 py-3 sm:px-5">
+          <p className="text-[11px] font-black uppercase tracking-wider text-slate-500">Active Users Right Now</p>
+          <div className="mt-2 grid gap-x-8 gap-y-1 sm:grid-cols-2 lg:grid-cols-3">
+            {rows.length > 0 ? (
+              rows.map((row, index) => (
+                <div key={`${row.country}-${index}`} className="flex items-center justify-between gap-3 border-b border-slate-100 py-1 text-sm last:border-0">
+                  <span className="truncate text-slate-700">{row.country}</span>
+                  <span className="font-bold text-slate-900">{formatCount(row.activeUsers)}</span>
+                </div>
+              ))
+            ) : (
+              <div className="flex items-center justify-between gap-3 py-1 text-sm">
+                <span className="truncate text-slate-700">Rwanda</span>
+                <span className="font-bold text-slate-900">{formatCount(realtime?.activeUsers)}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Performance() {
   const navigate = useNavigate();
-  const [role, setRole] = useState("all");
-  const [period, setPeriod] = useState("current");
-  const [from, setFrom] = useState("");
-  const [to, setTo] = useState("");
+  const [range, setRange] = useState("7");
   const [data, setData] = useState(null);
-  const [dailyData, setDailyData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [loadingDaily, setLoadingDaily] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
-  const [nowMs, setNowMs] = useState(Date.now());
-  const midnightRefreshLock = useRef(false);
+  const [updatedAt, setUpdatedAt] = useState(null);
 
-  const loadDailyData = useCallback(async () => {
-    try {
-      setLoadingDaily(true);
-      const payload = await Promise.race([
-        getAdminDailyPerformance({ role }),
-        new Promise((_, reject) => {
-          window.setTimeout(() => reject(new Error("Daily performance request timed out.")), 15000);
-        }),
-      ]);
-      setDailyData(payload);
-    } catch (err) {
-      console.error("Failed to load admin daily performance:", err);
-    } finally {
-      setLoadingDaily(false);
-    }
-  }, [role]);
-
-  useEffect(() => {
-    let active = true;
-    const load = async () => {
-      setLoading(true);
-      try {
-        const { start, end } = periodRange(period, from, to);
-        const payload = await Promise.race([
-          getAdminWeeklyPerformance({ role, start, end }),
-          new Promise((_, reject) => {
-            window.setTimeout(() => reject(new Error("Weekly performance request timed out.")), 15000);
-          }),
-        ]);
-        if (active) {
-          setData(payload);
-          setError("");
-        }
-      } catch (err) {
-        if (active) setError(err?.message || "Failed to load performance report.");
-      } finally {
-        if (active) setLoading(false);
+  const loadAnalytics = useCallback(
+    async (silent = false) => {
+      if (!silent) {
+        setLoading(true);
+        setError("");
+      } else {
+        setRefreshing(true);
       }
-    };
-    load();
-    return () => {
-      active = false;
-    };
-  }, [role, period, from, to]);
+
+      const config = RANGES.find((item) => item.value === range) || RANGES[1];
+
+      try {
+        const payload = await getAdminAnalytics({
+          startDate: config.startDate,
+          endDate: config.endDate,
+        });
+        setData(payload);
+        setError("");
+        setUpdatedAt(new Date());
+      } catch (err) {
+        setData(null);
+        if (err?.status === 403) {
+          setError("You are not authorized to access performance analytics.");
+        } else {
+          setError("Unable to load analytics.");
+        }
+      } finally {
+        if (!silent) {
+          setLoading(false);
+        } else {
+          setRefreshing(false);
+        }
+      }
+    },
+    [range]
+  );
 
   useEffect(() => {
-    loadDailyData();
-  }, [loadDailyData]);
+    loadAnalytics(false);
+  }, [loadAnalytics]);
 
   useEffect(() => {
-    const timer = window.setInterval(() => setNowMs(Date.now()), 1000);
+    const timer = window.setInterval(() => {
+      loadAnalytics(true);
+    }, REALTIME_INTERVAL_MS);
     return () => window.clearInterval(timer);
-  }, []);
+  }, [loadAnalytics]);
 
-  const serverTime = dailyData?.serverTime ? new Date(dailyData.serverTime).getTime() : Date.now();
-  const serverOffset = serverTime - Date.now();
-  const correctedNow = nowMs + serverOffset;
-  const nextMidnightMs = dailyData?.nextMidnight ? new Date(dailyData.nextMidnight).getTime() : 0;
-  const remainingMs = nextMidnightMs ? Math.max(0, nextMidnightMs - correctedNow) : 0;
-
-  useEffect(() => {
-    if (nextMidnightMs && remainingMs === 0 && !midnightRefreshLock.current) {
-      midnightRefreshLock.current = true;
-      loadDailyData();
-      const resetTimer = window.setTimeout(() => {
-        midnightRefreshLock.current = false;
-      }, 2000);
-      return () => window.clearTimeout(resetTimer);
-    }
-  }, [remainingMs, nextMidnightMs, loadDailyData]);
-
-  const report = useMemo(() => data?.report || [], [data]);
-  const days = data?.days || [];
-  const dayTotals = data?.dayTotals || {};
-  const summary = data?.summary || {};
-  const liveSummary = dailyData?.summary || {};
-  const livePeople = dailyData?.people || [];
-  const maxDay = Math.max(1, ...Object.values(dayTotals).map(Number));
-
-  const csv = useMemo(() => {
-    const headers = ["Name", "Role", "Department", "Total", "Expected", "Completion Rate", "Reached Days", "Missed Days", "Extra"];
-    const rows = report.map((row) => [
-      row.name || "",
-      ROLE_LABELS[row.roleType] || row.roleType || "",
-      row.department || "",
-      row.totals.completed,
-      row.totals.expected,
-      `${row.totals.completionRate}%`,
-      row.totals.reachedDays,
-      row.totals.missedDays,
-      row.totals.extra,
-    ]);
-    return [headers, ...rows]
-      .map((row) => row.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(","))
-      .join("\n");
-  }, [report]);
-
-  const downloadCSV = () => {
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "rubavu-today-performance.csv";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
+  const overview = data?.overview || {};
+  const trafficSources = useMemo(() => (data?.trafficSources || []).map((row) => ({ ...row, key: `${row.sourceMedium}-sources` })), [data]);
+  const channels = useMemo(() => (data?.channels || []).map((row) => ({ ...row, key: `${row.channel}-channel` })), [data]);
+  const countries = useMemo(() => (data?.countries || []).map((row) => ({ ...row, key: `${row.country}-country` })), [data]);
+  const cities = useMemo(() => (data?.cities || []).map((row) => ({ ...row, key: `${row.city}-city` })), [data]);
+  const topPages = useMemo(() => (data?.topPages || []).map((row) => ({ ...row, key: `${row.path}-page` })), [data]);
+  const firstUserSources = useMemo(() => (data?.firstUserSources || []).map((row) => ({ ...row, key: `${row.sourceMedium}-first` })), [data]);
+  const usersOverTime = data?.usersOverTime || [];
+  const viewsOverTime = data?.viewsOverTime || [];
 
   return (
     <DashboardLayout
@@ -246,249 +260,162 @@ function Performance() {
       }}
     >
       <div className="mx-auto max-w-7xl px-3 py-6 sm:px-6 lg:px-8">
-        <VisitorAnalytics />
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-xl font-black text-slate-900 sm:text-2xl">Imikorere y'abakozi</h1>
+            <h1 className="text-xl font-black text-slate-900 sm:text-2xl">
+              📊 Google Analytics 4
+            </h1>
             <p className="mt-0.5 text-sm text-slate-400">
-              Ibipimo by' imirimo y'umunsi (inkuru 3) by'abakozi n'abanditsi bakuru.
+              GA4 imikorere y'urubuga rwa Rubavu Today
             </p>
+            {data && (
+              <p className="mt-1 text-[11px] text-slate-400">
+                GA4 • {data.timeZone} • {data.startDate} — {data.endDate}
+              </p>
+            )}
           </div>
-          <button
-            onClick={downloadCSV}
-            className="rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-bold text-white shadow-md shadow-brand-200 transition hover:bg-brand-700"
-          >
-            📥 Kuramo raporo ya CSV
-          </button>
-        </div>
-
-        <div className="mb-6 grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-4">
-          <div>
-            <label className="mb-1 block text-xs font-bold text-slate-600">Umwanya</label>
-            <select
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-brand-500"
-            >
-              <option value="all">Bose</option>
-              <option value="employee">Abakozi</option>
-              <option value="chief_editor">Abanditsi Bakuru</option>
-            </select>
-          </div>
-          <div>
-            <label className="mb-1 block text-xs font-bold text-slate-600">Igihe</label>
-            <select
-              value={period}
-              onChange={(e) => setPeriod(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-brand-500"
-            >
-              {PERIODS.map((p) => (
-                <option key={p.value} value={p.value}>{p.label}</option>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
+              {RANGES.map((item) => (
+                <button
+                  key={item.value}
+                  onClick={() => setRange(item.value)}
+                  className={`rounded-lg px-3 py-2 text-xs font-bold transition ${
+                    range === item.value
+                      ? "bg-brand-600 text-white shadow-sm"
+                      : "text-slate-600 hover:bg-slate-50"
+                  }`}
+                >
+                  {item.label}
+                </button>
               ))}
-            </select>
+            </div>
+            <button
+              onClick={() => loadAnalytics(false)}
+              disabled={loading}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-50"
+            >
+              ↻ Refresh
+            </button>
           </div>
-          {period === "custom" && (
-            <>
-              <div>
-                <label className="mb-1 block text-xs font-bold text-slate-600">Kuva (itariki)</label>
-                <input
-                  type="date"
-                  value={from}
-                  onChange={(e) => setFrom(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-brand-500"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-bold text-slate-600">Kugeza (itariki)</label>
-                <input
-                  type="date"
-                  value={to}
-                  onChange={(e) => setTo(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-brand-500"
-                />
-              </div>
-            </>
-          )}
         </div>
-
-        {!loadingDaily && dailyData && (
-          <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h2 className="text-base font-black text-slate-900">LIVE Daily Performance</h2>
-                <p className="text-xs text-slate-500">{dailyData?.range?.date || "Uyu munsi"} • Africa/Kigali</p>
-              </div>
-              <div className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-700">
-                <span>Time left: </span>
-                <span className="font-mono text-slate-900">{formatRemaining(remainingMs)}</span>
-              </div>
-            </div>
-
-            <div className="mb-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
-              <StatCard label="Total Employees" value={liveSummary.totalEmployees || 0} icon="👥" color="blue" />
-              <StatCard label="Total Chief Editors" value={liveSummary.totalChiefEditors || 0} icon="🧑‍💼" color="purple" />
-              <StatCard label="Reached Target" value={liveSummary.reachedTarget || 0} icon="✅" color="emerald" />
-              <StatCard label="Still In Progress" value={liveSummary.inProgress || 0} icon="⏳" color="amber" />
-              <StatCard label="Exceeded Target" value={liveSummary.exceededTarget || 0} icon="🏆" color="blue" />
-              <StatCard label="Requiring Attention" value={liveSummary.needsAttention || 0} icon="⚠️" color="red" />
-            </div>
-
-            <div className="overflow-hidden rounded-2xl border border-slate-200">
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[1000px] text-left text-sm">
-                  <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
-                    <tr>
-                      <th className="px-4 py-3 font-bold">Name</th>
-                      <th className="px-2 py-3 font-bold">Role</th>
-                      <th className="px-2 py-3 text-center font-bold">Target</th>
-                      <th className="px-2 py-3 text-center font-bold">Completed</th>
-                      <th className="px-2 py-3 text-center font-bold">Remaining</th>
-                      <th className="px-2 py-3 text-center font-bold">Extra</th>
-                      <th className="px-2 py-3 text-center font-bold">Completion</th>
-                      <th className="px-2 py-3 text-center font-bold">Status</th>
-                      <th className="px-2 py-3 text-center font-bold">Time Left</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {livePeople.map((person) => (
-                      <tr key={`${person.roleType}-${person.id}`} className="border-b border-slate-100 last:border-0">
-                        <td className="px-4 py-3">
-                          <p className="font-bold text-slate-800">{person.name}</p>
-                          <p className="text-xs text-slate-400">{person.email || "-"}</p>
-                        </td>
-                        <td className="px-2 py-3">
-                          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600">
-                            {person.roleType === "chief_editor" ? "Chief Editor" : "Employee"}
-                          </span>
-                        </td>
-                        <td className="px-2 py-3 text-center font-bold text-slate-800">{person.target}</td>
-                        <td className="px-2 py-3 text-center font-bold text-slate-800">{person.completed}</td>
-                        <td className="px-2 py-3 text-center text-slate-600">{person.remaining}</td>
-                        <td className="px-2 py-3 text-center text-amber-600 font-bold">{person.extra}</td>
-                        <td className="px-2 py-3 text-center">
-                          <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${levelInfo(person.completionRate).cls}`}>
-                            {person.completionRate}%
-                          </span>
-                        </td>
-                        <td className="px-2 py-3 text-center">
-                          <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${getStatusBadge(person.status)}`}>
-                            {person.status}
-                          </span>
-                        </td>
-                        <td className="px-2 py-3 text-center font-mono text-sm text-slate-700">
-                          {formatRemaining(Math.max(0, (nextMidnightMs || 0) - correctedNow))}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        )}
 
         {loading ? (
-          <p className="py-10 text-center text-sm text-slate-400">Birimo gutwara...</p>
+          <div className="space-y-6" aria-label="Loading analytics">
+            <div className="h-28 animate-pulse rounded-2xl bg-slate-200" />
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+              {[1, 2, 3, 4, 5, 6].map((item) => (
+                <div key={item} className="h-28 animate-pulse rounded-2xl bg-slate-100" />
+              ))}
+            </div>
+            <p className="py-4 text-center text-sm text-slate-400">Loading analytics...</p>
+          </div>
         ) : error ? (
-          <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">{error}</p>
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-10 text-center">
+            <p className="text-base font-bold text-amber-800">{error}</p>
+            <p className="mt-1 text-sm text-amber-700">GA4 ibara ntiboneka ubu.</p>
+            <button
+              onClick={() => loadAnalytics(false)}
+              className="mt-4 rounded-xl bg-amber-700 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-amber-800"
+            >
+              Try again
+            </button>
+          </div>
         ) : (
           <div className="space-y-6">
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <StatCard label="Inkuru zose zakorwa" value={summary.totalCompleted || 0} icon="📰" color="blue" />
-              <StatCard label="Ipimo riri hagati" value={`${summary.averageCompletionRate || 0}%`} icon="📊" color="emerald" />
-              <StatCard label="Uwarushishoza" value={summary.best?.name || "-"} icon="🏆" color="amber" />
-              <StatCard label="Ukeneye kumenyeshwa" value={summary.lowest?.name || "-"} icon="📌" color="red" />
+            <LiveNow realtime={data?.realtime} updatedAt={updatedAt} refreshing={refreshing} />
+
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+              <StatCard label="Active Users" value={overview.activeUsers || 0} icon="👥" color="blue" />
+              <StatCard label="Total Users" value={overview.totalUsers || 0} icon="🧑" color="slate" />
+              <StatCard label="Sessions" value={overview.sessions || 0} icon="↔" color="purple" />
+              <StatCard label="Page Views" value={overview.pageViews || 0} icon="👁" color="emerald" />
+              <StatCard label="New Users" value={overview.newUsers || 0} icon="✨" color="amber" />
+              <StatCard label="Avg. Engagement Time" value={formatDuration(overview.averageEngagementTime)} icon="⏱" color="red" />
             </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-                <h2 className="text-base font-black text-slate-900">
-                  Inkuru zose zakorwa ku munsi
-                </h2>
-                <span className="text-xs text-slate-400">
-                  {data?.range?.start} — {data?.range?.end}
-                </span>
-              </div>
-              <PerformanceBarChart days={days} dayTotals={dayTotals} max={maxDay} />
-              {report.length === 0 && (
-                <p className="mt-4 text-center text-sm text-slate-400">
-                  Nta muntu uri kwandikwa muri iki gihe.
-                </p>
-              )}
+            <div className="grid gap-4 lg:grid-cols-2">
+              <Section title="Users over time" subtitle="Active Users by date">
+                <TimeChart items={usersOverTime} valueKey="users" colorClass="bg-blue-500" />
+              </Section>
+              <Section title="Views over time" subtitle="Page Views by date">
+                <TimeChart items={viewsOverTime} valueKey="pageViews" colorClass="bg-emerald-500" />
+              </Section>
             </div>
 
-            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[900px] text-left text-sm">
-                  <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
-                    <tr>
-                      <th className="px-4 py-3 font-bold">Umukozi</th>
-                      <th className="px-2 py-3 font-bold">Umwanya</th>
-                      {days.map((day) => (
-                        <th key={day.date} className="px-2 py-3 text-center font-bold">
-                          {DAY_LABELS[day.weekday] || day.label}
-                        </th>
-                      ))}
-                      <th className="px-2 py-3 text-center font-bold">Total</th>
-                      <th className="px-2 py-3 text-center font-bold">Igenwa</th>
-                      <th className="px-2 py-3 text-center font-bold">%</th>
-                      <th className="px-2 py-3 text-center font-bold">Yarangijwe</th>
-                      <th className="px-2 py-3 text-center font-bold">Izinjira</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {report.map((row) => {
-                      const level = levelInfo(row.totals.completionRate);
-                      const byDate = {};
-                      for (const day of row.days) byDate[day.date] = day;
-                      return (
-                        <tr key={`${row.roleType}-${row.userId}`} className="border-b border-slate-100 last:border-0">
-                          <td className="px-4 py-3">
-                            <p className="font-bold text-slate-800">{row.name}</p>
-                            <p className="text-xs text-slate-400">
-                              {row.department || row.email}
-                            </p>
-                          </td>
-                          <td className="px-2 py-3">
-                            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600">
-                              {ROLE_LABELS[row.roleType] || row.roleType}
-                            </span>
-                          </td>
-                          {days.map((day) => {
-                            const rec = byDate[day.date];
-                            return (
-                              <td key={day.date} className="px-2 py-3 text-center">
-                                <span
-                                  className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${rec?.reached
-                                    ? "bg-emerald-100 text-emerald-700"
-                                    : rec && rec.completed > 0
-                                      ? "bg-amber-100 text-amber-700"
-                                      : "bg-slate-100 text-slate-400"
-                                    }`}
-                                >
-                                  {rec?.completed || 0}
-                                </span>
-                              </td>
-                            );
-                          })}
-                          <td className="px-2 py-3 text-center font-black text-slate-800">{row.totals.completed}</td>
-                          <td className="px-2 py-3 text-center text-slate-500">{row.totals.expected}</td>
-                          <td className="px-2 py-3 text-center">
-                            <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${level.cls}`}>
-                              {row.totals.completionRate}%
-                            </span>
-                          </td>
-                          <td className="px-2 py-3 text-center text-slate-600">
-                            {row.totals.reachedDays} / {row.totals.missedDays}
-                          </td>
-                          <td className="px-2 py-3 text-center font-bold text-amber-600">{row.totals.extra}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+            <div className="grid gap-4 lg:grid-cols-2">
+              <Section title="Traffic Sources" subtitle="Session source / medium">
+                <DataTable
+                  columns={[
+                    { key: "sourceMedium", label: "Source / Medium", render: (row) => <CellText className="truncate font-semibold text-slate-700">{row.sourceMedium}</CellText> },
+                    { key: "sessions", label: "Sessions", align: "right", render: (row) => <span className="font-bold text-slate-900">{formatCount(row.sessions)}</span> },
+                    { key: "activeUsers", label: "Users", align: "right", render: (row) => <span className="text-slate-600">{formatCount(row.activeUsers)}</span> },
+                  ]}
+                  rows={trafficSources}
+                />
+              </Section>
+              <Section title="Session Channel Group" subtitle="Default channel grouping">
+                <DataTable
+                  columns={[
+                    { key: "channel", label: "Channel", render: (row) => <CellText className="truncate font-semibold text-slate-700">{row.channel}</CellText> },
+                    { key: "sessions", label: "Sessions", align: "right", render: (row) => <span className="font-bold text-slate-900">{formatCount(row.sessions)}</span> },
+                  ]}
+                  rows={channels}
+                />
+              </Section>
             </div>
+
+            <div className="grid gap-4 lg:grid-cols-2">
+              <Section title="Countries" subtitle="Active users by country">
+                <DataTable
+                  columns={[
+                    { key: "country", label: "Country", render: (row) => <CellText className="truncate font-semibold text-slate-700">{row.country}</CellText> },
+                    { key: "activeUsers", label: "Active Users", align: "right", render: (row) => <span className="font-bold text-slate-900">{formatCount(row.activeUsers)}</span> },
+                  ]}
+                  rows={countries}
+                />
+              </Section>
+              <Section title="Cities" subtitle="Active users by city">
+                <DataTable
+                  columns={[
+                    { key: "city", label: "City", render: (row) => <CellText className="truncate font-semibold text-slate-700">{row.city}</CellText> },
+                    { key: "activeUsers", label: "Active Users", align: "right", render: (row) => <span className="font-bold text-slate-900">{formatCount(row.activeUsers)}</span> },
+                  ]}
+                  rows={cities}
+                />
+              </Section>
+            </div>
+
+            <Section title="Top Articles" subtitle="Top 20 pages by page views">
+              <DataTable
+                columns={[
+                  {
+                    key: "page",
+                    label: "Article / Page",
+                    render: (row) => (
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-slate-800">{row.title || row.path}</p>
+                        <PublicPageLink path={row.path} fallback={row.path} />
+                      </div>
+                    ),
+                  },
+                  { key: "pageViews", label: "Views", align: "right", render: (row) => <span className="font-bold text-slate-900">{formatCount(row.pageViews)}</span> },
+                  { key: "activeUsers", label: "Active Users", align: "right", render: (row) => <span className="text-slate-600">{formatCount(row.activeUsers)}</span> },
+                ]}
+                rows={topPages}
+                emptyText="Nta mibare ibonetse."
+              />
+            </Section>
+
+            <Section title="First User Source / Medium" subtitle="Top first-touch acquisition sources">
+              <DataTable
+                columns={[
+                  { key: "sourceMedium", label: "Source / Medium", render: (row) => <CellText className="truncate font-semibold text-slate-700">{row.sourceMedium}</CellText> },
+                  { key: "activeUsers", label: "Active Users", align: "right", render: (row) => <span className="font-bold text-slate-900">{formatCount(row.activeUsers)}</span> },
+                ]}
+                rows={firstUserSources}
+              />
+            </Section>
           </div>
         )}
       </div>
