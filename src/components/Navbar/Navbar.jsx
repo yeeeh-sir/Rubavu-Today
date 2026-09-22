@@ -569,15 +569,31 @@ const ImportantStory = ({ post, matchedPostId, postRefs }) => {
           postRefs.current[postId] = element;
         }
       }}
-      className={`group flex h-24 flex-row overflow-hidden rounded-lg border bg-white shadow-sm transition-colors hover:bg-slate-50 hover:shadow-md ${matchedPostId === postId
+      className={`group flex min-h-24 h-full flex-col overflow-hidden rounded-lg border bg-white shadow-sm transition-colors hover:bg-slate-50 hover:shadow-md ${matchedPostId === postId
         ? "border-yellow-300 bg-yellow-50 ring-2 ring-yellow-300"
         : "border-slate-200"
         }`}
     >
       {/* Image Section */}
+      <div className="order-1 flex min-w-0 flex-1 flex-col justify-center px-2.5 py-2">
+        {post.category && (
+          <span className="mb-0.5 truncate text-[8px] font-bold uppercase tracking-wider text-red-600">
+            {post.category}
+          </span>
+        )}
+
+        <Link to={getArticleUrl(post)}>
+          <h3 className="break-words font-post-title text-xs font-bold leading-tight text-slate-950 transition-colors group-hover:text-red-600 sm:text-sm">
+            {post.title}
+          </h3>
+        </Link>
+
+        <TimeText date={getPostDate(post)} className="mt-1 font-body text-[8px] font-medium text-slate-400" />
+      </div>
+
       <Link
         to={getArticleUrl(post)}
-        className="relative block h-full w-20 shrink-0 overflow-hidden bg-slate-100 sm:w-24"
+        className="order-2 relative block aspect-[4/3] w-full shrink-0 overflow-hidden bg-slate-100"
       >
         <div className="h-full overflow-hidden">
           {post.image ? (
@@ -600,25 +616,6 @@ const ImportantStory = ({ post, matchedPostId, postRefs }) => {
         </div>
       </Link>
 
-      {/* Content Section */}
-      <div className="flex min-w-0 flex-1 flex-col justify-center px-2.5 py-1.5">
-        {/* Category Badge */}
-        {post.category && (
-          <span className="mb-0.5 truncate text-[8px] font-bold uppercase tracking-wider text-red-600">
-            {post.category}
-          </span>
-        )}
-
-        {/* Title */}
-        <Link to={getArticleUrl(post)}>
-          <h3 className="line-clamp-2 font-post-title text-xs font-bold leading-tight text-slate-950 transition-colors group-hover:text-red-600 sm:text-sm">
-            {post.title}
-          </h3>
-        </Link>
-
-        {/* Date */}
-        <TimeText date={getPostDate(post)} className="mt-1 font-body text-[8px] font-medium text-slate-400" />
-      </div>
     </article>
   );
 };
@@ -635,21 +632,31 @@ const CompactCard = ({ post, matchedPostId, postRefs, variant = "default" }) => 
           postRefs.current[postId] = element;
         }
       }}
-      className={`group flex h-24 flex-row overflow-hidden rounded-lg border bg-white shadow-sm transition-colors hover:bg-slate-50 hover:shadow-md ${matchedPostId === postId
+      className={`group flex min-h-24 h-full flex-col overflow-hidden rounded-lg border bg-white shadow-sm transition-colors hover:bg-slate-50 hover:shadow-md ${matchedPostId === postId
         ? "border-yellow-300 bg-yellow-50 ring-2 ring-yellow-300"
         : "border-slate-200"
         }`}
     >
+      <div className="order-1 flex min-w-0 flex-1 flex-col justify-center px-3 py-2.5">
+        <TimeText date={getPostDate(post)} className="font-body text-[8px] font-medium uppercase tracking-wider text-slate-400" />
+
+        <Link to={getArticleUrl(post)}>
+          <h3 className="mt-0.5 break-words font-post-title text-xs font-bold leading-tight text-slate-950 transition-colors group-hover:text-red-600 sm:text-sm">
+            {post.title}
+          </h3>
+        </Link>
+      </div>
+
       <Link
         to={getArticleUrl(post)}
-        className="relative block h-full w-20 shrink-0 overflow-hidden bg-slate-100 sm:w-24"
+        className="order-2 relative block aspect-[16/9] w-full shrink-0 overflow-hidden bg-slate-100"
       >
         {post.image ? (
           <OptimizedImage
             src={post.image}
             alt={post.title || "Inkuru"}
             widths={RESOLUTION_WIDTHS.THUMB}
-            sizes="96px"
+            sizes="(max-width: 640px) 100vw, 33vw"
             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
             loading="lazy"
             decoding="async"
@@ -662,16 +669,6 @@ const CompactCard = ({ post, matchedPostId, postRefs, variant = "default" }) => 
           <img src="/Rubavu.jpeg" alt="" className="h-full w-full object-cover" loading="lazy" width="320" height="180" />
         )}
       </Link>
-
-      <div className="flex min-w-0 flex-1 flex-col justify-center px-2.5 py-1.5">
-        <TimeText date={getPostDate(post)} className="font-body text-[8px] font-medium uppercase tracking-wider text-slate-400" />
-
-        <Link to={getArticleUrl(post)}>
-          <h3 className="mt-0.5 line-clamp-2 font-post-title text-xs font-bold leading-tight text-slate-950 transition-colors group-hover:text-red-600 sm:text-sm">
-            {post.title}
-          </h3>
-        </Link>
-      </div>
     </article>
   );
 };
@@ -840,7 +837,7 @@ const CategorySection = ({
               </span>
 
               <div className="min-w-0 flex-1">
-                <h4 className="line-clamp-2 text-sm font-bold leading-snug text-slate-950 transition-colors group-hover:text-red-600">
+                <h4 className="break-words text-sm font-bold leading-snug text-slate-950 transition-colors group-hover:text-red-600">
                   {post.title}
                 </h4>
                 <p className="mt-1 font-body text-[9px] font-medium text-slate-400">
@@ -860,11 +857,11 @@ const CategorySection = ({
       <section>
         {heading}
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div className={`grid grid-cols-1 gap-3 ${posts.length > 2 ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}>
           {posts.slice(0, 4).map((post, index) => (
             <div
               key={getPostId(post)}
-              className={index === 0 ? "sm:col-span-2" : ""}
+              className={index === 0 && posts.length > 2 ? "sm:col-span-2" : ""}
             >
               <CompactCard
                 post={post}
@@ -883,7 +880,7 @@ const CategorySection = ({
     <section>
       {heading}
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <div className={`grid grid-cols-1 gap-3 ${posts.length > 2 ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}>
         {posts.slice(0, 3).map((post) => (
           <CompactCard
             key={getPostId(post)}
@@ -993,7 +990,7 @@ const TopFiveSlider = ({
   return (
     <section
       className="
-        mt-6
+        mt-0
         w-full
         overflow-hidden
         rounded-2xl
@@ -1251,7 +1248,7 @@ const NewsPostsLayout = ({
 
   return (
     <div className="grid grid-cols-1 gap-7 lg:grid-cols-12">
-      <main className="min-w-0 space-y-7 lg:col-span-8">
+      <main className="min-w-0 space-y-3 lg:col-span-8">
         {/* FEATURED NEWS */}
         <section>
           <NewsSectionHeading title={t("featuredNews")} />
@@ -1296,6 +1293,7 @@ const NewsPostsLayout = ({
             <CategorySection
               key={section.name}
               title={section.title}
+              categoryName={section.name}
               posts={section.posts}
               matchedPostId={matchedPostId}
               postRefs={postRefs}
@@ -2014,7 +2012,7 @@ const Navbar = ({ showHomeContent = true }) => {
         @import url('https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700;900&family=Source+Sans+3:wght@300;400;500;600;700;800;900&display=swap');
 
         .font-post-title {
-          font-family: 'Merriweather', Georgia, serif;
+          font-family: 'Source Sans 3', Inter, system-ui, sans-serif;
         }
 
         .font-body {

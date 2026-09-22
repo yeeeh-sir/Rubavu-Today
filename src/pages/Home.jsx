@@ -5,7 +5,6 @@ import { SiteSEO } from "../components/SEO/SEO";
 import { getArticleUrl } from "../utils/slug";
 import { useLanguage } from "../context/LanguageContext";
 import AdBanner from "../components/common/AdBanner";
-import AdSense from "../components/common/AdSense";
 import OptimizedImage from "../components/common/OptimizedImage";
 import { RESOLUTION_WIDTHS } from "../utils/images";
 
@@ -155,30 +154,30 @@ const Home = () => {
 
     return (
       <Link to={articleHref} className="group block h-full">
-        <article className="flex h-24 flex-row overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition-colors hover:bg-slate-50 hover:shadow-md">
-          <div className="relative h-full w-20 shrink-0 overflow-hidden bg-slate-100 sm:w-24">
-              {post.image ? (
-                <OptimizedImage
-                  src={imageUrl}
-                  alt={post.title}
-                  widths={RESOLUTION_WIDTHS.CARD}
-                  sizes="96px"
-                  loading="lazy"
-                  onError={(e) => {
-                    e.currentTarget.onerror = null;
-                    e.currentTarget.src = "https://images.unsplash.com/photo-1495020689067-958852a7765e?auto=format&fit=crop&w=1200&q=80";
-                  }}
-                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                />
-              ) : (
-                <img src="/Rubavu.jpeg" alt="" className="h-full w-full object-cover" loading="lazy" width="320" height="180" />
-              )}
+        <article className="flex min-h-24 flex-row overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition-colors hover:bg-slate-50 hover:shadow-md">
+          <div className="relative min-h-24 w-20 shrink-0 overflow-hidden bg-slate-100 sm:w-24">
+            {post.image ? (
+              <OptimizedImage
+                src={imageUrl}
+                alt={post.title}
+                widths={RESOLUTION_WIDTHS.CARD}
+                sizes="96px"
+                loading="lazy"
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = "https://images.unsplash.com/photo-1495020689067-958852a7765e?auto=format&fit=crop&w=1200&q=80";
+                }}
+                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+              />
+            ) : (
+              <img src="/Rubavu.jpeg" alt="" className="h-full w-full object-cover" loading="lazy" width="320" height="180" />
+            )}
           </div>
 
           <div className="flex min-w-0 flex-1 flex-col justify-center px-2.5 py-2">
             {post.category && <span className="mb-0.5 truncate text-[8px] font-bold uppercase tracking-wider text-red-600">{post.category}</span>}
 
-            <h4 className="line-clamp-2 font-masthead text-[12px] font-extrabold leading-tight text-slate-900 transition-colors group-hover:text-red-600 sm:text-[13px]">
+            <h4 className="break-words font-masthead text-[12px] font-extrabold leading-tight text-slate-900 transition-colors group-hover:text-red-600 sm:text-[13px]">
               {post.title}
             </h4>
 
@@ -239,9 +238,9 @@ const Home = () => {
                 />
               </div>
 
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {sourcePosts.length > 0 ? (
-                  sourcePosts.slice(0, 6).map((post) => (
+                  sourcePosts.slice(0, 3).map((post) => (
                     <div
                       key={post.id || post._id || post.title}
                       className="overflow-hidden rounded-lg border border-slate-200 bg-slate-50 shadow-sm"
@@ -313,7 +312,7 @@ const Home = () => {
             </div>
           ) : isSearching ? (
             /* ==================== SEARCH RESULTS VIEW ==================== */
-            <div className="space-y-6">
+            <div className="space-y-0">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b-2 border-black pb-4">
                 <div>
                   <h2 className="font-masthead text-2xl font-black text-slate-900">
@@ -363,23 +362,20 @@ const Home = () => {
                     </div>
                   )}
 
-                  <div className="grid grid-cols-1 gap-2.5 xs:gap-3 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3 lg:gap-4 xl:grid-cols-4 xl:gap-4">
-                    {visiblePosts.map((post, index) => (
-                      <React.Fragment key={post.id || post._id}>
-                        <PostCard post={post} />
-                        {index === 2 && visiblePosts.length > 3 && <AdSense />}
-                      </React.Fragment>
+                  <div className="grid grid-cols-1 gap-0 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    {visiblePosts.map((post) => (
+                      <PostCard key={post.id || post._id} post={post} />
                     ))}
                   </div>
 
                   {advertisements[1] && advertisements[1].image && hasMore && (
-                    <div className="my-6 xs:my-7 sm:my-8 flex justify-center print:hidden">
+                    <div className="my-0 flex justify-center print:hidden">
                       <AdBanner ad={advertisements[1]} size="728x90" />
                     </div>
                   )}
 
                   {hasMore && (
-                    <div className="pt-6 xs:pt-7 sm:pt-8 pb-3 xs:pb-4 flex justify-center">
+                    <div className="flex justify-center py-2">
                       <button
                         onClick={handleLoadMore}
                         className="inline-flex items-center gap-2 rounded sm:rounded-md border border-slate-900 bg-slate-950 px-3 xs:px-4 py-1.5 xs:py-2 font-body text-[9px] xs:text-[10px] font-bold uppercase tracking-[0.14em] text-white shadow-sm transition hover:border-red-600 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-200"
