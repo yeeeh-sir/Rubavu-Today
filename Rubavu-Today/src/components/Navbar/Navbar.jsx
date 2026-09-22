@@ -624,18 +624,16 @@ const SmallPostCard = ({
       className={`
         group
         flex
-        h-24
+        !h-[176px]
+        min-h-0
+        max-h-[176px]
         w-full
         overflow-hidden
-        rounded-lg
-        border
-        border-slate-200
+        rounded-none
+        border-0
         bg-white
-        shadow-sm
-        transition-all
-        duration-300
-        hover:-translate-y-0.5
-        hover:shadow-md
+        shadow-none
+        transition-colors
         ${matchedPostId === postId
           ? "bg-yellow-50 ring-2 ring-yellow-300"
           : ""
@@ -644,9 +642,9 @@ const SmallPostCard = ({
     >
       <Link
         to={articleHref}
-        className="block"
+        className="flex h-full w-full min-w-0"
       >
-        <div className="relative h-full w-20 shrink-0 overflow-hidden bg-slate-100 sm:w-24">
+        <div className="relative h-full w-[96px] shrink-0 overflow-hidden bg-slate-100 sm:w-[112px]">
           {post.image ? (
             <img
               src={post.image}
@@ -674,8 +672,8 @@ const SmallPostCard = ({
           )}
         </div>
 
-        <div className="flex min-w-0 flex-1 flex-col justify-center px-2.5 py-1.5">
-          <h3 className="line-clamp-2 font-post-title text-[10px] font-bold leading-[1.25] text-slate-900 transition-colors group-hover:text-red-600 sm:text-[11px]">
+        <div className="flex min-w-0 flex-1 flex-col justify-center overflow-hidden px-2.5 py-1.5">
+          <h3 className="line-clamp-4 break-words font-post-title text-[10px] font-bold leading-[1.25] text-slate-900 transition-colors group-hover:text-red-600 sm:text-[11px]">
             {post.title}
           </h3>
 
@@ -695,6 +693,8 @@ const MixedPosts = ({
   matchedPostId,
   postRefs,
 }) => {
+  const [visibleCount, setVisibleCount] = useState(6);
+
   const mixedPosts = useMemo(() => {
     if (!posts.length) {
       return [];
@@ -712,58 +712,30 @@ const MixedPosts = ({
 
     const result = [];
     const used = new Set();
-
     let newestIndex = 0;
     let oldestIndex = 0;
 
+    const addPost = (post, index) => {
+      if (!post || result.length >= 24) return;
+
+      const id = getPostId(post, index);
+      if (used.has(id)) return;
+
+      result.push(post);
+      used.add(id);
+    };
+
+    // Keep the feed mixed, but favor older posts at a 2-to-1 ratio.
     while (
       result.length < 24 &&
-      (
-        newestIndex < newest.length ||
-        oldestIndex < oldest.length
-      )
+      (oldestIndex < oldest.length || newestIndex < newest.length)
     ) {
-      if (
-        newestIndex < newest.length &&
-        result.length < 24
-      ) {
-        const post =
-          newest[newestIndex];
-
-        const id =
-          getPostId(
-            post,
-            newestIndex
-          );
-
-        newestIndex++;
-
-        if (!used.has(id)) {
-          result.push(post);
-          used.add(id);
-        }
-      }
-
-      if (
-        oldestIndex < oldest.length &&
-        result.length < 24
-      ) {
-        const post =
-          oldest[oldestIndex];
-
-        const id =
-          getPostId(
-            post,
-            oldestIndex
-          );
-
-        oldestIndex++;
-
-        if (!used.has(id)) {
-          result.push(post);
-          used.add(id);
-        }
-      }
+      addPost(oldest[oldestIndex], oldestIndex);
+      oldestIndex += 1;
+      addPost(oldest[oldestIndex], oldestIndex);
+      oldestIndex += 1;
+      addPost(newest[newestIndex], newestIndex);
+      newestIndex += 1;
     }
 
     return result.slice(0, 24);
@@ -772,6 +744,9 @@ const MixedPosts = ({
   if (!mixedPosts.length) {
     return null;
   }
+
+  const visiblePosts = mixedPosts.slice(0, visibleCount);
+  const hasMorePosts = mixedPosts.length > visibleCount;
 
   return (
     <section className="w-full">
@@ -795,8 +770,8 @@ const MixedPosts = ({
         </span>
       </div>
 
-      <div className="grid grid-cols-2 gap-2 sm:gap-2.5 lg:grid-cols-3 lg:gap-2.5">
-        {mixedPosts.map(
+      <div className="grid auto-rows-[176px] grid-cols-2 gap-0 lg:grid-cols-3 items-start">
+        {visiblePosts.map(
           (post, index) => (
             <SmallPostCard
               key={`${getPostId(
@@ -813,6 +788,16 @@ const MixedPosts = ({
           )
         )}
       </div>
+
+      {hasMorePosts && (
+        <button
+          type="button"
+          onClick={() => setVisibleCount((count) => count + 6)}
+          className="mt-3 w-full border border-slate-900 bg-slate-950 px-3 py-2 font-body text-[9px] font-black uppercase tracking-[0.14em] text-white transition hover:bg-red-600"
+        >
+          Soma andi makuru <span aria-hidden="true">→</span>
+        </button>
+      )}
 
       <p className="mt-3 font-body text-[7px] font-semibold uppercase tracking-[0.12em] text-slate-400">
         Amakuru mashya n'andi makuru

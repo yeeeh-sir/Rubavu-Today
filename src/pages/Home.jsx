@@ -154,8 +154,8 @@ const Home = () => {
 
     return (
       <Link to={articleHref} className="group block h-full">
-        <article className="flex min-h-24 flex-row overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition-colors hover:bg-slate-50 hover:shadow-md">
-          <div className="relative min-h-24 w-20 shrink-0 overflow-hidden bg-slate-100 sm:w-24">
+        <article className="flex h-24 flex-row overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition-colors hover:bg-slate-50 hover:shadow-md">
+          <div className="relative h-24 w-20 shrink-0 overflow-hidden bg-slate-100 sm:w-24">
             {post.image ? (
               <OptimizedImage
                 src={imageUrl}
@@ -177,7 +177,7 @@ const Home = () => {
           <div className="flex min-w-0 flex-1 flex-col justify-center px-2.5 py-2">
             {post.category && <span className="mb-0.5 truncate text-[8px] font-bold uppercase tracking-wider text-red-600">{post.category}</span>}
 
-            <h4 className="break-words font-masthead text-[12px] font-extrabold leading-tight text-slate-900 transition-colors group-hover:text-red-600 sm:text-[13px]">
+            <h4 className="break-words line-clamp-2 font-masthead text-[12px] font-extrabold leading-tight text-slate-900 transition-colors group-hover:text-red-600 sm:text-[13px]">
               {post.title}
             </h4>
 
@@ -238,7 +238,7 @@ const Home = () => {
                 />
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-0">
                 {sourcePosts.length > 0 ? (
                   sourcePosts.slice(0, 3).map((post) => (
                     <div
@@ -328,7 +328,7 @@ const Home = () => {
               </div>
 
               {sortedPosts.length > 0 ? (
-                <div className="grid grid-cols-1 gap-3 xs:gap-4 sm:gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                <div className="grid grid-cols-1 gap-0 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   {sortedPosts.map((post) => (
                     <PostCard key={post.id || post._id} post={post} />
                   ))}

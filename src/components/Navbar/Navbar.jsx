@@ -569,13 +569,13 @@ const ImportantStory = ({ post, matchedPostId, postRefs }) => {
           postRefs.current[postId] = element;
         }
       }}
-      className={`group flex min-h-24 h-full flex-col overflow-hidden rounded-lg border bg-white shadow-sm transition-colors hover:bg-slate-50 hover:shadow-md ${matchedPostId === postId
+      className={`group flex h-[260px] flex-col overflow-hidden rounded-lg border bg-white shadow-sm transition-colors hover:bg-slate-50 hover:shadow-md ${matchedPostId === postId
         ? "border-yellow-300 bg-yellow-50 ring-2 ring-yellow-300"
         : "border-slate-200"
         }`}
     >
       {/* Image Section */}
-      <div className="order-1 flex min-w-0 flex-1 flex-col justify-center px-2.5 py-2">
+      <div className="order-1 h-[140px] shrink-0 overflow-hidden px-2.5 py-2">
         {post.category && (
           <span className="mb-0.5 truncate text-[8px] font-bold uppercase tracking-wider text-red-600">
             {post.category}
@@ -583,7 +583,7 @@ const ImportantStory = ({ post, matchedPostId, postRefs }) => {
         )}
 
         <Link to={getArticleUrl(post)}>
-          <h3 className="break-words font-post-title text-xs font-bold leading-tight text-slate-950 transition-colors group-hover:text-red-600 sm:text-sm">
+          <h3 className="line-clamp-5 break-words font-post-title text-xs font-bold leading-tight text-slate-950 transition-colors group-hover:text-red-600 sm:text-sm">
             {post.title}
           </h3>
         </Link>
@@ -593,7 +593,7 @@ const ImportantStory = ({ post, matchedPostId, postRefs }) => {
 
       <Link
         to={getArticleUrl(post)}
-        className="order-2 relative block aspect-[4/3] w-full shrink-0 overflow-hidden bg-slate-100"
+        className="order-2 relative block h-[120px] w-full shrink-0 overflow-hidden bg-slate-100"
       >
         <div className="h-full overflow-hidden">
           {post.image ? (
@@ -632,16 +632,16 @@ const CompactCard = ({ post, matchedPostId, postRefs, variant = "default" }) => 
           postRefs.current[postId] = element;
         }
       }}
-      className={`group flex min-h-24 h-full flex-col overflow-hidden rounded-lg border bg-white shadow-sm transition-colors hover:bg-slate-50 hover:shadow-md ${matchedPostId === postId
+      className={`group flex h-[260px] flex-col overflow-hidden rounded-lg border bg-white shadow-sm transition-colors hover:bg-slate-50 hover:shadow-md ${matchedPostId === postId
         ? "border-yellow-300 bg-yellow-50 ring-2 ring-yellow-300"
         : "border-slate-200"
         }`}
     >
-      <div className="order-1 flex min-w-0 flex-1 flex-col justify-center px-3 py-2.5">
+      <div className="order-1 h-[140px] shrink-0 overflow-hidden px-3 py-2.5">
         <TimeText date={getPostDate(post)} className="font-body text-[8px] font-medium uppercase tracking-wider text-slate-400" />
 
         <Link to={getArticleUrl(post)}>
-          <h3 className="mt-0.5 break-words font-post-title text-xs font-bold leading-tight text-slate-950 transition-colors group-hover:text-red-600 sm:text-sm">
+          <h3 className="mt-0.5 line-clamp-5 break-words font-post-title text-xs font-bold leading-tight text-slate-950 transition-colors group-hover:text-red-600 sm:text-sm">
             {post.title}
           </h3>
         </Link>
@@ -649,7 +649,7 @@ const CompactCard = ({ post, matchedPostId, postRefs, variant = "default" }) => 
 
       <Link
         to={getArticleUrl(post)}
-        className="order-2 relative block aspect-[16/9] w-full shrink-0 overflow-hidden bg-slate-100"
+        className="order-2 relative block h-[120px] w-full shrink-0 overflow-hidden bg-slate-100"
       >
         {post.image ? (
           <OptimizedImage
@@ -857,7 +857,7 @@ const CategorySection = ({
       <section>
         {heading}
 
-        <div className={`grid grid-cols-1 gap-3 ${posts.length > 2 ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}>
+        <div className={`grid grid-cols-1 gap-0 ${posts.length > 2 ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}>
           {posts.slice(0, 4).map((post, index) => (
             <div
               key={getPostId(post)}
@@ -880,7 +880,7 @@ const CategorySection = ({
     <section>
       {heading}
 
-      <div className={`grid grid-cols-1 gap-3 ${posts.length > 2 ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}>
+      <div className={`grid grid-cols-1 gap-0 ${posts.length > 2 ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}>
         {posts.slice(0, 3).map((post) => (
           <CompactCard
             key={getPostId(post)}
@@ -1225,7 +1225,7 @@ const NewsPostsLayout = ({
             title={translateCategory(activeCategory, language)}
           />
 
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-0 sm:grid-cols-2">
             {sortedNewest.map((post, index) => (
               <React.Fragment key={getPostId(post)}>
                 <CompactCard
@@ -1262,7 +1262,7 @@ const NewsPostsLayout = ({
 
         {/* OTHER RECENT STORIES */}
         <section>
-          <div className="grid grid-cols-1 gap-2 xs:gap-2.5 sm:gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-0 sm:grid-cols-2 lg:grid-cols-4">
             {sortedNewest.slice(1, 5).map((post) => (
               <ImportantStory
                 key={getPostId(post)}
@@ -1288,7 +1288,7 @@ const NewsPostsLayout = ({
         <AdSlot ad={advertisements[1]} size="728x90" />
 
         {/* CATEGORY SECTIONS */}
-        <div className="space-y-8">
+        <div className="space-y-0">
           {categorySections.map((section) => (
             <CategorySection
               key={section.name}
