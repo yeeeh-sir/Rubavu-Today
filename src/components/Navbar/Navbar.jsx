@@ -627,7 +627,6 @@ const CompactCard = ({ post, matchedPostId, postRefs, variant = "default" }) => 
   if (!post) return null;
 
   const postId = getPostId(post);
-  const isLarge = variant === "large";
 
   return (
     <article
