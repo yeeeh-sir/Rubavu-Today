@@ -229,7 +229,7 @@ const Media = () => {
                     <div className="flex flex-1 flex-col p-3 sm:p-3.5">
                       <Link
                         to={post.href}
-                        className="font-masthead text-sm font-extrabold leading-snug text-slate-900 transition-colors hover:text-red-600 line-clamp-2 mt-1"
+                        className="break-words font-masthead text-sm font-extrabold leading-snug text-slate-900 transition-colors hover:text-red-600 mt-1"
                       >
                         {post.title}
                       </Link>

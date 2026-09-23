@@ -1,0 +1,78 @@
+
+> rubavu-today@0.1.0 build
+> react-scripts build
+
+(node:1940) [DEP0176] DeprecationWarning: fs.F_OK is deprecated, use fs.constants.F_OK instead
+(Use `node --trace-deprecation ...` to show where the warning was created)
+Creating an optimized production build...
+Compiled with warnings.
+
+[eslint] 
+src\components\Navbar\Navbar.jsx
+  Line 749:7:  'TrendingWidget' is assigned a value but never used  no-unused-vars
+  Line 990:7:  'TopFiveSlider' is assigned a value but never used   no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+File sizes after gzip:
+
+  146.54 kB (-410 B)  build\static\js\main.bb496d47.js
+  17.69 kB            build\static\js\514.7404eaf8.chunk.js
+  16.61 kB (-13 B)    build\static\css\main.d5623110.css
+  13.64 kB (-12 B)    build\static\js\753.fe681e94.chunk.js
+  8.81 kB             build\static\js\757.4849d062.chunk.js
+  8.56 kB             build\static\js\486.e648c057.chunk.js
+  6.39 kB             build\static\js\78.b343e089.chunk.js
+  5.73 kB             build\static\js\871.6872b1bd.chunk.js
+  5.51 kB             build\static\js\568.9ea91aaf.chunk.js
+  4.9 kB (+19 B)      build\static\js\264.6d64a751.chunk.js
+  4.41 kB             build\static\js\586.bfb07d19.chunk.js
+  4.33 kB             build\static\js\284.f1baafb2.chunk.js
+  4.25 kB             build\static\js\71.b0d84169.chunk.js
+  4.21 kB             build\static\js\729.de1a0476.chunk.js
+  4.06 kB             build\static\js\852.bd7fe2bb.chunk.js
+  4.05 kB (+1 B)      build\static\js\485.479f122c.chunk.js
+  4.01 kB             build\static\js\503.16fc9709.chunk.js
+  3.83 kB             build\static\js\51.117b1744.chunk.js
+  3.36 kB             build\static\js\801.3b5ad26a.chunk.js
+  3.34 kB             build\static\js\522.c18a4931.chunk.js
+  3.24 kB             build\static\js\238.759108a8.chunk.js
+  3.21 kB             build\static\js\567.e08ac437.chunk.js
+  3.18 kB             build\static\js\464.c661738f.chunk.js
+  3.12 kB             build\static\js\142.d7bb78eb.chunk.js
+  3.11 kB             build\static\js\109.ef09ecda.chunk.js
+  2.95 kB             build\static\js\638.69f68977.chunk.js
+  2.68 kB             build\static\js\133.f720924d.chunk.js
+  2.68 kB             build\static\js\237.d91a51f1.chunk.js
+  2.65 kB             build\static\js\954.8c9c2c15.chunk.js
+  2.42 kB             build\static\js\988.a328711f.chunk.js
+  2.26 kB             build\static\js\599.95b1c0d0.chunk.js
+  2.23 kB             build\static\js\277.b4aedf33.chunk.js
+  2.08 kB             build\static\js\205.c1498332.chunk.js
+  2.08 kB             build\static\js\44.3eccdc0c.chunk.js
+  1.97 kB             build\static\js\266.eda334ef.chunk.js
+  1.96 kB             build\static\js\857.fdcca83a.chunk.js
+  1.95 kB             build\static\js\358.1e6f7acd.chunk.js
+  1.84 kB             build\static\js\681.c6e88522.chunk.js
+  1.83 kB             build\static\js\692.2cac4cfa.chunk.js
+  1.77 kB             build\static\js\453.8b724413.chunk.js
+  1.74 kB             build\static\js\183.802ad54d.chunk.js
+  1.73 kB             build\static\js\922.797c5a41.chunk.js
+  1.72 kB             build\static\js\549.0ec9c9f4.chunk.js
+  1.53 kB             build\static\js\983.1c44dadb.chunk.js
+  1.16 kB             build\static\js\751.1b3b2075.chunk.js
+
+The project was built assuming it is hosted at /.
+You can control this with the homepage field in your package.json.
+
+The build folder is ready to be deployed.
+You may serve it with a static server:
+
+  npm install -g serve
+  serve -s build
+
+Find out more about deployment here:
+
+  https://cra.link/deployment
+

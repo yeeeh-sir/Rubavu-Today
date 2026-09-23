@@ -92,6 +92,10 @@ const Home = () => {
   }, [posts, query]);
 
 
+  const orderedPosts = useMemo(() => {
+    return filteredPosts;
+  }, [filteredPosts]);
+
   const sortedPosts = useMemo(() => {
     return [...filteredPosts].sort(
       (a, b) => new Date(b.createdDate || 0) - new Date(a.createdDate || 0)
@@ -139,8 +143,8 @@ const Home = () => {
   }, [mediaPosts, sidebarPosts, mediaSearch]);
 
   const isSearching = query.trim().length > 0;
-  const visiblePosts = sortedPosts.slice(0, visibleCount);
-  const hasMore = sortedPosts.length > visibleCount;
+  const visiblePosts = orderedPosts.slice(0, visibleCount);
+  const hasMore = orderedPosts.length > visibleCount;
 
   const handleLoadMore = () => setVisibleCount((prev) => prev + 8);
 
@@ -154,14 +158,14 @@ const Home = () => {
 
     return (
       <Link to={articleHref} className="group block h-full">
-        <article className="flex h-24 flex-row overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition-colors hover:bg-slate-50 hover:shadow-md">
-          <div className="relative h-24 w-20 shrink-0 overflow-hidden bg-slate-100 sm:w-24">
+        <article className="mx-auto flex h-full w-full max-w-[360px] flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition-colors hover:bg-slate-50 hover:shadow-md sm:max-w-none">
+          <div className="relative aspect-[16/9] w-full shrink-0 overflow-hidden bg-slate-100">
             {post.image ? (
               <OptimizedImage
                 src={imageUrl}
                 alt={post.title}
                 widths={RESOLUTION_WIDTHS.CARD}
-                sizes="96px"
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 400px"
                 loading="lazy"
                 onError={(e) => {
                   e.currentTarget.onerror = null;
@@ -174,10 +178,10 @@ const Home = () => {
             )}
           </div>
 
-          <div className="flex min-w-0 flex-1 flex-col justify-center px-2.5 py-2">
+          <div className="flex min-w-0 flex-1 flex-col px-2.5 py-2.5 sm:px-3 sm:py-3">
             {post.category && <span className="mb-0.5 truncate text-[8px] font-bold uppercase tracking-wider text-red-600">{post.category}</span>}
 
-            <h4 className="break-words line-clamp-2 font-masthead text-[12px] font-extrabold leading-tight text-slate-900 transition-colors group-hover:text-red-600 sm:text-[13px]">
+            <h4 className="break-words font-masthead text-[12px] font-extrabold leading-tight text-slate-900 transition-colors group-hover:text-red-600 sm:text-[13px]">
               {post.title}
             </h4>
 

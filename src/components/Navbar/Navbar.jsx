@@ -28,7 +28,6 @@ import SearchBar from "../SearchBar/SearchBar";
 import { Loader2, Pause, Play, Radio as RadioIcon, Volume2, VolumeX } from "lucide-react";
 import { useRadio } from "../../context/RadioContext";
 import AdBanner from "../common/AdBanner";
-import AdSense from "../common/AdSense";
 import OptimizedImage from "../common/OptimizedImage";
 import { getArticleUrl } from "../../utils/slug";
 import { formatRelativeTime } from "../../utils/time";
@@ -66,6 +65,30 @@ export const DEPARTMENTS = [
     icon: "ðŸŽ“",
   },
 ];
+
+const normalizeDepartment = (value) => {
+  const category = String(value || "").trim().toLowerCase();
+  const aliases = {
+    news: "Amakuru",
+    amakuru: "Amakuru",
+    economy: "Ubukungu",
+    business: "Ubukungu",
+    ubukungu: "Ubukungu",
+    sports: "Imikino",
+    sport: "Imikino",
+    imikino: "Imikino",
+    entertainment: "Imyidagaduro",
+    imyidagaduro: "Imyidagaduro",
+    education: "Uburezi",
+    uburezi: "Uburezi",
+  };
+
+  if (aliases[category]) return aliases[category];
+
+  return DEPARTMENTS.find(
+    (department) => department.name.toLowerCase() === category
+  )?.name || String(value || "").trim();
+};
 
 
 
@@ -134,6 +157,54 @@ export const buildMixedPosts = (posts = []) => {
   }
 
   return result.slice(0, MAX_MIXED_POSTS);
+};
+
+export const buildNaturalPostOrder = (posts = []) => {
+  const newest = [...posts].sort((a, b) => getTime(b) - getTime(a));
+  const oldest = [...posts].sort((a, b) => getTime(a) - getTime(b));
+  const result = [];
+  const used = new Set();
+  let newestIndex = 0;
+  let oldestIndex = 0;
+  let recentCount = 0;
+  const getStablePostKey = (post, index) =>
+    post?._id ||
+    post?.id ||
+    `${post?.title || "post"}-${getPostDate(post) || index}`;
+
+  const addNext = (source, index) => {
+    const post = source[index];
+    if (!post) return false;
+
+    const id = getStablePostKey(post, index);
+    if (used.has(id)) return false;
+
+    used.add(id);
+    result.push(post);
+    return true;
+  };
+
+  while (newestIndex < newest.length || oldestIndex < oldest.length) {
+    if (recentCount < 2 && newestIndex < newest.length) {
+      if (addNext(newest, newestIndex)) recentCount += 1;
+      newestIndex += 1;
+      continue;
+    }
+
+    if (oldestIndex < oldest.length) {
+      addNext(oldest, oldestIndex);
+      oldestIndex += 1;
+      recentCount = 0;
+      continue;
+    }
+
+    if (newestIndex < newest.length) {
+      addNext(newest, newestIndex);
+      newestIndex += 1;
+    }
+  }
+
+  return result;
 };
 
 const preloadAdImages = (ads = []) => {
@@ -546,15 +617,16 @@ const FeaturedStory = ({ post, matchedPostId, postRefs }) => {
             </div>
           )}
 
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/40 to-slate-950/5" />
-
-          <div className="absolute inset-x-0 bottom-0 p-5 sm:p-7">
-            <h2 className="line-clamp-3 font-post-title text-[22px] font-black leading-tight text-white transition-colors group-hover:text-red-300 sm:text-3xl">
-              {post.title}
-            </h2>
-          </div>
         </div>
       </Link>
+
+      <div className="bg-slate-950 px-5 py-4 sm:px-7 sm:py-5">
+        <Link to={getArticleUrl(post)}>
+          <h2 className="break-words font-post-title text-lg font-black leading-tight text-white transition-colors group-hover:text-red-300 sm:text-3xl">
+            {post.title}
+          </h2>
+        </Link>
+      </div>
     </article>
   );
 };
@@ -571,14 +643,14 @@ const ImportantStory = ({ post, matchedPostId, postRefs }) => {
           postRefs.current[postId] = element;
         }
       }}
-      className={`group flex min-h-[250px] flex-col overflow-hidden rounded-xl border bg-white shadow-sm transition-colors hover:bg-slate-50 hover:shadow-md sm:h-[280px] ${matchedPostId === postId
+      className={`group flex h-fit self-start flex-col overflow-hidden rounded-xl border bg-white shadow-sm transition-colors hover:bg-slate-50 hover:shadow-md ${matchedPostId === postId
         ? "border-yellow-300 bg-yellow-50 ring-2 ring-yellow-300"
         : "border-slate-200"
         }`}
     >
       <Link
         to={getArticleUrl(post)}
-        className="order-1 relative block aspect-[16/9] w-full shrink-0 overflow-hidden bg-slate-100 sm:h-[150px] sm:aspect-auto"
+        className="order-1 relative block aspect-[16/10] w-full shrink-0 overflow-hidden bg-slate-100 sm:h-[150px] sm:aspect-auto"
       >
         <div className="h-full overflow-hidden">
           {post.image ? (
@@ -586,7 +658,7 @@ const ImportantStory = ({ post, matchedPostId, postRefs }) => {
               src={post.image}
               alt={post.title || "Inkuru"}
               widths={RESOLUTION_WIDTHS.CARD}
-              sizes="96px"
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 33vw, 300px"
               className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
               loading="lazy"
               decoding="async"
@@ -601,7 +673,7 @@ const ImportantStory = ({ post, matchedPostId, postRefs }) => {
         </div>
       </Link>
 
-      <div className="order-2 min-h-0 flex-1 px-3 py-3.5 sm:px-3 sm:py-3">
+      <div className="order-2 min-h-0 flex-1 px-2.5 py-2.5 sm:px-3 sm:py-3">
         {post.category && (
           <span className="mb-1 block truncate font-body text-[8px] font-bold uppercase tracking-[0.14em] text-red-600">
             {post.category}
@@ -609,7 +681,7 @@ const ImportantStory = ({ post, matchedPostId, postRefs }) => {
         )}
 
         <Link to={getArticleUrl(post)}>
-          <h3 className="line-clamp-3 break-words font-post-title text-sm font-extrabold leading-snug text-slate-950 transition-colors group-hover:text-red-600 sm:text-base">
+          <h3 className="break-words font-post-title text-xs font-extrabold leading-snug text-slate-950 transition-colors group-hover:text-red-600 sm:text-base">
             {post.title}
           </h3>
         </Link>
@@ -633,21 +705,21 @@ const CompactCard = ({ post, matchedPostId, postRefs, variant = "default" }) => 
           postRefs.current[postId] = element;
         }
       }}
-      className={`group flex min-h-[250px] flex-col overflow-hidden rounded-xl border bg-white shadow-sm transition-colors hover:bg-slate-50 hover:shadow-md sm:h-[280px] ${matchedPostId === postId
+      className={`group flex self-start flex-col overflow-hidden rounded-xl border bg-white shadow-sm transition-colors hover:bg-slate-50 hover:shadow-md ${variant === "large" ? "h-[280px] sm:h-[320px]" : "h-[250px] sm:h-[280px]"} ${matchedPostId === postId
         ? "border-yellow-300 bg-yellow-50 ring-2 ring-yellow-300"
         : "border-slate-200"
         }`}
     >
       <Link
         to={getArticleUrl(post)}
-        className="order-1 relative block aspect-[16/9] w-full shrink-0 overflow-hidden bg-slate-100 sm:h-[150px] sm:aspect-auto"
+        className={`order-1 relative block w-full shrink-0 overflow-hidden bg-slate-100 ${variant === "large" ? "aspect-[16/10] sm:h-[190px] sm:aspect-auto" : "aspect-[16/10] sm:h-[150px] sm:aspect-auto"}`}
       >
         {post.image ? (
           <OptimizedImage
             src={post.image}
             alt={post.title || "Inkuru"}
             widths={RESOLUTION_WIDTHS.THUMB}
-            sizes="(max-width: 640px) 100vw, 33vw"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 300px"
             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
             loading="lazy"
             decoding="async"
@@ -661,11 +733,11 @@ const CompactCard = ({ post, matchedPostId, postRefs, variant = "default" }) => 
         )}
       </Link>
 
-      <div className="order-2 min-h-0 flex-1 px-3 py-3.5 sm:px-3 sm:py-3">
+      <div className="order-2 min-h-0 flex-1 px-2.5 py-2.5 sm:px-3 sm:py-3">
         <TimeText date={getPostDate(post)} className="font-body text-[8px] font-medium uppercase tracking-wider text-slate-400" />
 
         <Link to={getArticleUrl(post)}>
-          <h3 className="mt-1 line-clamp-4 break-words font-post-title text-xs font-bold leading-tight text-slate-950 transition-colors group-hover:text-red-600 sm:text-sm">
+          <h3 className={`mt-1 break-words font-post-title font-bold leading-tight text-slate-950 transition-colors group-hover:text-red-600 ${variant === "large" ? "text-sm sm:text-base" : "text-[11px] sm:text-sm"}`}>
             {post.title}
           </h3>
         </Link>
@@ -711,7 +783,7 @@ const TrendingWidget = ({ posts = [] }) => {
               </span>
 
               <div className="min-w-0">
-                <h4 className="line-clamp-2 text-[13px] font-bold leading-snug text-slate-950 transition-colors group-hover:text-red-600">
+                <h4 className="break-words text-[13px] font-bold leading-snug text-slate-950 transition-colors group-hover:text-red-600">
                   {post.title}
                 </h4>
                 <p className="mt-0.5">
@@ -726,14 +798,10 @@ const TrendingWidget = ({ posts = [] }) => {
   );
 };
 
-const LatestWidget = ({ posts = [], matchedPostId, postRefs }) => {
+const LatestWidget = ({ posts = [], postRefs }) => {
   const { t } = useLanguage();
-
   const latest = useMemo(
-    () =>
-      [...posts]
-        .sort((a, b) => getTime(b) - getTime(a))
-        .slice(0, 6),
+    () => [...posts].sort((a, b) => getTime(b) - getTime(a)),
     [posts]
   );
 
@@ -747,30 +815,31 @@ const LatestWidget = ({ posts = [], matchedPostId, postRefs }) => {
           {t("latestNews")}
         </h3>
       </div>
-
       <style>{`
         @keyframes latestNewsScroll {
-          0% { transform: translate3d(0, 0, 0); }
-          100% { transform: translate3d(0, -50%, 0); }
+          from { transform: translate3d(0, 0, 0); }
+          to { transform: translate3d(0, -100%, 0); }
         }
         .latest-news-scroll {
-          animation: latestNewsScroll 36s linear infinite;
+          animation: latestNewsScroll 42s linear infinite;
           will-change: transform;
+          backface-visibility: hidden;
         }
       `}</style>
-      <div className="max-h-[280px] overflow-hidden sm:max-h-[360px]">
-        <div className="latest-news-scroll divide-y divide-slate-100">
-          {[...latest, ...latest].map((post, index) => {
+      <div className="h-[280px] w-full overflow-hidden sm:h-[360px]">
+        <div
+          className="latest-news-scroll divide-y divide-slate-100"
+          style={{ animationDuration: `${Math.max(42, latest.length * 8)}s` }}
+        >
+          {latest.map((post) => {
             const postId = getPostId(post);
 
             return (
               <Link
-                key={`${postId}-${index}`}
+                key={postId}
                 to={getArticleUrl(post)}
                 ref={(element) => {
-                  if (postRefs && postId) {
-                    postRefs.current[postId] = element;
-                  }
+                  if (postRefs && postId) postRefs.current[postId] = element;
                 }}
                 className="group flex items-center gap-3 p-3 transition hover:bg-slate-50"
               >
@@ -784,20 +853,17 @@ const LatestWidget = ({ posts = [], matchedPostId, postRefs }) => {
                       className="h-full w-full object-cover"
                       loading="lazy"
                       decoding="async"
-                      onError={(e) => {
-                        e.currentTarget.onerror = null;
-                        e.currentTarget.src = PORTAL_FALLBACK_IMAGE;
+                      onError={(event) => {
+                        event.currentTarget.onerror = null;
+                        event.currentTarget.src = PORTAL_FALLBACK_IMAGE;
                       }}
                     />
                   ) : (
-                    <div className="flex h-full w-full items-center justify-center text-lg opacity-30">
-                      📰
-                    </div>
+                    <div className="h-full w-full bg-slate-100" />
                   )}
                 </div>
-
                 <div className="min-w-0">
-                  <h4 className="line-clamp-2 text-[12px] font-bold leading-snug text-slate-950 transition-colors group-hover:text-red-600">
+                  <h4 className="break-words text-[12px] font-bold leading-snug text-slate-950 transition-colors group-hover:text-red-600">
                     {post.title}
                   </h4>
                   <p className="mt-1">
@@ -1126,7 +1192,7 @@ const TopFiveSlider = ({
                         </span>
                       )}
 
-                      <h3 className="line-clamp-3 font-post-title text-lg font-black leading-snug text-slate-950 transition-colors group-hover:text-red-600 sm:text-xl md:text-2xl">
+                      <h3 className="break-words font-post-title text-lg font-black leading-snug text-slate-950 transition-colors group-hover:text-red-600 sm:text-xl md:text-2xl">
                         {post.title}
                       </h3>
 
@@ -1139,21 +1205,6 @@ const TopFiveSlider = ({
                     </div>
                   </Link>
 
-                  <div className="order-2 min-h-0 flex-1 px-3 py-3.5 sm:px-3 sm:py-3">
-                    {post.category && (
-                      <span className="mb-0.5 block truncate text-[8px] font-bold uppercase tracking-wider text-red-600">
-                        {post.category}
-                      </span>
-                    )}
-
-                    <Link to={getArticleUrl(post)}>
-                      <h3 className="line-clamp-4 break-words font-post-title text-xs font-bold leading-tight text-slate-950 transition-colors group-hover:text-red-600 sm:text-sm">
-                        {post.title}
-                      </h3>
-                    </Link>
-
-                    <TimeText date={getPostDate(post)} className="mt-1 font-body text-[8px] font-medium text-slate-400" />
-                  </div>
                 </article>
               );
             }
@@ -1227,14 +1278,19 @@ const NewsPostsLayout = ({
     : DEPARTMENTS.map(({ name }) => ({
       name,
       title: translateCategory(name, language),
-      posts: sortedNewest.filter((p) => p.category === name),
+      posts: sortedNewest.filter(
+        (p) => normalizeDepartment(p.category) === name
+      ),
     })).filter((section) => section.posts.length > 0);
 
   const renderSidebar = () => (
     <aside className="min-w-0 lg:col-span-4">
-      <div className="space-y-6 lg:sticky lg:top-36">
+      <div className="space-y-4 lg:sticky lg:top-36">
         <AdSlot ad={advertisements[3]} size="rectangle" />
-        <TrendingWidget posts={sortedNewest} />
+        <LatestWidget
+          posts={sortedNewest}
+          postRefs={postRefs}
+        />
         <AdSlot ad={advertisements[4]} size="rectangle" />
       </div>
     </aside>
@@ -1245,19 +1301,28 @@ const NewsPostsLayout = ({
     return (
       <div className="grid grid-cols-1 gap-7 lg:grid-cols-12">
         <main className="min-w-0 lg:col-span-8">
-          <NewsSectionHeading
-            title={translateCategory(activeCategory, language)}
-          />
+          <div className="mb-5 flex items-end justify-between border-b-2 border-slate-900 pb-3">
+            <div>
+              <p className="mb-1 font-body text-[9px] font-bold uppercase tracking-[0.2em] text-red-600">
+                {language === "rw" ? "Icyiciro cy'amakuru" : "News department"}
+              </p>
+              <h1 className="font-post-title text-2xl font-black uppercase tracking-tight text-slate-950 sm:text-3xl">
+                {translateCategory(activeCategory, language)}
+              </h1>
+            </div>
+            <span className="font-body text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              {sortedNewest.length} {language === "rw" ? "inkuru" : "posts"}
+            </span>
+          </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-3">
-            {sortedNewest.map((post, index) => (
+          <div className="grid grid-cols-1 items-start gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {sortedNewest.map((post) => (
               <React.Fragment key={getPostId(post)}>
                 <CompactCard
                   post={post}
                   matchedPostId={matchedPostId}
                   postRefs={postRefs}
                 />
-                {index === 2 && sortedNewest.length > 3 && <AdSense />}
               </React.Fragment>
             ))}
           </div>
@@ -1298,21 +1363,8 @@ const NewsPostsLayout = ({
           </div>
         </section>
 
-        <LatestWidget
-          posts={sortedNewest}
-          matchedPostId={matchedPostId}
-          postRefs={postRefs}
-        />
-
         {/* IN-CONTENT AD */}
         <AdSlot ad={advertisements[0]} size="728x90" />
-
-        {/* LATEST NEWS */}
-        <TopFiveSlider
-          posts={sortedNewest.slice(5)}
-          matchedPostId={matchedPostId}
-          postRefs={postRefs}
-        />
 
         {/* IN-CONTENT AD */}
         <AdSlot ad={advertisements[1]} size="728x90" />
@@ -1714,7 +1766,7 @@ const Navbar = ({ showHomeContent = true }) => {
 
       return posts.filter(
         (post) =>
-          post.category ===
+          normalizeDepartment(post.category) ===
           activeCategory
       );
     }, [
@@ -1728,13 +1780,7 @@ const Navbar = ({ showHomeContent = true }) => {
 
   const sortedPosts =
     useMemo(() => {
-      return [
-        ...filteredPosts,
-      ].sort(
-        (a, b) =>
-          getTime(b) -
-          getTime(a)
-      );
+      return buildNaturalPostOrder(filteredPosts);
     }, [filteredPosts]);
 
   /* translated display posts (matched by id) */
