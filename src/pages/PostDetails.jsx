@@ -206,9 +206,15 @@ export default function PostDetails() {
         }
 
         let postData = null;
-        let all = [];
 
-        const listPromise = getPosts().catch(() => []);
+        getPosts()
+          .then((list) => {
+            if (cancelled) return;
+            const posts = Array.isArray(list) ? list : [];
+            setOriginalAllPosts(posts);
+            setAllPosts(posts);
+          })
+          .catch(() => { });
 
         if (numericId) {
           postData = await getPostById(numericId);
@@ -232,12 +238,6 @@ export default function PostDetails() {
           if (cancelled) return;
         }
 
-        if (postData) {
-          const list = await listPromise;
-          if (cancelled) return;
-          all = Array.isArray(list) ? list : [];
-        }
-
         if (cancelled) return;
 
         if (!postData) {
@@ -250,6 +250,13 @@ export default function PostDetails() {
 
         setOriginalPost(postData);
         setPost(postData);
+        setError("");
+        setLoading(false);
+
+        window.scrollTo({
+          top: 0,
+          behavior: "smooth",
+        });
 
         const postId = postData.id ?? postData._id;
 
@@ -282,15 +289,6 @@ export default function PostDetails() {
         });
         persistReactions(merged);
 
-        setOriginalAllPosts(all);
-        setAllPosts(all);
-        setError("");
-        setLoading(false);
-
-        window.scrollTo({
-          top: 0,
-          behavior: "smooth",
-        });
       } catch (err) {
         console.error("Ikibazo mu gushaka amakuru:", err);
 

@@ -43,7 +43,7 @@ import AuthorProfileTrigger from "../../components/common/AuthorProfileTrigger";
 import ArticleEditor from "../../components/article/ArticleEditor";
 import OptimizedImage from "../../components/common/OptimizedImage";
 import { RESOLUTION_WIDTHS } from "../../utils/images";
-import { MessageSquare, Eye, EyeOff, ChevronDown, ChevronRight } from "lucide-react";
+import { MessageSquare, Eye, EyeOff, ChevronDown, ChevronRight, Radio } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const API_URL = API_ROOT;
@@ -1485,6 +1485,16 @@ const AdminDashboard = ({
 
 
                         <div className="flex w-full min-w-0 flex-wrap items-center justify-end gap-1.5 sm:w-auto sm:shrink-0 sm:flex-nowrap sm:gap-3">
+                            <button
+                                type="button"
+                                onClick={() => navigate("/admin/radio")}
+                                className="inline-flex items-center gap-1.5 rounded-xl bg-red-600 px-2.5 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-red-700 sm:px-3"
+                                title="Gucunga Radio"
+                            >
+                                <Radio className="h-4 w-4" />
+                                <span>Radio</span>
+                            </button>
+
                             <button
                                 onClick={() => loadPosts()}
                                 className="rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-sm font-medium text-slate-600 shadow-sm transition hover:bg-slate-50 sm:px-3"

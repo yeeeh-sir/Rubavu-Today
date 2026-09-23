@@ -29,6 +29,7 @@ export const ADMIN_NAV_SECTIONS = [
     {
         label: "IBINDI",
         items: [
+            { icon: <span>🎙️</span>, label: "Radio", path: "/admin/radio" },
             { icon: <span>📢</span>, label: "Kwamamaza", path: "/admin/advertisements" },
             { icon: <span>📥</span>, label: "Kuramo raporo", path: "/admin/reports" },
             { icon: <span>🧹</span>, label: "Text Cleaner", path: "/admin/text-cleaner" },

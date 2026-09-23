@@ -1396,6 +1396,64 @@ export async function healthCheck() {
   return request("/api/health");
 }
 
+export async function getRadio() {
+  return request("/api/radio");
+}
+
+export async function getActiveRadio() {
+  return request("/api/radio/active");
+}
+
+export async function getAdminRadio() {
+  return request("/api/admin/radio");
+}
+
+export async function addRadioItem(itemData) {
+  return request("/api/admin/radio", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(itemData),
+  });
+}
+
+export async function updateRadioItem(id, itemData) {
+  return request(`/api/admin/radio/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(itemData),
+  });
+}
+
+export async function deleteRadioItem(id) {
+  return request(`/api/admin/radio/${id}`, {
+    method: "DELETE",
+  });
+}
+
+export async function setRadioItemStatus(id, status) {
+  return request(`/api/admin/radio/${id}/status`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status }),
+  });
+}
+
+export async function reorderRadioItem(id, queueOrder) {
+  return request(`/api/admin/radio/${id}/reorder`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ queue_order: queueOrder }),
+  });
+}
+
+export async function setRadioNowPlaying(id, nowPlaying) {
+  return request(`/api/admin/radio/${id}/now-playing`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ now_playing: nowPlaying }),
+  });
+}
+
 async function rawRequest(endpoint, options = {}) {
   const isFormData =
     options.body instanceof FormData;
@@ -1570,6 +1628,16 @@ const api = {
   addAdvertisement,
   updateAdvertisement,
   deleteAdvertisement,
+
+  getRadio,
+  getActiveRadio,
+  getAdminRadio,
+  addRadioItem,
+  updateRadioItem,
+  deleteRadioItem,
+  setRadioItemStatus,
+  reorderRadioItem,
+  setRadioNowPlaying,
 
   healthCheck,
   normalizeImageUrl,

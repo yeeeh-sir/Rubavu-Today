@@ -25,6 +25,8 @@ import {
 } from "../../services/api";
 
 import SearchBar from "../SearchBar/SearchBar";
+import { Loader2, Pause, Play, Radio as RadioIcon, Volume2, VolumeX } from "lucide-react";
+import { useRadio } from "../../context/RadioContext";
 import AdBanner from "../common/AdBanner";
 import AdSense from "../common/AdSense";
 import OptimizedImage from "../common/OptimizedImage";
@@ -1316,6 +1318,31 @@ const NewsPostsLayout = ({
 
 const Navbar = ({ showHomeContent = true }) => {
   const { language, t } = useLanguage();
+  const {
+    queue: radioQueue,
+    currentItem: radioItem,
+    isPlaying: radioIsPlaying,
+    isLoading: radioIsLoading,
+    error: radioError,
+    volume: radioVolume,
+    isMuted: radioIsMuted,
+    togglePlay: toggleRadio,
+    playItem: playRadioItem,
+    setVolume: setRadioVolume,
+    toggleMute: toggleRadioMute,
+  } = useRadio();
+
+  const radioIsLive = Boolean(radioItem || radioQueue.length);
+  const radioTitle = radioItem?.title || radioQueue[0]?.title || "Rubavu Today Radio";
+  const radioPlayableItem = radioItem || radioQueue[0];
+
+  const handleRadioPlay = () => {
+    if (radioItem) {
+      toggleRadio();
+    } else if (radioPlayableItem) {
+      playRadioItem(radioPlayableItem);
+    }
+  };
 
   const [
     isMenuOpen,
@@ -1325,6 +1352,11 @@ const Navbar = ({ showHomeContent = true }) => {
   const [
     isMobileSearchOpen,
     setIsMobileSearchOpen,
+  ] = useState(false);
+
+  const [
+    isRadioMenuOpen,
+    setIsRadioMenuOpen,
   ] = useState(false);
 
   const [
@@ -1917,52 +1949,76 @@ const Navbar = ({ showHomeContent = true }) => {
         false
       );
 
-      const next =
-        new URLSearchParams(
-          location.search
-        );
-
-      if (category === "All") {
-        if (location.pathname !== "/") {
-          navigate("/", { replace: true });
-        }
-
-        next.delete("category");
-      } else {
-        next.set(
-          "category",
-          category
-        );
-      }
-
       const nextSearch =
-        next.toString();
+        category === "All"
+          ? ""
+          : `?category=${encodeURIComponent(category)}`;
 
-      const currentSearch =
-        location.search.replace(
-          /^\?/,
-          ""
-        );
-
-      if (
-        nextSearch !==
-        currentSearch
-      ) {
-        navigate(
-          {
-            search: nextSearch,
-          },
-          {
-            replace: true,
-          }
-        );
-      }
+      navigate(
+        {
+          pathname: "/",
+          search: nextSearch,
+        },
+        {
+          replace: true,
+        }
+      );
 
       window.scrollTo({
         top: 0,
         behavior: "smooth",
       });
     };
+
+  const radioDropdown = isRadioMenuOpen && (
+    <div className="absolute right-0 top-full z-50 mt-1 w-[min(86vw,200px)] rounded-lg border border-slate-700 bg-slate-950 p-2 text-white shadow-xl">
+      <p className="truncate text-[10px] font-bold text-white">{radioTitle}</p>
+      <p className={`mt-0.5 break-words text-[8px] leading-tight ${radioError ? "text-red-400" : radioIsPlaying ? "text-emerald-400" : "text-slate-400"}`}>
+        {radioError || (radioIsLoading ? "Loading..." : radioIsPlaying ? "Now playing" : radioIsLive ? "Ready to play" : "No live radio")}
+      </p>
+      <div className="mt-2 flex items-center gap-1.5">
+        <button
+          type="button"
+          onClick={handleRadioPlay}
+          disabled={!radioPlayableItem || radioIsLoading}
+          className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-red-600 text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+          aria-label={radioIsPlaying ? "Pause radio" : "Play radio"}
+        >
+          {radioIsLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : radioIsPlaying ? <Pause className="h-3 w-3 fill-current" /> : <Play className="ml-0.5 h-3 w-3 fill-current" />}
+        </button>
+        <button type="button" onClick={toggleRadioMute} className="text-slate-300 hover:text-white" aria-label={radioIsMuted ? "Unmute radio" : "Mute radio"}>
+          {radioIsMuted || radioVolume === 0 ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}
+        </button>
+        <input
+          type="range"
+          min="0"
+          max="1"
+          step="0.05"
+          value={radioIsMuted ? 0 : radioVolume}
+          onChange={(event) => setRadioVolume(event.target.value)}
+          className="radio-range min-w-0 flex-1 accent-red-600"
+          aria-label="Radio volume"
+        />
+      </div>
+    </div>
+  );
+
+  const radioControl = (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setIsRadioMenuOpen((previous) => !previous)}
+        aria-expanded={isRadioMenuOpen}
+        aria-label="RubavuToday Radio"
+        title="RubavuToday Radio"
+        className={`flex h-9 w-9 items-center justify-center gap-1.5 px-0 py-0 font-body text-[11px] font-black uppercase tracking-[0.1em] transition sm:h-auto sm:w-auto sm:px-4 sm:py-3 ${radioIsLive ? "bg-red-600 text-white hover:bg-red-700" : "text-slate-300 hover:bg-slate-800 hover:text-white"}`}
+      >
+        <RadioIcon className={`h-3.5 w-3.5 ${radioIsLive ? "text-red-200" : "text-slate-400"}`} />
+        <span className="hidden sm:inline">RubavuToday Radio</span>
+      </button>
+      {radioDropdown}
+    </div>
+  );
 
   /* =====================================================
      INITIAL PAGE LOADER
@@ -2216,6 +2272,10 @@ const Navbar = ({ showHomeContent = true }) => {
 
 
 
+          <div className="absolute right-12 flex sm:hidden">
+            {radioControl}
+          </div>
+
           <button
             type="button"
             onClick={() =>
@@ -2324,6 +2384,7 @@ const Navbar = ({ showHomeContent = true }) => {
                   );
                 }
               )}
+              {radioControl}
             </div>
           </div>
 
@@ -2378,6 +2439,7 @@ const Navbar = ({ showHomeContent = true }) => {
                   );
                 }
               )}
+              {radioControl}
             </div>
           </div>
 
@@ -2442,6 +2504,7 @@ const Navbar = ({ showHomeContent = true }) => {
                       );
                     }
                   )}
+                  <div className="col-span-2">{radioControl}</div>
                 </div>
               </div>
 

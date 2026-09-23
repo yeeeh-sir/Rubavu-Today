@@ -4,6 +4,7 @@ import { HelmetProvider } from "react-helmet-async";
 import { AuthProvider } from "./context/AuthContext";
 import { LanguageProvider } from "./context/LanguageContext";
 import { ThemeProvider } from "./context/ThemeContext";
+import { RadioProvider } from "./context/RadioContext";
 import AppRoutes from "./routes/AppRoutes";
 
 function App() {
@@ -13,7 +14,9 @@ function App() {
         <AuthProvider>
           <LanguageProvider>
             <ThemeProvider>
-              <AppRoutes />
+              <RadioProvider>
+                <AppRoutes />
+              </RadioProvider>
             </ThemeProvider>
           </LanguageProvider>
         </AuthProvider>
