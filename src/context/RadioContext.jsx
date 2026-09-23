@@ -128,8 +128,10 @@ export function RadioProvider({ children }) {
 
     const durationInSeconds = Math.floor(player.getDuration());
     const maxStart = Math.max(0, durationInSeconds - 1);
-    const startAt = maxStart > 0
-      ? Math.floor(Math.random() * maxStart) + 1
+    const minimumStart = Math.min(30, maxStart);
+    const startRange = Math.max(0, maxStart - minimumStart);
+    const startAt = startRange > 0
+      ? minimumStart + Math.floor(Math.random() * (startRange + 1))
       : 0;
 
     playFromPosition(player, startAt);

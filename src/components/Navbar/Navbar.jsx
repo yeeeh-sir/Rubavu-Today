@@ -571,31 +571,14 @@ const ImportantStory = ({ post, matchedPostId, postRefs }) => {
           postRefs.current[postId] = element;
         }
       }}
-      className={`group flex h-[260px] flex-col overflow-hidden rounded-lg border bg-white shadow-sm transition-colors hover:bg-slate-50 hover:shadow-md ${matchedPostId === postId
+      className={`group flex min-h-[250px] flex-col overflow-hidden rounded-xl border bg-white shadow-sm transition-colors hover:bg-slate-50 hover:shadow-md sm:h-[280px] ${matchedPostId === postId
         ? "border-yellow-300 bg-yellow-50 ring-2 ring-yellow-300"
         : "border-slate-200"
         }`}
     >
-      {/* Image Section */}
-      <div className="order-1 h-[140px] shrink-0 overflow-hidden px-2.5 py-2">
-        {post.category && (
-          <span className="mb-0.5 truncate text-[8px] font-bold uppercase tracking-wider text-red-600">
-            {post.category}
-          </span>
-        )}
-
-        <Link to={getArticleUrl(post)}>
-          <h3 className="line-clamp-5 break-words font-post-title text-xs font-bold leading-tight text-slate-950 transition-colors group-hover:text-red-600 sm:text-sm">
-            {post.title}
-          </h3>
-        </Link>
-
-        <TimeText date={getPostDate(post)} className="mt-1 font-body text-[8px] font-medium text-slate-400" />
-      </div>
-
       <Link
         to={getArticleUrl(post)}
-        className="order-2 relative block h-[120px] w-full shrink-0 overflow-hidden bg-slate-100"
+        className="order-1 relative block aspect-[16/9] w-full shrink-0 overflow-hidden bg-slate-100 sm:h-[150px] sm:aspect-auto"
       >
         <div className="h-full overflow-hidden">
           {post.image ? (
@@ -618,6 +601,22 @@ const ImportantStory = ({ post, matchedPostId, postRefs }) => {
         </div>
       </Link>
 
+      <div className="order-2 min-h-0 flex-1 px-3 py-3.5 sm:px-3 sm:py-3">
+        {post.category && (
+          <span className="mb-1 block truncate font-body text-[8px] font-bold uppercase tracking-[0.14em] text-red-600">
+            {post.category}
+          </span>
+        )}
+
+        <Link to={getArticleUrl(post)}>
+          <h3 className="line-clamp-3 break-words font-post-title text-sm font-extrabold leading-snug text-slate-950 transition-colors group-hover:text-red-600 sm:text-base">
+            {post.title}
+          </h3>
+        </Link>
+
+        <TimeText date={getPostDate(post)} className="mt-2 font-body text-[8px] font-medium text-slate-400" />
+      </div>
+
     </article>
   );
 };
@@ -634,24 +633,14 @@ const CompactCard = ({ post, matchedPostId, postRefs, variant = "default" }) => 
           postRefs.current[postId] = element;
         }
       }}
-      className={`group flex h-[260px] flex-col overflow-hidden rounded-lg border bg-white shadow-sm transition-colors hover:bg-slate-50 hover:shadow-md ${matchedPostId === postId
+      className={`group flex min-h-[250px] flex-col overflow-hidden rounded-xl border bg-white shadow-sm transition-colors hover:bg-slate-50 hover:shadow-md sm:h-[280px] ${matchedPostId === postId
         ? "border-yellow-300 bg-yellow-50 ring-2 ring-yellow-300"
         : "border-slate-200"
         }`}
     >
-      <div className="order-1 h-[140px] shrink-0 overflow-hidden px-3 py-2.5">
-        <TimeText date={getPostDate(post)} className="font-body text-[8px] font-medium uppercase tracking-wider text-slate-400" />
-
-        <Link to={getArticleUrl(post)}>
-          <h3 className="mt-0.5 line-clamp-5 break-words font-post-title text-xs font-bold leading-tight text-slate-950 transition-colors group-hover:text-red-600 sm:text-sm">
-            {post.title}
-          </h3>
-        </Link>
-      </div>
-
       <Link
         to={getArticleUrl(post)}
-        className="order-2 relative block h-[120px] w-full shrink-0 overflow-hidden bg-slate-100"
+        className="order-1 relative block aspect-[16/9] w-full shrink-0 overflow-hidden bg-slate-100 sm:h-[150px] sm:aspect-auto"
       >
         {post.image ? (
           <OptimizedImage
@@ -671,6 +660,16 @@ const CompactCard = ({ post, matchedPostId, postRefs, variant = "default" }) => 
           <img src="/Rubavu.jpeg" alt="" className="h-full w-full object-cover" loading="lazy" width="320" height="180" />
         )}
       </Link>
+
+      <div className="order-2 min-h-0 flex-1 px-3 py-3.5 sm:px-3 sm:py-3">
+        <TimeText date={getPostDate(post)} className="font-body text-[8px] font-medium uppercase tracking-wider text-slate-400" />
+
+        <Link to={getArticleUrl(post)}>
+          <h3 className="mt-1 line-clamp-4 break-words font-post-title text-xs font-bold leading-tight text-slate-950 transition-colors group-hover:text-red-600 sm:text-sm">
+            {post.title}
+          </h3>
+        </Link>
+      </div>
     </article>
   );
 };
@@ -749,54 +748,66 @@ const LatestWidget = ({ posts = [], matchedPostId, postRefs }) => {
         </h3>
       </div>
 
-      <div className="divide-y divide-slate-100">
-        {latest.map((post) => {
-          const postId = getPostId(post);
+      <style>{`
+        @keyframes latestNewsScroll {
+          0% { transform: translate3d(0, 0, 0); }
+          100% { transform: translate3d(0, -50%, 0); }
+        }
+        .latest-news-scroll {
+          animation: latestNewsScroll 36s linear infinite;
+          will-change: transform;
+        }
+      `}</style>
+      <div className="max-h-[280px] overflow-hidden sm:max-h-[360px]">
+        <div className="latest-news-scroll divide-y divide-slate-100">
+          {[...latest, ...latest].map((post, index) => {
+            const postId = getPostId(post);
 
-          return (
-            <Link
-              key={postId}
-              to={getArticleUrl(post)}
-              ref={(element) => {
-                if (postRefs && postId) {
-                  postRefs.current[postId] = element;
-                }
-              }}
-              className="group flex items-center gap-3 p-3 transition hover:bg-slate-50"
-            >
-              <div className="h-14 w-20 shrink-0 overflow-hidden rounded-md bg-slate-100">
-                {post.image ? (
-                  <OptimizedImage
-                    src={post.image}
-                    alt={post.title || "Inkuru"}
-                    widths={RESOLUTION_WIDTHS.THUMB}
-                    sizes="80px"
-                    className="h-full w-full object-cover"
-                    loading="lazy"
-                    decoding="async"
-                    onError={(e) => {
-                      e.currentTarget.onerror = null;
-                      e.currentTarget.src = PORTAL_FALLBACK_IMAGE;
-                    }}
-                  />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center text-lg opacity-30">
-                    📰
-                  </div>
-                )}
-              </div>
+            return (
+              <Link
+                key={`${postId}-${index}`}
+                to={getArticleUrl(post)}
+                ref={(element) => {
+                  if (postRefs && postId) {
+                    postRefs.current[postId] = element;
+                  }
+                }}
+                className="group flex items-center gap-3 p-3 transition hover:bg-slate-50"
+              >
+                <div className="h-14 w-20 shrink-0 overflow-hidden rounded-md bg-slate-100">
+                  {post.image ? (
+                    <OptimizedImage
+                      src={post.image}
+                      alt={post.title || "Inkuru"}
+                      widths={RESOLUTION_WIDTHS.THUMB}
+                      sizes="80px"
+                      className="h-full w-full object-cover"
+                      loading="lazy"
+                      decoding="async"
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = PORTAL_FALLBACK_IMAGE;
+                      }}
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-lg opacity-30">
+                      📰
+                    </div>
+                  )}
+                </div>
 
-              <div className="min-w-0">
-                <h4 className="line-clamp-2 text-[12px] font-bold leading-snug text-slate-950 transition-colors group-hover:text-red-600">
-                  {post.title}
-                </h4>
-                <p className="mt-1">
-                  <TimeText date={getPostDate(post)} className="font-body text-[9px] font-medium text-slate-400" />
-                </p>
-              </div>
-            </Link>
-          );
-        })}
+                <div className="min-w-0">
+                  <h4 className="line-clamp-2 text-[12px] font-bold leading-snug text-slate-950 transition-colors group-hover:text-red-600">
+                    {post.title}
+                  </h4>
+                  <p className="mt-1">
+                    <TimeText date={getPostDate(post)} className="font-body text-[9px] font-medium text-slate-400" />
+                  </p>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
       </div>
     </section>
   );
@@ -859,7 +870,7 @@ const CategorySection = ({
       <section>
         {heading}
 
-        <div className={`grid grid-cols-1 gap-0 ${posts.length > 2 ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}>
+        <div className={`grid grid-cols-1 gap-4 ${posts.length > 2 ? "sm:grid-cols-3 sm:gap-3" : "sm:grid-cols-2 sm:gap-3"}`}>
           {posts.slice(0, 4).map((post, index) => (
             <div
               key={getPostId(post)}
@@ -882,7 +893,7 @@ const CategorySection = ({
     <section>
       {heading}
 
-      <div className={`grid grid-cols-1 gap-0 ${posts.length > 2 ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}>
+      <div className={`grid grid-cols-1 gap-4 ${posts.length > 2 ? "sm:grid-cols-3 sm:gap-3" : "sm:grid-cols-2 sm:gap-3"}`}>
         {posts.slice(0, 3).map((post) => (
           <CompactCard
             key={getPostId(post)}
@@ -1127,6 +1138,22 @@ const TopFiveSlider = ({
                       </p>
                     </div>
                   </Link>
+
+                  <div className="order-2 min-h-0 flex-1 px-3 py-3.5 sm:px-3 sm:py-3">
+                    {post.category && (
+                      <span className="mb-0.5 block truncate text-[8px] font-bold uppercase tracking-wider text-red-600">
+                        {post.category}
+                      </span>
+                    )}
+
+                    <Link to={getArticleUrl(post)}>
+                      <h3 className="line-clamp-4 break-words font-post-title text-xs font-bold leading-tight text-slate-950 transition-colors group-hover:text-red-600 sm:text-sm">
+                        {post.title}
+                      </h3>
+                    </Link>
+
+                    <TimeText date={getPostDate(post)} className="mt-1 font-body text-[8px] font-medium text-slate-400" />
+                  </div>
                 </article>
               );
             }
@@ -1208,11 +1235,6 @@ const NewsPostsLayout = ({
       <div className="space-y-6 lg:sticky lg:top-36">
         <AdSlot ad={advertisements[3]} size="rectangle" />
         <TrendingWidget posts={sortedNewest} />
-        <LatestWidget
-          posts={sortedNewest}
-          matchedPostId={matchedPostId}
-          postRefs={postRefs}
-        />
         <AdSlot ad={advertisements[4]} size="rectangle" />
       </div>
     </aside>
@@ -1227,7 +1249,7 @@ const NewsPostsLayout = ({
             title={translateCategory(activeCategory, language)}
           />
 
-          <div className="grid grid-cols-1 gap-0 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-3">
             {sortedNewest.map((post, index) => (
               <React.Fragment key={getPostId(post)}>
                 <CompactCard
@@ -1264,7 +1286,7 @@ const NewsPostsLayout = ({
 
         {/* OTHER RECENT STORIES */}
         <section>
-          <div className="grid grid-cols-1 gap-0 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-3 lg:grid-cols-4">
             {sortedNewest.slice(1, 5).map((post) => (
               <ImportantStory
                 key={getPostId(post)}
@@ -1275,6 +1297,12 @@ const NewsPostsLayout = ({
             ))}
           </div>
         </section>
+
+        <LatestWidget
+          posts={sortedNewest}
+          matchedPostId={matchedPostId}
+          postRefs={postRefs}
+        />
 
         {/* IN-CONTENT AD */}
         <AdSlot ad={advertisements[0]} size="728x90" />
@@ -1323,7 +1351,6 @@ const Navbar = ({ showHomeContent = true }) => {
     currentItem: radioItem,
     isPlaying: radioIsPlaying,
     isLoading: radioIsLoading,
-    error: radioError,
     volume: radioVolume,
     isMuted: radioIsMuted,
     togglePlay: toggleRadio,
@@ -1333,7 +1360,6 @@ const Navbar = ({ showHomeContent = true }) => {
   } = useRadio();
 
   const radioIsLive = Boolean(radioItem || radioQueue.length);
-  const radioTitle = radioItem?.title || radioQueue[0]?.title || "Rubavu Today Radio";
   const radioPlayableItem = radioItem || radioQueue[0];
 
   const handleRadioPlay = () => {
@@ -1971,12 +1997,8 @@ const Navbar = ({ showHomeContent = true }) => {
     };
 
   const radioDropdown = isRadioMenuOpen && (
-    <div className="absolute right-0 top-full z-50 mt-1 w-[min(86vw,200px)] rounded-lg border border-slate-700 bg-slate-950 p-2 text-white shadow-xl">
-      <p className="truncate text-[10px] font-bold text-white">{radioTitle}</p>
-      <p className={`mt-0.5 break-words text-[8px] leading-tight ${radioError ? "text-red-400" : radioIsPlaying ? "text-emerald-400" : "text-slate-400"}`}>
-        {radioError || (radioIsLoading ? "Loading..." : radioIsPlaying ? "Now playing" : radioIsLive ? "Ready to play" : "No live radio")}
-      </p>
-      <div className="mt-2 flex items-center gap-1.5">
+    <div className="absolute right-0 top-full z-50 mt-1 w-[min(86vw,160px)] rounded-lg border border-slate-700 bg-slate-950 p-2 text-white shadow-xl">
+      <div className="flex items-center gap-1.5">
         <button
           type="button"
           onClick={handleRadioPlay}
