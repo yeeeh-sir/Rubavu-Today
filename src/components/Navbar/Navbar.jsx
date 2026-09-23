@@ -705,7 +705,7 @@ const CompactCard = ({ post, matchedPostId, postRefs, variant = "default" }) => 
           postRefs.current[postId] = element;
         }
       }}
-      className={`group flex self-start flex-col overflow-hidden rounded-xl border bg-white shadow-sm transition-colors hover:bg-slate-50 hover:shadow-md ${variant === "large" ? "h-[280px] sm:h-[320px]" : "h-[250px] sm:h-[280px]"} ${matchedPostId === postId
+      className={`group flex self-start flex-col overflow-hidden rounded-xl border bg-white shadow-sm transition-colors hover:bg-slate-50 hover:shadow-md ${variant === "large" ? "min-h-[280px] sm:min-h-[320px]" : "min-h-[250px] sm:min-h-[280px]"} ${matchedPostId === postId
         ? "border-yellow-300 bg-yellow-50 ring-2 ring-yellow-300"
         : "border-slate-200"
         }`}
