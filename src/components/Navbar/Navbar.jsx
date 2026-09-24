@@ -622,7 +622,7 @@ const FeaturedStory = ({ post, matchedPostId, postRefs }) => {
 
       <div className="bg-slate-950 px-5 py-4 sm:px-7 sm:py-5">
         <Link to={getArticleUrl(post)}>
-          <h2 className="break-words font-post-title text-lg font-black leading-tight text-white transition-colors group-hover:text-red-300 sm:text-3xl">
+          <h2 className="break-words font-post-title text-2xl font-bold leading-tight tracking-tight text-white transition-colors group-hover:text-red-300 sm:text-3xl">
             {post.title}
           </h2>
         </Link>
@@ -681,7 +681,7 @@ const ImportantStory = ({ post, matchedPostId, postRefs }) => {
         )}
 
         <Link to={getArticleUrl(post)}>
-          <h3 className="break-words font-post-title text-xs font-extrabold leading-snug text-slate-950 transition-colors group-hover:text-red-600 sm:text-base">
+          <h3 className="break-words font-post-title text-sm font-bold leading-snug tracking-tight text-balance text-slate-950 transition-colors group-hover:text-red-600 sm:text-base">
             {post.title}
           </h3>
         </Link>
@@ -737,7 +737,7 @@ const CompactCard = ({ post, matchedPostId, postRefs, variant = "default" }) => 
         <TimeText date={getPostDate(post)} className="font-body text-[8px] font-medium uppercase tracking-wider text-slate-400" />
 
         <Link to={getArticleUrl(post)}>
-          <h3 className={`mt-1 break-words font-post-title font-bold leading-tight text-slate-950 transition-colors group-hover:text-red-600 ${variant === "large" ? "text-sm sm:text-base" : "text-[11px] sm:text-sm"}`}>
+          <h3 className={`mt-1 break-words font-post-title leading-tight tracking-tight text-balance text-slate-950 transition-colors group-hover:text-red-600 ${variant === "large" ? "text-base font-bold sm:text-base" : "text-sm font-bold sm:text-sm"}`}>
             {post.title}
           </h3>
         </Link>
