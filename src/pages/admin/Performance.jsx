@@ -55,13 +55,6 @@ function rateTone(rate) {
   return "bg-slate-300";
 }
 
-const STATUS_LABELS = {
-  NOT_STARTED: { text: "Not Started", className: "bg-slate-100 text-slate-600" },
-  IN_PROGRESS: { text: "Completed", className: "bg-amber-100 text-amber-700" },
-  TARGET_COMPLETED: { text: "Submitted", className: "bg-emerald-100 text-emerald-700" },
-  TARGET_EXCEEDED: { text: "Approved", className: "bg-blue-100 text-blue-700" },
-};
-
 function roleLabel(roleType) {
   return roleType === "chief_editor" ? "Chief Editor" : "Employee";
 }
