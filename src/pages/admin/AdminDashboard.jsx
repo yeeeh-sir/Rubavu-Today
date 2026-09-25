@@ -38,7 +38,7 @@ import {
     updatePostStatus,
 } from "../../services/api";
 
-import { DashboardLayout, VisitorAnalytics } from "../../components/dashboard";
+import { DashboardLayout } from "../../components/dashboard";
 import AuthorProfileTrigger from "../../components/common/AuthorProfileTrigger";
 import ArticleEditor from "../../components/article/ArticleEditor";
 import OptimizedImage from "../../components/common/OptimizedImage";
@@ -2018,8 +2018,6 @@ const AdminDashboard = ({
                             color="purple"
                         />
                     </section>
-
-                    <VisitorAnalytics />
 
                     <section className="mb-5 grid gap-4 md:grid-cols-2">
                         <button

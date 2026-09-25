@@ -1,17 +1,39 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getAdminAnalytics, logout } from "../../services/api";
+import {
+  getAdminDailyPerformance,
+  getAdminWeeklyPerformance,
+  logout,
+} from "../../services/api";
 import { DashboardLayout, StatCard } from "../../components/dashboard";
 import { ADMIN_NAV_SECTIONS } from "./adminNav";
 
+const KIGALI_OFFSET_MS = 2 * 60 * 60 * 1000;
+
 const RANGES = [
-  { value: "today", label: "Today", startDate: "today", endDate: "today" },
-  { value: "7", label: "7 Days", startDate: "6daysAgo", endDate: "today" },
-  { value: "28", label: "28 Days", startDate: "27daysAgo", endDate: "today" },
-  { value: "90", label: "90 Days", startDate: "89daysAgo", endDate: "today" },
+  { value: "today", label: "Today", days: 0 },
+  { value: "7", label: "7 Days", days: 6 },
+  { value: "28", label: "28 Days", days: 27 },
+  { value: "90", label: "90 Days", days: 89 },
 ];
 
-const REALTIME_INTERVAL_MS = 60000;
+const ROLES = [
+  { value: "all", label: "All" },
+  { value: "employee", label: "Employees" },
+  { value: "chief_editor", label: "Chief Editors" },
+];
+
+const REFRESH_INTERVAL_MS = 60000;
+
+function kigaliToday() {
+  return new Date(Date.now() + KIGALI_OFFSET_MS).toISOString().slice(0, 10);
+}
+
+function shiftDays(dateStr, amount) {
+  const date = new Date(`${dateStr}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + amount);
+  return date.toISOString().slice(0, 10);
+}
 
 function formatCount(value) {
   const number = Number(value || 0);
@@ -19,20 +41,29 @@ function formatCount(value) {
   return number.toLocaleString();
 }
 
-function formatDuration(seconds) {
-  const total = Math.max(0, Math.round(Number(seconds) || 0));
-  const hours = Math.floor(total / 3600);
-  const minutes = Math.floor((total % 3600) / 60);
-  const secs = total % 60;
-  if (hours > 0) return `${hours}h ${minutes}m`;
-  if (minutes > 0) return `${minutes}m ${secs}s`;
-  return `${secs}s`;
-}
-
 function formatTick(value) {
   const raw = String(value || "");
   if (/^\d{8}$/.test(raw)) return `${raw.slice(4, 6)}/${raw.slice(6, 8)}`;
   return raw.slice(5);
+}
+
+function rateTone(rate) {
+  if (rate >= 100) return "bg-emerald-500";
+  if (rate >= 75) return "bg-blue-500";
+  if (rate >= 50) return "bg-amber-500";
+  if (rate > 0) return "bg-orange-500";
+  return "bg-slate-300";
+}
+
+const STATUS_LABELS = {
+  NOT_STARTED: { text: "Not Started", className: "bg-slate-100 text-slate-600" },
+  IN_PROGRESS: { text: "Completed", className: "bg-amber-100 text-amber-700" },
+  TARGET_COMPLETED: { text: "Submitted", className: "bg-emerald-100 text-emerald-700" },
+  TARGET_EXCEEDED: { text: "Approved", className: "bg-blue-100 text-blue-700" },
+};
+
+function roleLabel(roleType) {
+  return roleType === "chief_editor" ? "Chief Editor" : "Employee";
 }
 
 function Section({ title, subtitle, children }) {
@@ -47,26 +78,26 @@ function Section({ title, subtitle, children }) {
   );
 }
 
-function TimeChart({ items, valueKey, colorClass = "bg-brand-500" }) {
+function TimeChart({ items }) {
   if (!items || items.length === 0) {
-    return <p className="py-8 text-center text-sm text-slate-400">Nta mibare ibonetse.</p>;
+    return <p className="py-8 text-center text-sm text-slate-400">No data available.</p>;
   }
 
-  const max = Math.max(1, ...items.map((item) => Number(item[valueKey]) || 0));
+  const max = Math.max(1, ...items.map((item) => Number(item.value) || 0));
 
   return (
     <div className="mt-2 flex h-44 items-end gap-1 overflow-x-auto pb-5" role="img">
       {items.map((item, index) => {
-        const value = Number(item[valueKey]) || 0;
+        const value = Number(item.value) || 0;
         const height = Math.max(3, Math.round((value / max) * 100));
         return (
           <div
-            key={index}
+            key={item.date}
             className="group flex h-full min-w-6 flex-1 flex-col justify-end"
             title={`${item.date}: ${formatCount(value)}`}
           >
             <div
-              className={`w-full rounded-t-md ${colorClass} transition group-hover:opacity-80`}
+              className="w-full rounded-t-md bg-brand-500 transition group-hover:opacity-80"
               style={{ height: `${height}%` }}
             />
             <span className="mt-1 -rotate-45 origin-top-left whitespace-nowrap text-[9px] text-slate-400">
@@ -79,181 +110,247 @@ function TimeChart({ items, valueKey, colorClass = "bg-brand-500" }) {
   );
 }
 
-function DataTable({ columns, rows, emptyText = "Nta mibare ibonetse." }) {
+function ProgressBar({ rate }) {
+  const value = Math.max(0, Math.min(Number(rate) || 0, 100));
+  return (
+    <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
+      <div
+        className={`h-full rounded-full ${rateTone(value)}`}
+        style={{ width: `${value}%` }}
+      />
+    </div>
+  );
+}
+
+function PersonRow({ person }) {
+  return (
+    <li className="px-4 py-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="min-w-0">
+          <p className="truncate text-sm font-bold text-slate-900">{person.name}</p>
+          <p className="truncate text-xs text-slate-400">
+            {roleLabel(person.roleType)}
+            {person.department ? ` • ${person.department}` : ""}
+          </p>
+        </div>
+        <div className="flex items-center gap-3 text-xs font-bold text-slate-600">
+          <span className="tabular-nums">
+            {formatCount(person.completed)} / {formatCount(person.target)}
+          </span>
+          <span className="w-12 text-right tabular-nums text-slate-900">
+            {person.completionRate}%
+          </span>
+        </div>
+      </div>
+      <div className="mt-2">
+        <ProgressBar rate={person.completionRate} />
+      </div>
+    </li>
+  );
+}
+
+function DailyTable({ people }) {
+  if (!people || people.length === 0) {
+    return <p className="py-8 text-center text-sm text-slate-400">No employees found.</p>;
+  }
+
+  return (
+    <ul className="divide-y divide-slate-100">
+      {people.map((person) => (
+        <PersonRow key={`${person.roleType}-${person.id}`} person={person} />
+      ))}
+    </ul>
+  );
+}
+
+function ReportTable({ report }) {
+  if (!report || report.length === 0) {
+    return <p className="py-8 text-center text-sm text-slate-400">No data available.</p>;
+  }
+
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-left text-sm">
-        <thead className="border-b border-slate-200 bg-slate-50 text-[11px] uppercase tracking-wide text-slate-500">
-          <tr>
-            {columns.map((column) => (
-              <th key={column.key} className={`px-4 py-2.5 font-bold ${column.align === "right" ? "text-right" : ""}`}>
-                {column.label}
-              </th>
-            ))}
+      <table className="w-full min-w-[640px] text-left text-sm">
+        <thead>
+          <tr className="border-b border-slate-100 text-xs uppercase tracking-wide text-slate-400">
+            <th className="px-3 py-2 font-bold">Employee</th>
+            <th className="px-3 py-2 font-bold">Department</th>
+            <th className="px-3 py-2 text-right font-bold">Completed</th>
+            <th className="px-3 py-2 text-right font-bold">Expected</th>
+            <th className="px-3 py-2 text-right font-bold">Extra</th>
+            <th className="px-3 py-2 text-right font-bold">Missed</th>
+            <th className="px-3 py-2 text-right font-bold">Rate</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100">
-          {rows.length === 0 ? (
-            <tr>
-              <td colSpan={columns.length} className="px-4 py-8 text-center text-sm text-slate-400">
-                {emptyText}
+        <tbody className="divide-y divide-slate-50">
+          {report.map((row) => (
+            <tr key={`${row.roleType}-${row.userId}`}>
+              <td className="px-3 py-2.5">
+                <p className="font-bold text-slate-900">{row.name}</p>
+                <p className="text-xs text-slate-400">{roleLabel(row.roleType)}</p>
+              </td>
+              <td className="px-3 py-2.5 text-xs text-slate-500">
+                {row.department || "—"}
+              </td>
+              <td className="px-3 py-2.5 text-right tabular-nums text-slate-900">
+                {formatCount(row.totals.completed)}
+              </td>
+              <td className="px-3 py-2.5 text-right tabular-nums text-slate-500">
+                {formatCount(row.totals.expected)}
+              </td>
+              <td className="px-3 py-2.5 text-right tabular-nums text-slate-500">
+                {formatCount(row.totals.extra)}
+              </td>
+              <td className="px-3 py-2.5 text-right tabular-nums text-amber-600">
+                {formatCount(row.totals.missedDays)}
+              </td>
+              <td className="px-3 py-2.5">
+                <div className="flex items-center justify-end gap-2">
+                  <div className="w-20">
+                    <ProgressBar rate={row.totals.completionRate} />
+                  </div>
+                  <span className="w-11 text-right tabular-nums font-bold text-slate-900">
+                    {row.totals.completionRate}%
+                  </span>
+                </div>
               </td>
             </tr>
-          ) : (
-            rows.map((row, index) => (
-              <tr key={`${row.key || index}-${index}`} className="transition hover:bg-slate-50/70">
-                {columns.map((column) => (
-                  <td key={column.key} className={`px-4 py-2.5 ${column.align === "right" ? "text-right" : ""}`}>
-                    {column.render ? column.render(row) : row[column.key]}
-                  </td>
-                ))}
-              </tr>
-            ))
-          )}
+          ))}
         </tbody>
       </table>
     </div>
   );
 }
 
-function CellText({ children, className }) {
-  return <span className={className || "text-slate-700"}>{children}</span>;
-}
-
-function PublicPageLink({ path, fallback }) {
-  if (!path || !String(path).startsWith("/")) {
-    return <span className="block truncate text-xs text-slate-500">{fallback}</span>;
-  }
-  return (
-    <a
-      href={`${window.location.origin}${path}`}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="block truncate text-xs font-semibold text-brand-600 underline decoration-dotted underline-offset-2 hover:text-brand-800"
-    >
-      {path}
-    </a>
-  );
-}
-
-function LiveNow({ realtime, updatedAt, refreshing }) {
-  const rows = realtime?.byCountry || [];
-
-  return (
-    <div className="mb-5 overflow-hidden rounded-2xl border border-red-200 bg-gradient-to-r from-red-600 to-rose-600 shadow-md">
-      <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
-        <div className="flex items-center gap-4">
-          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/20 text-2xl" aria-hidden="true">
-            🔴
-          </span>
-          <div>
-            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-white/80">LIVE NOW</p>
-            <p className="text-xl font-black text-white">
-              {formatCount(realtime?.activeUsers)} Active Users
-            </p>
-          </div>
-        </div>
-        <div className="text-right text-[11px] text-white/90">
-          <p>{refreshing ? "Refreshing..." : "Auto-refreshes every 60s"}</p>
-          {updatedAt && <p>Updated {updatedAt.toLocaleTimeString()}</p>}
-        </div>
+function StandoutCard({ title, person, tone }) {
+  if (!person) {
+    return (
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <p className="text-xs font-bold uppercase tracking-wide text-slate-400">{title}</p>
+        <p className="mt-2 text-sm text-slate-400">No data.</p>
       </div>
+    );
+  }
 
-      {(rows.length > 0 || realtime?.activeUsers > 0) && (
-        <div className="bg-white/95 px-4 py-3 sm:px-5">
-          <p className="text-[11px] font-black uppercase tracking-wider text-slate-500">Active Users Right Now</p>
-          <div className="mt-2 grid gap-x-8 gap-y-1 sm:grid-cols-2 lg:grid-cols-3">
-            {rows.length > 0 ? (
-              rows.map((row, index) => (
-                <div key={`${row.country}-${index}`} className="flex items-center justify-between gap-3 border-b border-slate-100 py-1 text-sm last:border-0">
-                  <span className="truncate text-slate-700">{row.country}</span>
-                  <span className="font-bold text-slate-900">{formatCount(row.activeUsers)}</span>
-                </div>
-              ))
-            ) : (
-              <div className="flex items-center justify-between gap-3 py-1 text-sm">
-                <span className="truncate text-slate-700">Rwanda</span>
-                <span className="font-bold text-slate-900">{formatCount(realtime?.activeUsers)}</span>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+  return (
+    <div className={`rounded-2xl border p-4 shadow-sm ${tone}`}>
+      <p className="text-xs font-bold uppercase tracking-wide opacity-70">{title}</p>
+      <p className="mt-1.5 truncate text-base font-black">{person.name}</p>
+      <p className="mt-0.5 text-xs opacity-80">{roleLabel(person.roleType)}</p>
+      <p className="mt-2 text-sm font-bold tabular-nums">
+        {formatCount(person.completed)} / {formatCount(person.expected)} •{" "}
+        {person.completionRate}%
+      </p>
     </div>
   );
 }
 
-function Performance() {
+export default function Performance() {
   const navigate = useNavigate();
-  const [range, setRange] = useState("7");
+  const [range, setRange] = useState("today");
+  const [role, setRole] = useState("all");
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
   const [updatedAt, setUpdatedAt] = useState(null);
 
-  const loadAnalytics = useCallback(
+  const config = RANGES.find((item) => item.value === range) || RANGES[0];
+
+  const loadPerformance = useCallback(
     async (silent = false) => {
-      if (!silent) {
+      if (silent) {
+        setRefreshing(true);
+      } else {
         setLoading(true);
         setError("");
-      } else {
-        setRefreshing(true);
       }
 
-      const config = RANGES.find((item) => item.value === range) || RANGES[1];
-
       try {
-        const payload = await getAdminAnalytics({
-          startDate: config.startDate,
-          endDate: config.endDate,
-        });
+        let payload;
+        if (config.days === 0) {
+          payload = await getAdminDailyPerformance({ role });
+        } else {
+          const end = kigaliToday();
+          payload = await getAdminWeeklyPerformance({
+            role,
+            start: shiftDays(end, -config.days),
+            end,
+          });
+        }
         setData(payload);
         setError("");
         setUpdatedAt(new Date());
       } catch (err) {
         setData(null);
+        const body = err?.response?.data;
+        console.error("[performance] Worker performance request failed", {
+          status: err?.status,
+          message: err?.message,
+        });
         if (err?.status === 403) {
           setError("You are not authorized to access performance analytics.");
         } else {
-          setError("Unable to load analytics.");
+          setError(
+            body?.error || "Employee performance is unavailable. Please try again."
+          );
         }
       } finally {
-        if (!silent) {
-          setLoading(false);
-        } else {
+        if (silent) {
           setRefreshing(false);
+        } else {
+          setLoading(false);
         }
       }
     },
-    [range]
+    [config.days, role]
   );
 
   useEffect(() => {
-    loadAnalytics(false);
-  }, [loadAnalytics]);
+    loadPerformance(false);
+  }, [loadPerformance]);
 
   useEffect(() => {
     const timer = window.setInterval(() => {
-      loadAnalytics(true);
-    }, REALTIME_INTERVAL_MS);
+      loadPerformance(true);
+    }, REFRESH_INTERVAL_MS);
     return () => window.clearInterval(timer);
-  }, [loadAnalytics]);
+  }, [loadPerformance]);
 
-  const overview = data?.overview || {};
-  const trafficSources = useMemo(() => (data?.trafficSources || []).map((row) => ({ ...row, key: `${row.sourceMedium}-sources` })), [data]);
-  const channels = useMemo(() => (data?.channels || []).map((row) => ({ ...row, key: `${row.channel}-channel` })), [data]);
-  const countries = useMemo(() => (data?.countries || []).map((row) => ({ ...row, key: `${row.country}-country` })), [data]);
-  const cities = useMemo(() => (data?.cities || []).map((row) => ({ ...row, key: `${row.city}-city` })), [data]);
-  const topPages = useMemo(() => (data?.topPages || []).map((row) => ({ ...row, key: `${row.path}-page` })), [data]);
-  const firstUserSources = useMemo(() => (data?.firstUserSources || []).map((row) => ({ ...row, key: `${row.sourceMedium}-first` })), [data]);
-  const usersOverTime = data?.usersOverTime || [];
-  const viewsOverTime = data?.viewsOverTime || [];
+  const summary = data?.summary || {};
+  const rangeLabel = data?.range
+    ? `${data.range.start} — ${data.range.end}`
+    : "";
+
+  const chartItems = useMemo(() => {
+    if (config.days === 0 || !Array.isArray(data?.days)) return [];
+    const totals = data.dayTotals || {};
+    return data.days.map((day) => ({ date: day.date, value: totals[day.date] || 0 }));
+  }, [data, config.days]);
+
+  const sortedPeople = useMemo(() => {
+    const people = Array.isArray(data?.people) ? data.people : [];
+    return [...people].sort(
+      (a, b) =>
+        (b.completionRate || 0) - (a.completionRate || 0) ||
+        a.name.localeCompare(b.name)
+    );
+  }, [data]);
+
+  const sortedReport = useMemo(() => {
+    const report = Array.isArray(data?.report) ? data.report : [];
+    return [...report].sort(
+      (a, b) =>
+        (b.totals?.completionRate || 0) - (a.totals?.completionRate || 0) ||
+        a.name.localeCompare(b.name)
+    );
+  }, [data]);
 
   return (
     <DashboardLayout
+      title="Admin"
       navigationSections={ADMIN_NAV_SECTIONS}
-      roleLabel="Imicungire y'ubwanditsi"
+      roleLabel="Admin"
       onLogout={() => {
         logout();
         navigate("/admin/login", { replace: true });
@@ -263,14 +360,16 @@ function Performance() {
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-xl font-black text-slate-900 sm:text-2xl">
-              📊 Google Analytics 4
+              📊 Employee Performance
             </h1>
             <p className="mt-0.5 text-sm text-slate-400">
-              GA4 imikorere y'urubuga rwa Rubavu Today
+              View employee and chief editor performance.
             </p>
-            {data && (
+            {rangeLabel && (
               <p className="mt-1 text-[11px] text-slate-400">
-                GA4 • {data.timeZone} • {data.startDate} — {data.endDate}
+                {rangeLabel}
+                {data?.range?.today ? ` • Today: ${data.range.today}` : ""}
+                {updatedAt ? ` • ${updatedAt.toLocaleTimeString()}` : ""}
               </p>
             )}
           </div>
@@ -291,7 +390,7 @@ function Performance() {
               ))}
             </div>
             <button
-              onClick={() => loadAnalytics(false)}
+              onClick={() => loadPerformance(false)}
               disabled={loading}
               className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-50"
             >
@@ -300,22 +399,39 @@ function Performance() {
           </div>
         </div>
 
+        <div className="mb-5 flex flex-wrap items-center gap-2">
+          {ROLES.map((item) => (
+            <button
+              key={item.value}
+              onClick={() => setRole(item.value)}
+              className={`rounded-full px-3 py-1.5 text-xs font-bold transition ${
+                role === item.value
+                  ? "bg-slate-900 text-white"
+                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+              }`}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+
         {loading ? (
-          <div className="space-y-6" aria-label="Loading analytics">
-            <div className="h-28 animate-pulse rounded-2xl bg-slate-200" />
+          <div className="space-y-6" aria-label="Loading performance">
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
               {[1, 2, 3, 4, 5, 6].map((item) => (
                 <div key={item} className="h-28 animate-pulse rounded-2xl bg-slate-100" />
               ))}
             </div>
-            <p className="py-4 text-center text-sm text-slate-400">Loading analytics...</p>
+            <div className="h-64 animate-pulse rounded-2xl bg-slate-100" />
+            <p className="py-4 text-center text-sm text-slate-400">
+              Loading performance...
+            </p>
           </div>
         ) : error ? (
           <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-10 text-center">
             <p className="text-base font-bold text-amber-800">{error}</p>
-            <p className="mt-1 text-sm text-amber-700">GA4 ibara ntiboneka ubu.</p>
             <button
-              onClick={() => loadAnalytics(false)}
+              onClick={() => loadPerformance(false)}
               className="mt-4 rounded-xl bg-amber-700 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-amber-800"
             >
               Try again
@@ -323,104 +439,119 @@ function Performance() {
           </div>
         ) : (
           <div className="space-y-6">
-            <LiveNow realtime={data?.realtime} updatedAt={updatedAt} refreshing={refreshing} />
+            {config.days === 0 ? (
+              <>
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+                  <StatCard
+                    label="Employees"
+                    value={summary.totalEmployees || 0}
+                    icon="🧑‍💻"
+                    color="blue"
+                  />
+                  <StatCard
+                    label="Chief Editors"
+                    value={summary.totalChiefEditors || 0}
+                    icon="🗞️"
+                    color="purple"
+                  />
+                  <StatCard
+                    label="Submitted"
+                    value={summary.reachedTarget || 0}
+                    icon="✅"
+                    color="emerald"
+                  />
+                  <StatCard
+                    label="Approved"
+                    value={summary.exceededTarget || 0}
+                    icon="🚀"
+                    color="slate"
+                  />
+                  <StatCard
+                    label="Completed"
+                    value={summary.inProgress || 0}
+                    icon="⏳"
+                    color="amber"
+                  />
+                  <StatCard
+                    label="Not Started"
+                    value={summary.needsAttention || 0}
+                    icon="⚠️"
+                    color="red"
+                  />
+                </div>
 
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-              <StatCard label="Active Users" value={overview.activeUsers || 0} icon="👥" color="blue" />
-              <StatCard label="Total Users" value={overview.totalUsers || 0} icon="🧑" color="slate" />
-              <StatCard label="Sessions" value={overview.sessions || 0} icon="↔" color="purple" />
-              <StatCard label="Page Views" value={overview.pageViews || 0} icon="👁" color="emerald" />
-              <StatCard label="New Users" value={overview.newUsers || 0} icon="✨" color="amber" />
-              <StatCard label="Avg. Engagement Time" value={formatDuration(overview.averageEngagementTime)} icon="⏱" color="red" />
-            </div>
+                <Section
+                  title="Daily Performance"
+                  subtitle="Summary for today (target: 3 per day)"
+                >
+                  <DailyTable people={sortedPeople} />
+                </Section>
+              </>
+            ) : (
+              <>
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  <StatCard
+                    label="Total Completed"
+                    value={summary.totalCompleted || 0}
+                    icon="🧑‍💻"
+                    color="blue"
+                  />
+                  <StatCard
+                    label="Daily Average"
+                    value={summary.averagePerDay || 0}
+                    icon="📈"
+                    color="emerald"
+                  />
+                  <StatCard
+                    label="Average Rate"
+                    value={`${summary.averageCompletionRate || 0}%`}
+                    icon="🎯"
+                    color="purple"
+                  />
+                  <StatCard
+                    label="Employees Counted"
+                    value={summary.countedUsers || 0}
+                    icon="👥"
+                    color="slate"
+                  />
+                </div>
 
-            <div className="grid gap-4 lg:grid-cols-2">
-              <Section title="Users over time" subtitle="Active Users by date">
-                <TimeChart items={usersOverTime} valueKey="users" colorClass="bg-blue-500" />
-              </Section>
-              <Section title="Views over time" subtitle="Page Views by date">
-                <TimeChart items={viewsOverTime} valueKey="pageViews" colorClass="bg-emerald-500" />
-              </Section>
-            </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <StandoutCard
+                    title="Top Performer"
+                    person={summary.best}
+                    tone="border-emerald-200 bg-emerald-50 text-emerald-900"
+                  />
+                  <StandoutCard
+                    title="Lowest Performer"
+                    person={summary.lowest}
+                    tone="border-amber-200 bg-amber-50 text-amber-900"
+                  />
+                </div>
 
-            <div className="grid gap-4 lg:grid-cols-2">
-              <Section title="Traffic Sources" subtitle="Session source / medium">
-                <DataTable
-                  columns={[
-                    { key: "sourceMedium", label: "Source / Medium", render: (row) => <CellText className="truncate font-semibold text-slate-700">{row.sourceMedium}</CellText> },
-                    { key: "sessions", label: "Sessions", align: "right", render: (row) => <span className="font-bold text-slate-900">{formatCount(row.sessions)}</span> },
-                    { key: "activeUsers", label: "Users", align: "right", render: (row) => <span className="text-slate-600">{formatCount(row.activeUsers)}</span> },
-                  ]}
-                  rows={trafficSources}
-                />
-              </Section>
-              <Section title="Session Channel Group" subtitle="Default channel grouping">
-                <DataTable
-                  columns={[
-                    { key: "channel", label: "Channel", render: (row) => <CellText className="truncate font-semibold text-slate-700">{row.channel}</CellText> },
-                    { key: "sessions", label: "Sessions", align: "right", render: (row) => <span className="font-bold text-slate-900">{formatCount(row.sessions)}</span> },
-                  ]}
-                  rows={channels}
-                />
-              </Section>
-            </div>
+                <Section
+                  title="Daily Summary"
+                  subtitle={`Summary of all activity • ${rangeLabel}`}
+                >
+                  <TimeChart items={chartItems} />
+                </Section>
 
-            <div className="grid gap-4 lg:grid-cols-2">
-              <Section title="Countries" subtitle="Active users by country">
-                <DataTable
-                  columns={[
-                    { key: "country", label: "Country", render: (row) => <CellText className="truncate font-semibold text-slate-700">{row.country}</CellText> },
-                    { key: "activeUsers", label: "Active Users", align: "right", render: (row) => <span className="font-bold text-slate-900">{formatCount(row.activeUsers)}</span> },
-                  ]}
-                  rows={countries}
-                />
-              </Section>
-              <Section title="Cities" subtitle="Active users by city">
-                <DataTable
-                  columns={[
-                    { key: "city", label: "City", render: (row) => <CellText className="truncate font-semibold text-slate-700">{row.city}</CellText> },
-                    { key: "activeUsers", label: "Active Users", align: "right", render: (row) => <span className="font-bold text-slate-900">{formatCount(row.activeUsers)}</span> },
-                  ]}
-                  rows={cities}
-                />
-              </Section>
-            </div>
+                <Section
+                  title="Employee Performance"
+                  subtitle="Summary of all activity in this period"
+                >
+                  <ReportTable report={sortedReport} />
+                </Section>
+              </>
+            )}
 
-            <Section title="Top Articles" subtitle="Top 20 pages by page views">
-              <DataTable
-                columns={[
-                  {
-                    key: "page",
-                    label: "Article / Page",
-                    render: (row) => (
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-slate-800">{row.title || row.path}</p>
-                        <PublicPageLink path={row.path} fallback={row.path} />
-                      </div>
-                    ),
-                  },
-                  { key: "pageViews", label: "Views", align: "right", render: (row) => <span className="font-bold text-slate-900">{formatCount(row.pageViews)}</span> },
-                  { key: "activeUsers", label: "Active Users", align: "right", render: (row) => <span className="text-slate-600">{formatCount(row.activeUsers)}</span> },
-                ]}
-                rows={topPages}
-                emptyText="Nta mibare ibonetse."
-              />
-            </Section>
-
-            <Section title="First User Source / Medium" subtitle="Top first-touch acquisition sources">
-              <DataTable
-                columns={[
-                  { key: "sourceMedium", label: "Source / Medium", render: (row) => <CellText className="truncate font-semibold text-slate-700">{row.sourceMedium}</CellText> },
-                  { key: "activeUsers", label: "Active Users", align: "right", render: (row) => <span className="font-bold text-slate-900">{formatCount(row.activeUsers)}</span> },
-                ]}
-                rows={firstUserSources}
-              />
-            </Section>
+            <p className="text-center text-[11px] text-slate-400">
+              All times are in Rwanda time (UTC+2)
+              {refreshing ? " • refreshing…" : ""}
+            </p>
           </div>
         )}
       </div>
     </DashboardLayout>
   );
 }
-
-export default Performance;

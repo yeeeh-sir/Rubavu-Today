@@ -1590,6 +1590,7 @@ const api = {
 
   getDailyTaskState,
   getMyPerformance,
+  getAdminDailyPerformance,
   getAdminWeeklyPerformance,
   getAdminPerformanceSummary,
 
