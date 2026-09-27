@@ -43,6 +43,13 @@ const STATUS_FILTERS = [
   { value: "rejected", label: "Zanzwe" },
 ];
 
+/* Mirrors the backend rule: an employee may keep working on their own
+   article only while it is a private draft or still waiting for review. */
+const EDITABLE_STATUSES = ["draft", "pending"];
+
+const canEditPost = (post) =>
+  EDITABLE_STATUSES.includes(String(getStatus(post) || "").toLowerCase());
+
 export default function MyArticles() {
   const toast = useToast();
   const { refresh: refreshNotifications } = useNotifications();
@@ -295,7 +302,7 @@ export default function MyArticles() {
                           >
                             <Eye className="h-4 w-4" />
                           </button>
-                          {getStatus(post) === "pending" && (
+                          {canEditPost(post) && (
                             <Link
                               to={`/employee/posts/${getPostId(post)}/edit`}
                               title="Hindura"
@@ -344,7 +351,7 @@ export default function MyArticles() {
                     <button onClick={() => openDetails(post)} className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-slate-200 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-50">
                       <Eye className="h-3.5 w-3.5" /> Reba
                     </button>
-                    {getStatus(post) === "pending" && (
+                    {canEditPost(post) && (
                       <Link to={`/employee/posts/${getPostId(post)}/edit`} className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 py-2 text-xs font-semibold text-blue-600 transition hover:bg-blue-100">
                         <Pencil className="h-3.5 w-3.5" /> Hindura
                       </Link>
@@ -532,6 +539,15 @@ function PostDetailsModal({ open, post, onClose }) {
         )}
       </div>
       <ModalFooter>
+        {canEditPost(post) && (
+          <Link
+            to={`/employee/posts/${getPostId(post)}/edit`}
+            className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
+          >
+            <Pencil className="h-4 w-4" />
+            {getStatus(post) === "draft" ? "Komeza kwandika" : "Hindura"}
+          </Link>
+        )}
         <button onClick={onClose} type="button" className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50">
           Gufunga
         </button>

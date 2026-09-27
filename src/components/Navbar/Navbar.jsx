@@ -115,6 +115,20 @@ const getTime = (post) => {
 
 export const MAX_MIXED_POSTS = 15;
 
+/* TICKER PACING
+   A breaking-news ticker should stay readable, so it only carries the
+   newest headlines instead of the whole archive. The loop translates
+   -50% (one full copy of the headlines), so its travel distance grows
+   with the headline count; scaling the duration by the count keeps the
+   visible speed constant and slow.
+
+   The 40-headline cap matches the count the strip was originally built
+   for, which keeps the doubled track comfortably wider than the
+   viewport so the loop stays seamless. */
+const TICKER_MAX_HEADLINES = 40;
+const TICKER_SECONDS_PER_HEADLINE = 12;
+const TICKER_MIN_DURATION_SECONDS = 60;
+
 export const buildMixedPosts = (posts = []) => {
   if (!posts.length) {
     return [];
@@ -1678,13 +1692,38 @@ const Navbar = ({ showHomeContent = true }) => {
   const tickerHeadlines =
     useMemo(
       () =>
-        displayPosts
+        [
+          ...displayPosts
+        ]
+          .sort(
+            (a, b) =>
+              getTime(b) -
+              getTime(a)
+          )
           .map(
             (post) =>
               post.title
           )
-          .filter(Boolean),
+          .filter(Boolean)
+          .filter(
+            (title, index, all) =>
+              all.indexOf(title) === index
+          )
+          .slice(
+            0,
+            TICKER_MAX_HEADLINES
+          ),
       [displayPosts]
+    );
+
+  /* Keep a steady, readable pace: the loop distance grows with the number
+     of headlines, so the duration is scaled to hold roughly the same
+     seconds-per-headline no matter how many articles the archive holds. */
+  const tickerDurationSeconds =
+    Math.max(
+      tickerHeadlines.length *
+        TICKER_SECONDS_PER_HEADLINE,
+      TICKER_MIN_DURATION_SECONDS
     );
 
   /* =====================================================
@@ -1905,10 +1944,12 @@ const Navbar = ({ showHomeContent = true }) => {
           <div className="relative flex w-full overflow-hidden whitespace-nowrap py-2">
             <div
               className="rubavu-ticker-scroll"
-              style={{
-                animation: "rubavuTicker 350s linear infinite",
-                willChange: "transform",
-              }}
+              style={
+                {
+                  "--rubavu-ticker-duration": `${tickerDurationSeconds}s`,
+                  willChange: "transform",
+                }
+              }
             >
               {tickerHeadlines.map(
                 (

@@ -145,7 +145,7 @@ a {
 .rubavu-ticker-scroll {
   display: inline-flex;
   white-space: nowrap;
-  animation: rubavuTicker 350s linear infinite;
+  animation: rubavuTicker var(--rubavu-ticker-duration, 480s) linear infinite;
   will-change: transform;
 }
 

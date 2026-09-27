@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useRef, useMemo } from "react";
 import { Link, useLocation, useParams, useNavigate } from "react-router-dom";
-import { ThumbsUp, ThumbsDown } from "lucide-react";
+import { ThumbsUp, ThumbsDown, ArrowRight, Loader2 } from "lucide-react";
 import rubavuLogo from "../Rubavu.jpeg";
-import { API_ROOT as API_URL, getPostById, getPostBySlug, getPosts, commitCommentReaction } from "../services/api";
+import { API_ROOT as API_URL, getPostById, getPostBySlug, getPosts, getNextArticle, formatAuthorName, getPostAuthorNickname, commitCommentReaction } from "../services/api";
 import { ArticleSEO } from "../components/SEO/SEO";
 import ArticleRenderer from "../components/article/ArticleRenderer";
 import { getPostSlug, getArticleUrl } from "../utils/slug";
@@ -46,6 +46,13 @@ export default function PostDetails() {
   const [reloadKey, setReloadKey] = useState(0);
   const [commentStatus, setCommentStatus] = useState("");
   const [profileOpen, setProfileOpen] = useState(false);
+
+  // "Soma Andi Makuru" — the next published article in reading order
+  // (newest -> oldest), resolved by the server so every approved
+  // article stays reachable no matter how large the archive grows.
+  const [nextArticle, setNextArticle] = useState(null);
+  const [nextLoading, setNextLoading] = useState(true);
+  const [nextError, setNextError] = useState("");
 
   const [name, setName] = useState("");
   const [commentText, setCommentText] = useState("");
@@ -322,6 +329,52 @@ export default function PostDetails() {
     }
     setAllPosts(originalAllPosts);
   }, [originalPost, originalAllPosts]);
+
+
+
+  // Resolve the next published article for the "Soma Andi Makuru" button.
+  // The server walks the whole archive, so this stays correct even when the
+  // current article is far outside the cached home-page feed.
+  useEffect(() => {
+    const currentId = post?.id ?? post?._id ?? null;
+    const currentSlug = getPostSlug(post) || "";
+
+    if (!currentId && !currentSlug) {
+      setNextArticle(null);
+      setNextLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    setNextLoading(true);
+    setNextError("");
+
+    getNextArticle({ id: currentId, slug: currentId ? "" : currentSlug })
+      .then((result) => {
+        if (cancelled) return;
+        setNextArticle(result?.post || null);
+        setNextError("");
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setNextArticle(null);
+        setNextError(
+          language === "rw"
+            ? "Hari ikibazo cyo kugaragaza inkuru ikurikira."
+            : "We could not load the next article."
+        );
+      })
+      .finally(() => {
+        if (cancelled) return;
+        setNextLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [post?.id, post?._id, post?.slug]);
 
 
 
@@ -719,15 +772,7 @@ export default function PostDetails() {
       .slice(0, 12);
   })();
 
-  // Sequential article navigation so every published article is linked
-  // from its chronological neighbours (older/newer), keeping older posts
-  // reachable via internal links rather than only through the sitemap.
-  const currentIndex = sortedOthers.findIndex(
-    (p) => String(p._id || p.id || "") === String(post?._id || post?.id || "")
-  );
-  const olderPost = currentIndex >= 0 ? sortedOthers[currentIndex + 1] : null;
-  const newerPost = currentIndex > 0 ? sortedOthers[currentIndex - 1] : null;
-
+  // Chronological neighbours used by the "more news" side rail.
   const rightSidePosts = moreNews.length
     ? moreNews
     : sortedOthers.slice(0, 6);
@@ -797,6 +842,17 @@ export default function PostDetails() {
     ? "RubavuToday"
     : getAuthorName(post);
 
+  // Real name stays primary; the optional employee nickname is shown in
+  // parentheses next to it (e.g. "MBONYINSHUTI Claude (TPLAY WARAKAYE)").
+  const authorNickname = adminPost
+    ? null
+    : getPostAuthorNickname(post);
+
+  const authorDisplayName = formatAuthorName(
+    authorName,
+    authorNickname
+  );
+
   const authorProfileImage = adminPost
     ? rubavuLogo
     : post?.author_profile_image ||
@@ -815,6 +871,8 @@ export default function PostDetails() {
     : {
       ...(typeof post?.author === "object" ? post.author : {}),
       name: authorName,
+      nickname: authorNickname,
+      display_name: authorDisplayName,
       profile_image: authorProfileImage,
     };
 
@@ -949,7 +1007,7 @@ export default function PostDetails() {
                       <div className="relative shrink-0">
                         <img
                           src={authorProfileImage}
-                          alt={authorName}
+                          alt={authorDisplayName}
                           className="h-11 w-11 rounded-full border-2 border-white object-cover shadow-md"
                         />
                       </div>
@@ -965,7 +1023,7 @@ export default function PostDetails() {
                           {language === "rw" ? "Yanditswe Na:" : t("writtenBy")}
                         </span>
                         <span className="truncate font-body text-sm font-bold text-slate-950">
-                          {authorName}
+                          {authorDisplayName}
                         </span>
                         {adminPost && (
                           <span
@@ -1423,42 +1481,58 @@ export default function PostDetails() {
                 </div>
               </section>
 
-              {/* PREVIOUS / NEXT ARTICLE — internal link chain */}
-              {(olderPost || newerPost) && (
-                <nav
-                  aria-label={language === "rw" ? "Inzira y'inkuru" : "Article navigation"}
-                  className="mt-14 grid grid-cols-1 gap-4 sm:grid-cols-2"
-                >
-                  {olderPost && (
-                    <Link
-                      to={getArticleUrl(olderPost)}
-                      onClick={openPostFull(olderPost)}
-                      className="group flex flex-col rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-red-200 hover:shadow-md"
+              {/* SOMA ANDI MAKURU — walks the whole published archive,
+                  newest to oldest, one article at a time. */}
+              <section className="mt-14">
+                {nextArticle ? (
+                  <Link
+                    to={getArticleUrl(nextArticle)}
+                    onClick={openPostFull(nextArticle)}
+                    className="group flex flex-col gap-3 rounded-2xl border-2 border-slate-900 bg-white p-5 shadow-sm transition hover:border-red-600 hover:shadow-md sm:flex-row sm:items-center sm:justify-between sm:p-6"
+                  >
+                    <span className="flex flex-col gap-1">
+                      <span className="font-body text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                        {language === "rw"
+                          ? "Soma Andi Makuru"
+                          : t("readNextArticle")}
+                      </span>
+                      <span className="line-clamp-2 font-post-title text-lg font-black leading-snug text-slate-950 transition-colors group-hover:text-red-600 sm:text-xl">
+                        {nextArticle.title}
+                      </span>
+                    </span>
+
+                    <span
+                      aria-hidden="true"
+                      className="inline-flex shrink-0 items-center gap-2 self-start rounded-full bg-red-600 px-4 py-2 font-body text-xs font-bold uppercase tracking-wider text-white transition-transform group-hover:translate-x-1 sm:self-auto"
                     >
-                      <span className="font-body text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                        {language === "rw" ? "Inkuru Yabanje" : "Previous story"}
-                      </span>
-                      <span className="mt-1 line-clamp-2 font-post-title text-sm font-bold leading-snug text-slate-950 transition-colors group-hover:text-red-600">
-                        {olderPost.title}
-                      </span>
-                    </Link>
-                  )}
-                  {newerPost && (
-                    <Link
-                      to={getArticleUrl(newerPost)}
-                      onClick={openPostFull(newerPost)}
-                      className="group flex flex-col rounded-xl border border-slate-200 bg-white p-4 text-right shadow-sm transition hover:border-red-200 hover:shadow-md"
-                    >
-                      <span className="font-body text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                        {language === "rw" ? "Inkuru Ikurikira" : "Next story"}
-                      </span>
-                      <span className="mt-1 line-clamp-2 font-post-title text-sm font-bold leading-snug text-slate-950 transition-colors group-hover:text-red-600">
-                        {newerPost.title}
-                      </span>
-                    </Link>
-                  )}
-                </nav>
-              )}
+                      {language === "rw" ? "Komeza" : t("continueReading")}
+                      <ArrowRight className="h-4 w-4" />
+                    </span>
+                  </Link>
+                ) : nextLoading ? (
+                  <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-5 text-slate-500 sm:p-6">
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <span className="font-body text-sm">
+                      {language === "rw"
+                        ? "Guhitamo inkuru ikurikira..."
+                        : t("loadingNextArticle")}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-5 text-center sm:p-6">
+                    <p className="font-post-title text-base font-bold text-slate-700">
+                      {language === "rw"
+                        ? "Nta yandi makuru ahari."
+                        : t("noMoreArticles")}
+                    </p>
+                    {nextError ? (
+                      <p className="mt-1 font-body text-sm text-slate-500">
+                        {nextError}
+                      </p>
+                    ) : null}
+                  </div>
+                )}
+              </section>
 
               {/* RELATED ARTICLES */}
               {relatedPosts.length > 0 && (

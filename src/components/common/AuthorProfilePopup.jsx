@@ -3,11 +3,27 @@ import { X } from "lucide-react";
 
 const PROFILE_POPUP_EVENT = "rubavu-author-popup-open";
 
+/* Real name first, optional nickname in parentheses. */
+const displayNameFor = (name, nickname) => {
+  const realName = String(name || "").trim();
+  const alias = String(nickname || "").trim();
+
+  if (!alias) return realName;
+  if (!realName) return alias;
+  if (alias.toLowerCase() === realName.toLowerCase()) {
+    return realName;
+  }
+
+  return `${realName} (${alias})`;
+};
+
 const normalizeAuthor = (author) => {
     if (!author) {
         return {
             id: null,
             name: "Rubavu Today",
+            nickname: null,
+            display_name: "Rubavu Today",
             role: "unknown",
             profile_image: null,
         };
@@ -17,14 +33,28 @@ const normalizeAuthor = (author) => {
         return {
             id: null,
             name: author,
+            nickname: null,
+            display_name: author,
             role: "unknown",
             profile_image: null,
         };
     }
 
+    const name =
+        author.name ||
+        author.full_name ||
+        author.email ||
+        "Rubavu Today";
+
+    const nickname = author.nickname || null;
+
     return {
         id: author.id || null,
-        name: author.name || author.full_name || author.email || "Rubavu Today",
+        name,
+        nickname,
+        display_name:
+            author.display_name ||
+            displayNameFor(name, nickname),
         role: author.role || author.role_type || "unknown",
         email: author.email || null,
         bio: author.bio || null,
@@ -118,7 +148,7 @@ export default function AuthorProfilePopup({ author, open, onClose }) {
                 )}
 
                 <p className="mt-3 max-w-full break-words text-sm font-bold text-slate-900">
-                    {normalizedAuthor.name}
+                    {normalizedAuthor.display_name}
                 </p>
                 <p className="mt-1 text-xs font-semibold capitalize text-red-600">
                     {roleLabel(normalizedAuthor.role)}

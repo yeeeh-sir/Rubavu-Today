@@ -26,7 +26,7 @@ export default function EditArticle() {
         const posts = Array.isArray(data) ? data : [];
         const found = posts.find((item) => String(item.id || item._id) === String(id));
         if (!found) {
-          setError("Employees can only edit their own pending posts.");
+          setError("Employees can only edit their own draft or pending posts.");
         } else {
           setPost(found);
         }
@@ -42,11 +42,32 @@ export default function EditArticle() {
     };
   }, [id]);
 
-  const handleSave = useCallback(
+  /* Keep working on the article: stays a private draft. */
+  const handleSaveDraft = useCallback(
     async (formData) => {
       if (saving) return;
       setSaving(true);
       try {
+        formData.set("status", "draft");
+        await updatePost(id, formData);
+        toast.success("Draft yahindurwe neza. Uzabasha kwita ariko.");
+        navigate("/employee/articles", { replace: true });
+      } catch (err) {
+        toast.error(err?.message || "Hari ikosa ryabaye mu kubika draft.");
+      } finally {
+        setSaving(false);
+      }
+    },
+    [saving, id, navigate, toast]
+  );
+
+  /* Send the article to the Chief Editor for review. */
+  const handleSubmitReview = useCallback(
+    async (formData) => {
+      if (saving) return;
+      setSaving(true);
+      try {
+        formData.set("status", "pending");
         await updatePost(id, formData);
         toast.success("Impinduka zabikiwe neza. Inkuru isigaye itegereje gusuzumwa.");
         navigate("/employee/articles", { replace: true });
@@ -85,12 +106,15 @@ export default function EditArticle() {
     );
   }
 
-  const canEdit = String(post?.status || "").toLowerCase() === "pending";
+  /* A draft or a post still waiting for review can be improved.
+     Approved and sent-back articles are locked to Admin / Chief Editor. */
+  const currentStatus = String(post?.status || "").toLowerCase();
+  const canEdit = currentStatus === "draft" || currentStatus === "pending";
 
   if (!canEdit) {
     return (
       <div className="rounded-3xl border border-amber-200 bg-amber-50 px-6 py-14 text-center">
-        <h2 className="text-lg font-bold text-slate-800">Employees can only edit their own pending posts.</h2>
+        <h2 className="text-lg font-bold text-slate-800">Employees can only edit their own draft or pending posts.</h2>
         <p className="mt-2 text-sm text-slate-600">Iyi nkuru ntikiri mu miterere itegereje gusuzumwa.</p>
         <button
           onClick={() => navigate("/employee/articles")}
@@ -102,13 +126,17 @@ export default function EditArticle() {
     );
   }
 
+  const isDraft = currentStatus === "draft";
+
   return (
     <div className="mx-auto max-w-4xl space-y-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-xl font-bold text-slate-900">Hindura Inkuru</h2>
           <p className="text-sm text-slate-500">
-            Impinduka zishyirwa muri {String(post.status || "pending").toUpperCase()} kugeza umusuzumyi aremeye.
+            {isDraft
+              ? "Iyi nkuru ni draft ya bwite. Wandike maze ukayohereza kugira ngo isuzumwe."
+              : "Impinduka zishyirwa muri PENDING kugeza umusuzumyi aremeye."}
           </p>
         </div>
         <button
@@ -123,10 +151,12 @@ export default function EditArticle() {
         <ArticleEditor
           initial={post}
           categories={DEPARTMENTS}
-          submitLabel="Bika impinduka"
+          submitLabel="Ohereza Gusuzumwa"
           saving={saving}
           hideStatusField
-          onSubmit={handleSave}
+          onSubmit={handleSubmitReview}
+          draftLabel="Bika nka Draft"
+          onDraft={handleSaveDraft}
           onCancel={() => navigate("/employee/articles")}
         />
       </div>

@@ -21,6 +21,7 @@ function Employees() {
     // Create
     const [showCreate, setShowCreate] = useState(false);
     const [newName, setNewName] = useState("");
+    const [newNickname, setNewNickname] = useState("");
     const [newEmail, setNewEmail] = useState("");
     const [newPhone, setNewPhone] = useState("");
     const [newPassword, setNewPassword] = useState("");
@@ -29,6 +30,7 @@ function Employees() {
     const [showEdit, setShowEdit] = useState(false);
     const [editId, setEditId] = useState(null);
     const [editName, setEditName] = useState("");
+    const [editNickname, setEditNickname] = useState("");
     const [editEmail, setEditEmail] = useState("");
     const [editPhone, setEditPhone] = useState("");
     const [editStatus, setEditStatus] = useState("active");
@@ -50,6 +52,7 @@ function Employees() {
         const q = search.toLowerCase();
         return !q ||
             (e.full_name || "").toLowerCase().includes(q) ||
+            (e.nickname || "").toLowerCase().includes(q) ||
             (e.email || "").toLowerCase().includes(q) ||
             (e.role || "").toLowerCase().includes(q);
     });
@@ -59,12 +62,13 @@ function Employees() {
         setError("");
         try {
             await addEmployee({
-                full_name: newName, email: newEmail, phone: newPhone || null,
+                full_name: newName, nickname: newNickname.trim() || null,
+                email: newEmail, phone: newPhone || null,
                 password: newPassword, role: "reporter", status: "active",
             });
             setMessage("Umukozi yongewe neza.");
             setShowCreate(false);
-            setNewName(""); setNewEmail(""); setNewPhone(""); setNewPassword("");
+            setNewName(""); setNewNickname(""); setNewEmail(""); setNewPhone(""); setNewPassword("");
             await load();
         } catch (err) {
             setError(err?.message || "Failed to add employee.");
@@ -74,6 +78,7 @@ function Employees() {
     const openEdit = (emp) => {
         setEditId(emp.id);
         setEditName(emp.full_name || emp.name || "");
+        setEditNickname(emp.nickname || "");
         setEditEmail(emp.email || "");
         setEditPhone(emp.phone || "");
         setEditStatus(emp.status || "active");
@@ -85,7 +90,8 @@ function Employees() {
         setError("");
         try {
             await updateEmployee(editId, {
-                full_name: editName, email: editEmail, phone: editPhone || null,
+                full_name: editName, nickname: editNickname.trim(),
+                email: editEmail, phone: editPhone || null,
                 status: editStatus || "active",
             });
             setMessage("Umukozi yahinduwe neza.");
@@ -163,6 +169,9 @@ function Employees() {
                                 <li key={emp.id} className="grid grid-cols-1 gap-2 px-5 py-3.5 sm:grid-cols-2 md:grid-cols-12 md:items-center">
                                     <span className="col-span-4 truncate text-sm font-semibold text-slate-800">
                                         {emp.full_name || emp.name || emp.email}
+                                        {emp.nickname ? (
+                                            <span className="ml-1 font-medium text-brand-600">({emp.nickname})</span>
+                                        ) : null}
                                     </span>
                                     <span className="col-span-3 truncate text-xs text-slate-400">{emp.email}</span>
                                     <span className="col-span-2 text-xs text-slate-500">{emp.role || "reporter"}</span>
@@ -189,6 +198,7 @@ function Employees() {
                         <ModalHeader title="Ongera Umukozi" description="Onjera umukozi mushya." onClose={() => setShowCreate(false)} />
                         <form onSubmit={handleCreate} className="space-y-4 p-5">
                             <FormField label="Izina" required><input value={newName} onChange={(e) => setNewName(e.target.value)} required className="form-input" /></FormField>
+                            <FormField label="Nickname" description="Ntihagenewe. Igaragara ku byanditswe nk' Izina (Nickname)."><input value={newNickname} onChange={(e) => setNewNickname(e.target.value)} maxLength={100} className="form-input" /></FormField>
                             <FormField label="Imeriyo" required><input type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} required className="form-input" /></FormField>
                             <FormField label="Telefoni"><input value={newPhone} onChange={(e) => setNewPhone(e.target.value)} className="form-input" /></FormField>
                             <FormField label="Ijambo ry'ibanga" required><input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required minLength={6} className="form-input" /></FormField>
@@ -203,6 +213,7 @@ function Employees() {
                         <ModalHeader title="Hindura Umukozi" description="Vugurura amakuru y'umukozi." onClose={() => setShowEdit(false)} />
                         <form onSubmit={handleSaveEdit} className="space-y-4 p-5">
                             <FormField label="Izina" required><input value={editName} onChange={(e) => setEditName(e.target.value)} required className="form-input" /></FormField>
+                            <FormField label="Nickname" description="Urimwe usiga nk'oko ukubikira."><input value={editNickname} onChange={(e) => setEditNickname(e.target.value)} maxLength={100} className="form-input" /></FormField>
                             <FormField label="Imeriyo" required><input type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} required className="form-input" /></FormField>
                             <FormField label="Telefoni"><input value={editPhone} onChange={(e) => setEditPhone(e.target.value)} className="form-input" /></FormField>
                             <FormField label="Ikibanza">

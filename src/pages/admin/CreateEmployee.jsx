@@ -51,7 +51,7 @@ const adminNav = [
 export default function CreateEmployee({ onLogout }) {
   const navigate = useNavigate();
 
-  const [form, setForm] = useState({ full_name: "", email: "", phone: "", password: "" });
+  const [form, setForm] = useState({ full_name: "", nickname: "", email: "", phone: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("");
@@ -67,6 +67,7 @@ export default function CreateEmployee({ onLogout }) {
     setMessageType("");
 
     const fullName = form.full_name.trim();
+    const nickname = form.nickname.trim();
     const email = form.email.trim();
     const phone = form.phone.trim();
     const password = form.password;
@@ -81,11 +82,11 @@ export default function CreateEmployee({ onLogout }) {
 
     try {
       setLoading(true);
-      const payload = { full_name: fullName, email, phone: phone || null, role: "reporter", password };
+      const payload = { full_name: fullName, nickname: nickname || null, email, phone: phone || null, role: "reporter", password };
       const result = await createEmployee(payload);
       setMessage(result.message || "Employee created successfully.");
       setMessageType("success");
-      setForm({ full_name: "", email: "", phone: "", password: "" });
+      setForm({ full_name: "", nickname: "", email: "", phone: "", password: "" });
       navigate("/admin");
     } catch (error) {
       setMessage(error.message || "Unable to create employee.");
@@ -121,6 +122,10 @@ export default function CreateEmployee({ onLogout }) {
             <form onSubmit={handleSubmit} className="space-y-5">
               <FormField label="Izina ryuzuye" required>
                 <input type="text" name="full_name" placeholder="Andika izina ryuzuye" value={form.full_name} onChange={handleChange} className="form-input" required disabled={loading} />
+              </FormField>
+
+              <FormField label="Nickname" description="Byibuwe. Igaragara ku byanditswe by'umukozi nk' Izina (Nickname).">
+                <input type="text" name="nickname" placeholder="Urugero: TPLAY WARAKAYE" value={form.nickname} onChange={handleChange} maxLength={100} className="form-input" disabled={loading} />
               </FormField>
 
               <FormField label="Imeyili" required>

@@ -46,6 +46,60 @@ export const getProfileImageUrl = (user) => {
   return normalizeImageUrl(candidate);
 };
 
+/* The real name stays primary. An employee's optional nickname is shown
+   in parentheses, e.g. "MBONYINSHUTI Claude (TPLAY WARAKAYE)".
+   A nickname identical to the real name is ignored. */
+export const formatAuthorName = (name, nickname) => {
+  const realName = String(name || "").trim();
+  const alias = String(nickname || "").trim();
+
+  if (!alias) return realName;
+  if (!realName) return alias;
+  if (alias.toLowerCase() === realName.toLowerCase()) {
+    return realName;
+  }
+
+  return `${realName} (${alias})`;
+};
+
+/* Ready-to-render byline for a post, working with both the enriched
+   `author` object and the flat public fields. */
+export const getPostAuthorName = (post) => {
+  if (!post) return "";
+
+  const authorObject =
+    post.author && typeof post.author === "object" ? post.author : null;
+
+  const realName =
+    authorObject?.name ||
+    post.author_name ||
+    post.Author ||
+    (typeof post.author === "string" ? post.author : "") ||
+    "";
+
+  const nickname =
+    authorObject?.nickname || post.author_nickname || null;
+
+  return (
+    authorObject?.display_name ||
+    post.author_display_name ||
+    formatAuthorName(realName, nickname)
+  );
+};
+
+export const getPostAuthorNickname = (post) => {
+  if (!post) return null;
+
+  const authorObject =
+    post.author && typeof post.author === "object" ? post.author : null;
+
+  return (
+    authorObject?.nickname ||
+    post.author_nickname ||
+    null
+  );
+};
+
 export const normalizePost = (post) => ({
   ...post,
 
@@ -82,9 +136,9 @@ export const normalizePost = (post) => ({
           : null,
       }
       : post.Author ||
-      post.author ||
-      post.author_name ||
-      "",
+        post.author ||
+        post.author_name ||
+        "",
 
   author_profile_image:
     post.author_profile_image ||
@@ -95,6 +149,11 @@ export const normalizePost = (post) => ({
         post.author_profile_image || post.author.profile_image
       )
       : null,
+
+  author_display_name:
+    getPostAuthorName(post),
+
+  author_nickname: getPostAuthorNickname(post),
 
   slug: post.slug || "",
 
@@ -364,13 +423,28 @@ export async function changeMyEmail(
 }
 
 export async function updateProfile(payload = {}) {
-  return request("/api/profile", {
+  const data = await request("/api/profile", {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify(payload),
   });
+
+  /* Keep the cached session in sync so the header and profile page show
+     the new nickname (or the cleared one) without a reload. */
+  if (data?.user) {
+    const storedUser = getStoredUser();
+
+    if (storedUser) {
+      setAuthStorage(getToken(), {
+        ...storedUser,
+        ...data.user,
+      });
+    }
+  }
+
+  return data;
 }
 
 export async function uploadProfileImage(imageFile) {
@@ -637,6 +711,47 @@ export const getPostBySlug = async (slug) => {
   cachePostDetail(cacheKey, post);
 
   return post;
+};
+
+/* Walks the published archive newest -> oldest, one article at a time.
+   Pass the article the reader is on (`id` or `slug`); omit both to start
+   from the newest article. A `null` post means the oldest article was
+   reached. */
+export const getNextArticle = async ({ id, slug } = {}) => {
+  const params = new URLSearchParams();
+
+  if (id !== undefined && id !== null && String(id).trim()) {
+    params.set("id", String(id));
+  } else if (slug) {
+    const safeSlug = String(slug)
+      .replace(/\.html$/i, "")
+      .trim()
+      .replace(/\/+$/, "");
+
+    if (safeSlug) {
+      params.set("slug", safeSlug);
+    }
+  }
+
+  const query = params.toString();
+  const response = await fetch(
+    `${API_BASE_URL}/posts/next${query ? `?${query}` : ""}`
+  );
+
+  if (!response.ok) {
+    if (response.status === 404) {
+      return { post: null, hasMore: false };
+    }
+
+    throw new Error("Unable to load the next article.");
+  }
+
+  const data = await response.json();
+
+  return {
+    post: data?.post ? normalizePost(data.post) : null,
+    hasMore: Boolean(data?.hasMore),
+  };
 };
 
 export async function getPublicPosts() {
@@ -1125,6 +1240,7 @@ export async function addEmployee(employeeData) {
 
     body: JSON.stringify({
       full_name: employeeData.full_name,
+      nickname: employeeData.nickname || null,
       email: employeeData.email,
       phone: employeeData.phone || null,
       password: employeeData.password,

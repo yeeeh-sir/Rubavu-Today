@@ -1,14 +1,17 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Camera,
   Key,
   LogOut,
   Mail,
+  Save,
+  UserRound,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import {
   changeMyPassword,
   getProfileImageUrl,
+  updateProfile,
   uploadProfileImage,
 } from "../../services/api";
 import { useToast } from "../../components/employee/EmployeeUI";
@@ -31,8 +34,32 @@ export default function EmployeeProfile({ onLogout }) {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
 
+  const [nickname, setNickname] = useState("");
+  const [identityLoading, setIdentityLoading] = useState(false);
+
   const [profileLoading, setProfileLoading] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
+
+  // Keep the field in sync with the session after a refresh or login.
+  useEffect(() => {
+    setNickname(String(user?.nickname || ""));
+  }, [user?.nickname, user?.id]);
+
+  const handleSaveIdentity = async (e) => {
+    e.preventDefault();
+    if (identityLoading) return;
+
+    setIdentityLoading(true);
+    try {
+      await updateProfile({ nickname: nickname.trim() });
+      await refreshUser();
+      toast.success("Nickname yawe yahindurwe neza.");
+    } catch (err) {
+      toast.error(errorMessage(err, "Ntanabonye guhindura nickname."));
+    } finally {
+      setIdentityLoading(false);
+    }
+  };
 
   const handleImageUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -89,6 +116,8 @@ export default function EmployeeProfile({ onLogout }) {
   const profileImage = getProfileImageUrl(user);
   const userName = user?.full_name || user?.name || "Umukozi";
   const userInitial = String(userName).charAt(0).toUpperCase();
+  const savedNickname = String(user?.nickname || "").trim();
+  const nicknameChanged = nickname.trim() !== savedNickname;
 
   return (
     <div className="space-y-6">
@@ -119,6 +148,11 @@ export default function EmployeeProfile({ onLogout }) {
               <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
             </div>
             <h3 className="text-lg font-bold text-slate-900">{userName}</h3>
+            {savedNickname && (
+              <p className="mt-0.5 text-sm font-semibold text-blue-600">
+                ({savedNickname})
+              </p>
+            )}
             <p className="mt-1 text-xs text-slate-500">{user?.email || "umukozi@rubavutoday.com"}</p>
 
             <div className="mt-4 flex flex-col gap-2 text-left">
@@ -145,6 +179,66 @@ export default function EmployeeProfile({ onLogout }) {
         </div>
 
         <div className="space-y-5">
+          <form onSubmit={handleSaveIdentity} className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+            <div className="mb-5 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-100 text-blue-600">
+                <UserRound className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-900">Amazina Yanjye</h3>
+                <p className="text-xs text-slate-500">
+                  Nickname yawe igaragara ku byanditswe byawe, oha ni amagina akomeye.
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-700">Amazina yombi</label>
+                <input
+                  type="text"
+                  value={user?.full_name || ""}
+                  readOnly
+                  disabled
+                  className="w-full cursor-not-allowed rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500 outline-none"
+                />
+                <p className="mt-1.5 text-xs text-slate-500">
+                  Amazina yombi yahindurwa n'umuyobozi gusa.
+                </p>
+              </div>
+
+              <div>
+                <label htmlFor="employee-nickname" className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-700">
+                  Nickname (ntihagenewe)
+                </label>
+                <input
+                  id="employee-nickname"
+                  type="text"
+                  value={nickname}
+                  onChange={(e) => setNickname(e.target.value)}
+                  maxLength={100}
+                  placeholder="Urugero: TPLAY WARAKAYE"
+                  className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                />
+                <p className="mt-1.5 text-xs text-slate-500">
+                  Iyi nkuru igaragara nk' "{`${user?.full_name || "Amazina"} (${nickname.trim() || "nickname"})`}".
+                  Urimwe usiga nk'oko.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 flex items-center justify-end gap-3">
+              <button
+                type="submit"
+                disabled={identityLoading || !nicknameChanged}
+                className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {identityLoading ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" /> : <Save className="h-4 w-4" />}
+                Bika nickname
+              </button>
+            </div>
+          </form>
+
           <form onSubmit={handleChangePassword} className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
             <div className="mb-5 flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-100 text-amber-600">
