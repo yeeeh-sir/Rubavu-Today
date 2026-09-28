@@ -947,7 +947,7 @@ export default function ChiefDashboard({ onLogout }) {
                         onClick={() =>
                           profileInputRef.current?.click()
                         }
-                        className="rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-bold text-white transition hover:bg-white/25"
+                        className="rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-bold text-white transition duration-200 hover:-translate-y-0.5 hover:bg-white/25 focus:outline-none focus:ring-2 focus:ring-white/60"
                       >
                         {profilePreview ? "Hindura" : "Ifoto"}
                       </button>
@@ -958,7 +958,7 @@ export default function ChiefDashboard({ onLogout }) {
                             type="button"
                             onClick={handleProfileUpload}
                             disabled={profileUploading}
-                            className="rounded-full bg-emerald-500 px-2 py-0.5 text-[10px] font-bold text-white transition hover:bg-emerald-600 disabled:opacity-50"
+                            className="rounded-full bg-emerald-500 px-2 py-0.5 text-[10px] font-bold text-white transition duration-200 hover:-translate-y-0.5 hover:bg-emerald-600 disabled:opacity-50"
                           >
                             {profileUploading ? "..." : "Bika"}
                           </button>
@@ -968,7 +968,7 @@ export default function ChiefDashboard({ onLogout }) {
                             onClick={() =>
                               setProfilePreview(null)
                             }
-                            className="rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold text-white transition hover:bg-red-600"
+                            className="rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold text-white transition duration-200 hover:-translate-y-0.5 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-200"
                           >
                             Reka
                           </button>

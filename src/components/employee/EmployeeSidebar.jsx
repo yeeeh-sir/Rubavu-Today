@@ -48,7 +48,7 @@ export default function EmployeeSidebar({ mobileOpen, onClose, onLogout }) {
         </button>
       </div>
 
-      <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto px-3 py-4">
+      <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto px-3 py-4 pr-2" style={{ scrollbarWidth: "thin", msOverflowStyle: "auto" }}>
         <p className="px-3 pb-2 text-[10px] font-bold uppercase tracking-widest text-slate-500">Imibare y'umwuga</p>
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
@@ -58,7 +58,7 @@ export default function EmployeeSidebar({ mobileOpen, onClose, onLogout }) {
               to={item.to}
               onClick={onClose}
               className={({ isActive }) =>
-                `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition ${isActive
+                `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400/80 ${isActive
                   ? "bg-blue-600 text-white shadow-md shadow-blue-950/40"
                   : "text-slate-400 hover:bg-white/5 hover:text-white"
                 }`

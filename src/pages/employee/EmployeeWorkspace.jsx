@@ -2,9 +2,12 @@ import React, {
   useState,
   useEffect,
   useCallback,
+  useMemo,
 } from "react";
+import { Link, useLocation } from "react-router-dom";
 
 import {
+  Bell,
   Loader2,
   Upload,
   User,
@@ -15,30 +18,40 @@ import {
   Calendar,
   Tag,
   BookOpen,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 
-import api, { API_ROOT } from "../../services/api";
-import rubavuLogo from "../../Rubavu.jpeg";
+import api, {
+  API_ROOT,
+  getMyPosts,
+  getMyPostById,
+  updatePost,
+  deletePost,
+  hasPermission,
+} from "../../services/api";
+import { useAuth } from "../../context/AuthContext";
+import { useNotifications } from "../../context/NotificationsContext";
 import ArticleEditor from "../../components/article/ArticleEditor";
 import AuthorProfileTrigger from "../../components/common/AuthorProfileTrigger";
 import OptimizedImage from "../../components/common/OptimizedImage";
 import { RESOLUTION_WIDTHS } from "../../utils/images";
 
 function Employee() {
-
-
-
+  const { user: currentUser, refreshUser } = useAuth();
+  const { unreadCount } = useNotifications();
+  const location = useLocation();
 
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const [currentUser, setCurrentUser] = useState(null);
-
-  const [showAllPosts, setShowAllPosts] = useState(true);
+  const [showAllPosts, setShowAllPosts] = useState(false);
 
 
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+
+  const [editingPost, setEditingPost] = useState(null);
 
 
   const [selectedPost, setSelectedPost] = useState(null);
@@ -76,55 +89,143 @@ function Employee() {
 
 
 
-  const loadCurrentUser = useCallback(async () => {
-    try {
-      const storedUser = localStorage.getItem("user");
+  const hasPermissionFor = useCallback(
+    (permissionKey) => hasPermission(currentUser, permissionKey),
+    [currentUser]
+  );
 
-      if (storedUser) {
-        try {
-          const parsedUser = JSON.parse(storedUser);
+  const hasViewAllPostsPermission = hasPermissionFor("view_all_posts");
 
-          if (parsedUser) {
-            setCurrentUser(parsedUser);
-            return;
-          }
-        } catch (storedError) {
-          console.error(
-            "Invalid stored user:",
-            storedError
-          );
-        }
-      }
+  const permissionSummary = {
+    view_all_posts: "View all posts",
+    edit_own_posts: "Edit own posts",
+    delete_own_pending_post: "Delete own pending",
+    edit_post_text: "Edit text",
+    edit_post_image: "Edit image",
+    approve_posts: "Approve posts",
+    reject_posts: "Reject posts",
+    delete_any_post: "Delete any post",
+    edit_any_post: "Edit any post",
+    publish_approve_posts: "Publish posts",
+    manage_images: "Manage images",
+  };
 
-      if (api.getCurrentUser) {
-        const user = await api.getCurrentUser();
+  const rawPermissions = currentUser?.permissions || {};
+  const permissionEntries = Array.isArray(rawPermissions)
+    ? rawPermissions.map((key) => [key, true])
+    : Object.entries(rawPermissions);
 
-        if (user) {
-          setCurrentUser(user);
+  const activePermissions = permissionEntries
+    .filter(([key, enabled]) => {
+      if (typeof enabled === "boolean") return enabled;
+      if (Array.isArray(enabled)) return enabled.length > 0;
+      return Boolean(enabled) || Boolean(key);
+    })
+    .map(([key]) => ({
+      key,
+      label: permissionSummary[key] || key,
+    }));
 
-          localStorage.setItem(
-            "user",
-            JSON.stringify(user)
-          );
-        }
-      }
-    } catch (err) {
-      console.error(
-        "Failed to load current user:",
-        err
-      );
+  const selectedPermission = (() => {
+    const params = new URLSearchParams(location.search);
+    const rawPermission = params.get("permission");
+    const normalized = rawPermission ? rawPermission.trim().toLowerCase() : "";
+
+    if (!normalized) {
+      return "";
     }
-  }, []);
+
+    return normalized.replace(/\s+/g, "_")
+      .replace(/-+/g, "_")
+      .replace(/^_+|_+$/g, "");
+  })();
+
+  const selectedPermissionIsActive = activePermissions.some(
+    ({ key }) => key === selectedPermission
+  );
+
+  const permissionTarget = selectedPermission
+    ? selectedPermission.replace(/\s+/g, "_").replace(/-+/g, "_").replace(/^_+|_+$/g, "")
+    : "";
+
+  const permissionColorMap = {
+    view_all_posts: "border-violet-200 bg-violet-100 text-violet-700",
+    edit_own_posts: "border-emerald-200 bg-emerald-100 text-emerald-700",
+    delete_own_pending_post: "border-rose-200 bg-rose-100 text-rose-700",
+    edit_post_text: "border-sky-200 bg-sky-100 text-sky-700",
+    edit_post_image: "border-cyan-200 bg-cyan-100 text-cyan-700",
+    approve_posts: "border-amber-200 bg-amber-100 text-amber-700",
+    reject_posts: "border-red-200 bg-red-100 text-red-700",
+    delete_any_post: "border-pink-200 bg-pink-100 text-pink-700",
+    edit_any_post: "border-indigo-200 bg-indigo-100 text-indigo-700",
+    publish_approve_posts: "border-teal-200 bg-teal-100 text-teal-700",
+    manage_images: "border-orange-200 bg-orange-100 text-orange-700",
+  };
+
+  const broadAccessPermissions = useMemo(
+    () => new Set([
+      "view_all_posts",
+      "edit_any_post",
+      "delete_any_post",
+      "edit_post_text",
+      "edit_post_image",
+      "approve_posts",
+      "reject_posts",
+      "publish_approve_posts",
+      "manage_images",
+    ]),
+    []
+  );
 
   useEffect(() => {
-    loadCurrentUser();
-  }, [loadCurrentUser]);
+    if (!refreshUser) {
+      return;
+    }
+
+    const hasPermissionData =
+      currentUser &&
+      (
+        Array.isArray(currentUser.permissions) ||
+        (currentUser.permissions && typeof currentUser.permissions === "object" && Object.keys(currentUser.permissions).length > 0)
+      );
+
+    if (!hasPermissionData && currentUser) {
+      refreshUser().catch((error) => {
+        console.error("Failed to refresh employee permissions:", error);
+      });
+    }
+  }, [currentUser, refreshUser]);
+
+  useEffect(() => {
+    if (selectedPermission && broadAccessPermissions.has(selectedPermission)) {
+      setShowAllPosts(true);
+      return;
+    }
+
+    if (hasViewAllPostsPermission) {
+      setShowAllPosts(true);
+    } else {
+      setShowAllPosts(false);
+    }
+  }, [broadAccessPermissions, hasViewAllPostsPermission, selectedPermission]);
+
+  useEffect(() => {
+    if (!permissionTarget) {
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      const target = document.getElementById(`permission-${permissionTarget}`);
+      target?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 120);
+
+    return () => clearTimeout(timer);
+  }, [permissionTarget]);
 
 
 
 
-
-  const getCurrentUserName = () => {
+  const getCurrentUserName = useCallback(() => {
     if (!currentUser) {
       return "Employee";
     }
@@ -137,7 +238,7 @@ function Employee() {
       currentUser.email ||
       "Employee"
     );
-  };
+  }, [currentUser]);
 
 
 
@@ -161,22 +262,20 @@ function Employee() {
 
 
 
+  /* The list is fetched from the authenticated employee endpoint rather than
+     the public feed, and it is never filtered in the browser: visibility is
+     decided by the backend from the stored permissions. Asking for "all" is a
+     request, not a grant — without "View All Posts" the server keeps replying
+     with the employee's own posts. Each post arrives with a `permissions`
+     capability map describing the actions the backend will accept. */
   const fetchPosts = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
 
-      let response;
-
-      if (api.getPosts) {
-        response = await api.getPosts();
-      } else if (api.get) {
-        response = await api.get("/posts");
-      } else {
-        throw new Error(
-          "getPosts API function is not available."
-        );
-      }
+      const response = await getMyPosts({
+        scope: showAllPosts ? "all" : undefined,
+      });
 
       const data = Array.isArray(response)
         ? response
@@ -200,10 +299,12 @@ function Employee() {
         err?.message ||
         "Failed to load posts."
       );
+
+      setPosts([]);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [showAllPosts]);
 
   useEffect(() => {
     fetchPosts();
@@ -212,8 +313,56 @@ function Employee() {
 
 
 
+  const getPostCapabilities = useCallback((post) => {
+    const capabilities = post?.permissions;
+
+    if (capabilities && typeof capabilities === "object") {
+      return capabilities;
+    }
+
+    /* Fallback for posts fetched before the capability map existed: mirror the
+       same rules so the UI never offers an action the backend would reject. */
+    const isOwner =
+      Number(post?.author_id) === Number(currentUser?.id) ||
+      String(post?.Author || "").trim() ===
+        String(currentUser?.full_name || currentUser?.email || "").trim();
+
+    const status = String(post?.status || "").trim().toLowerCase();
+    const ownsEditablePost = isOwner;
+
+    return {
+      isOwner,
+      canView: isOwner || hasPermissionFor("view_all_posts"),
+      canEditText:
+        hasPermissionFor("edit_any_post") ||
+        hasPermissionFor("edit_post_text") ||
+        (ownsEditablePost && hasPermissionFor("edit_own_posts")),
+      canEditImage:
+        hasPermissionFor("edit_any_post") ||
+        hasPermissionFor("edit_post_image") ||
+        hasPermissionFor("manage_images") ||
+        (ownsEditablePost && hasPermissionFor("edit_own_posts")),
+      canDelete:
+        status !== "approved" &&
+        (hasPermissionFor("delete_any_post") ||
+          (isOwner && hasPermissionFor("delete_own_pending_post"))),
+      canApprove:
+        hasPermissionFor("approve_posts") ||
+        hasPermissionFor("publish_approve_posts"),
+      canReject: hasPermissionFor("reject_posts"),
+      canManageImages: hasPermissionFor("manage_images"),
+    };
+  }, [currentUser, hasPermissionFor]);
+
+
+
+
 
   const toggleAllPosts = () => {
+    if (!hasViewAllPostsPermission) {
+      return;
+    }
+
     setShowAllPosts((previous) => !previous);
   };
 
@@ -223,6 +372,7 @@ function Employee() {
 
   const handleOpenUploadModal = () => {
     setError("");
+    setEditingPost(null);
     setIsUploadModalOpen(true);
   };
 
@@ -236,6 +386,7 @@ function Employee() {
     }
 
     setIsUploadModalOpen(false);
+    setEditingPost(null);
     setError("");
   };
 
@@ -361,6 +512,53 @@ function Employee() {
     setError("");
   };
 
+  /* Open the article editor. The backend refuses anything the capability map
+     says is not allowed, so a stale button can never turn into a data leak. */
+  const handleEditPost = async (post) => {
+    setActionLoading(true);
+    setError("");
+
+    try {
+      const full = await getMyPostById(post.id || post._id);
+
+      setSelectedPost(null);
+      setEditingPost(full);
+      setIsUploadModalOpen(true);
+    } catch (err) {
+      setError(
+        err?.response?.data?.error ||
+          err?.message ||
+          "Ntitwashoboye guhindura iyi nkuru."
+      );
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDeletePost = async (post) => {
+    if (!window.confirm("Siba iyi nkuru? Ikigizeho ntibizakomeretsa.")) {
+      return;
+    }
+
+    setActionLoading(true);
+    setError("");
+
+    try {
+      await deletePost(post.id || post._id);
+      setPosts((previous) =>
+        previous.filter((item) => String(item.id || item._id) !== String(post.id || post._id))
+      );
+    } catch (err) {
+      setError(
+        err?.response?.data?.error ||
+          err?.message ||
+          "Ntitwashoboye gusiba iyi nkuru."
+      );
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
 
 
 
@@ -401,6 +599,18 @@ function Employee() {
         setError(
           "Your account information could not be found. Please login again."
         );
+
+        return;
+      }
+
+      /* Editing an existing article reuses the same form; the backend
+         re-checks ownership and the edit permissions on every save. */
+      if (editingPost) {
+        await updatePost(editingPost.id || editingPost._id, formData);
+
+        handleCloseUploadModal();
+
+        await fetchPosts();
 
         return;
       }
@@ -451,22 +661,18 @@ function Employee() {
 
         <div className="flex min-w-0 items-center gap-3">
 
-          <img
-            src={rubavuLogo}
-            alt="Rubavu Today"
-            className="h-11 w-11 shrink-0 rounded-full border border-slate-200 object-cover sm:h-14 sm:w-14"
-          />
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-red-600 via-orange-500 to-blue-600 text-lg font-black text-white shadow-sm sm:h-14 sm:w-14">
+            RT
+          </div>
 
           <div className="min-w-0">
 
-            <h1 className="truncate text-lg font-bold tracking-tight text-slate-900 sm:text-2xl">
-              Ahakorerwa umukozi
-            </h1>
-
-            <p className="mt-1 text-xs text-slate-500 sm:text-sm">
-              Kora inkuru usome iziri mu biro by'amakuru
-              stories.
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
+              Rubavu Today
             </p>
+            <h1 className="truncate text-lg font-black tracking-tight text-slate-900 sm:text-2xl">
+              Employee workspace
+            </h1>
 
           </div>
 
@@ -545,6 +751,64 @@ function Employee() {
 
 
 
+      <div className="rounded-2xl border border-violet-200 bg-gradient-to-r from-violet-50 via-blue-50 to-emerald-50 p-4 shadow-sm">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-violet-600">
+              Employee access
+            </p>
+            <h2 className="mt-1 text-base font-bold text-slate-900">
+              {activePermissions.length > 0
+                ? "Your current permissions"
+                : "No employee permissions yet"}
+            </h2>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Link
+              to="/employee/notifications"
+              className="relative inline-flex items-center justify-center rounded-xl border border-white bg-white/80 p-2 text-slate-700 shadow-sm transition hover:border-violet-200 hover:text-violet-700"
+              aria-label="Notifications"
+            >
+              <Bell className="h-4 w-4" />
+              {unreadCount > 0 && (
+                <span className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              )}
+            </Link>
+
+            <div className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-600 shadow-sm">
+              {activePermissions.length} active
+            </div>
+          </div>
+        </div>
+
+{permissionTarget && !selectedPermissionIsActive && (
+          <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+            This workspace was opened for the permission “{permissionSummary[permissionTarget] || permissionTarget.replace(/_/g, " ")}”, but it is not currently active for this employee.
+          </div>
+        )}
+
+        <div className="mt-3 flex flex-wrap gap-2">
+          {activePermissions.length === 0 ? (
+            <span className="text-sm text-slate-500">
+              Ask your admin to grant your employee permissions.
+            </span>
+          ) : (
+            activePermissions.map(({ key, label }, index) => (
+              <span
+                key={`${key}-${index}`}
+                id={`permission-${key}`}
+                className={`rounded-full border px-2.5 py-1 text-xs font-semibold ring-2 ring-transparent transition ${permissionColorMap[key] || "border-slate-200 bg-white text-slate-700"} ${permissionTarget === key ? "ring-violet-400 shadow-sm" : ""}`}
+              >
+                {label}
+              </span>
+            ))
+          )}
+        </div>
+      </div>
+
       {error && !isUploadModalOpen && (
         <div className="rounded-xl border border-red-200 bg-red-50 p-4">
 
@@ -582,30 +846,32 @@ function Employee() {
               {posts.length} Inkuru
             </span>
 
-            <button
-              type="button"
-              onClick={toggleAllPosts}
-              className={`inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition ${showAllPosts
-                ? "bg-slate-200 text-slate-700 hover:bg-slate-300"
-                : "bg-blue-600 text-white hover:bg-blue-700"
-                }`}
-            >
+            {hasViewAllPostsPermission && (
+              <button
+                type="button"
+                onClick={toggleAllPosts}
+                className={`inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition ${showAllPosts
+                  ? "bg-slate-200 text-slate-700 hover:bg-slate-300"
+                  : "bg-blue-600 text-white hover:bg-blue-700"
+                  }`}
+              >
 
-              {showAllPosts ? (
-                <>
-                  <EyeOff className="h-4 w-4" />
+                {showAllPosts ? (
+                  <>
+                    <EyeOff className="h-4 w-4" />
 
-                  Hisha zose
-                </>
-              ) : (
-                <>
-                  <Eye className="h-4 w-4" />
+                    View all posts
+                  </>
+                ) : (
+                  <>
+                    <Eye className="h-4 w-4" />
 
-                  Erekana zose
-                </>
-              )}
+                    View all posts
+                  </>
+                )}
 
-            </button>
+              </button>
+            )}
 
           </div>
 
@@ -613,7 +879,7 @@ function Employee() {
 
 
 
-        {!showAllPosts ? (
+        {!showAllPosts && hasViewAllPostsPermission ? (
 
           <div className="p-12 text-center">
 
@@ -638,7 +904,7 @@ function Employee() {
             >
               <Eye className="h-4 w-4" />
 
-              Erekana inkuru zose
+              View all posts
             </button>
 
           </div>
@@ -688,6 +954,17 @@ function Employee() {
 
               const imageUrl =
                 getImageUrl(post);
+
+              /* Capabilities come from the backend. Only the actions an
+                 employee is actually allowed to perform are rendered. */
+              const capabilities =
+                getPostCapabilities(post);
+
+              const canOpen = capabilities.canView || capabilities.isOwner;
+
+              const canEdit =
+                capabilities.canEditText ||
+                capabilities.canEditImage;
 
               return (
 
@@ -749,10 +1026,17 @@ function Employee() {
                   <div className="flex flex-1 flex-col p-4">
 
                     <h3 className="line-clamp-2 text-base font-bold leading-snug text-slate-900">
-
-                      {post.title ||
-                        "Untitled Post"}
-
+                      {canOpen ? (
+                        <button
+                          type="button"
+                          onClick={() => handleViewPost(post)}
+                          className="text-left hover:text-blue-700 focus:outline-none focus-visible:underline"
+                        >
+                          {post.title || "Untitled Post"}
+                        </button>
+                      ) : (
+                        post.title || "Untitled Post"
+                      )}
                     </h3>
 
 
@@ -812,19 +1096,91 @@ function Employee() {
 
                     <div className="mt-4 border-t border-slate-100 pt-3">
 
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleViewPost(post)
-                        }
-                        className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-blue-700"
-                      >
+                      <div className="flex flex-wrap items-center gap-2">
 
-                        <BookOpen className="h-4 w-4" />
+                        {canOpen && (
 
-                        Open & Read Post
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleViewPost(post)
+                            }
+                            className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-blue-600 px-3 py-2.5 text-xs font-bold text-white transition hover:bg-blue-700"
+                          >
 
-                      </button>
+                            <BookOpen className="h-4 w-4" />
+
+                            Soma Inkuru
+
+                          </button>
+
+                        )}
+
+                        {canEdit && (
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleEditPost(post)
+                            }
+                            disabled={actionLoading}
+                            title={
+                              capabilities.isOwner
+                                ? "Hindura iyi nkuru"
+                                : "Hindura inkuru y'uwundi mukozi"
+                            }
+                            className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2.5 text-xs font-bold text-amber-800 transition hover:bg-amber-100 disabled:opacity-50"
+                          >
+
+                            <Pencil className="h-4 w-4" />
+
+                            Hindura
+
+                          </button>
+
+                        )}
+
+                        {capabilities.canDelete && (
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleDeletePost(post)
+                            }
+                            disabled={actionLoading}
+                            title={
+                              capabilities.isOwner
+                                ? "Siba iyi nkuru"
+                                : "Siba inkuru y'uwundi mukozi"
+                            }
+                            className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-red-300 bg-red-50 px-3 py-2.5 text-xs font-bold text-red-700 transition hover:bg-red-100 disabled:opacity-50"
+                          >
+
+                            <Trash2 className="h-4 w-4" />
+
+                            Siba
+
+                          </button>
+
+                        )}
+
+                        {!canOpen && !canEdit && !capabilities.canDelete && (
+
+                          <p className="text-xs italic text-slate-400">
+                            Nta gukubira uyu mukozi.
+                          </p>
+
+                        )}
+
+                      </div>
+
+                      {!capabilities.isOwner && capabilities.canView && (
+
+                        <p className="mt-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                          Inkuru y'uwundi mukozi
+                        </p>
+
+                      )}
 
                     </div>
 
@@ -1130,10 +1486,14 @@ function Employee() {
               )}
 
               <ArticleEditor
-                initial={null}
+                initial={editingPost}
                 categories={departments}
                 authorText={getCurrentUserName()}
-                submitLabel="Tangaza Inkuru"
+                submitLabel={
+                  editingPost
+                    ? "Bika Impinduka"
+                    : "Tangaza Inkuru"
+                }
                 saving={actionLoading}
                 onSubmit={handleSubmit}
                 onCancel={handleCloseUploadModal}

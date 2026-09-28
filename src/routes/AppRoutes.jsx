@@ -18,6 +18,7 @@ import { getUserRole, isAuthenticated } from "../utils/auth";
 import { useAuth } from "../context/AuthContext";
 import LoadingScreen from "../components/common/LoadingScreen";
 import WebsiteChat from "../components/WebsiteChat/WebsiteChat";
+import { NotificationsProvider } from "../context/NotificationsContext";
 
 const Home = lazy(() => import("../pages/Home"));
 const RadioPage = lazy(() => import("../pages/RadioPage"));
@@ -71,13 +72,15 @@ const PublicLayout = ({ children, showHomeContent = true }) => (
 );
 
 const LegacyEmployeeLayout = ({ children }) => (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
-        <EmployeeNavbar />
-        <div className="flex flex-1">
-            <EmployeeSidebar />
-            <main className="flex-1 p-6 overflow-y-auto">{children}</main>
+    <NotificationsProvider>
+        <div className="min-h-screen bg-slate-50 flex flex-col">
+            <EmployeeNavbar />
+            <div className="flex flex-1">
+                <EmployeeSidebar />
+                <main className="flex-1 p-6 overflow-y-auto">{children}</main>
+            </div>
         </div>
-    </div>
+    </NotificationsProvider>
 );
 
 function EmployeeShellLayout() {
@@ -95,18 +98,27 @@ function EmployeeShellLayout() {
 }
 
 function ProtectedRoute({ roles, loginPath, children }) {
+    const location = useLocation();
     const { user, loading, refreshUser } = useAuth();
     const storedUser = getStoredUser();
     const effectiveUser = user || storedUser;
 
     useEffect(() => {
-        if (isAuthenticated() && !user) {
+        if (!isAuthenticated() || loading) {
+            return;
+        }
+
+        if (!user && effectiveUser) {
+            return;
+        }
+
+        if (!user) {
             refreshUser();
         }
-    }, [user, refreshUser]);
+    }, [user, effectiveUser, loading, refreshUser]);
 
     if (!isAuthenticated()) {
-        return <Navigate to={loginPath} replace />;
+        return <Navigate to={loginPath} replace state={{ from: location }} />;
     }
 
     if (loading) {
@@ -201,7 +213,7 @@ function AppRoutes() {
 
     return (
         <>
-            <Suspense fallback={<LoadingScreen message="Loading..." />}>
+            <Suspense fallback={null}>
                 <Routes>
                     <Route path="/" element={<PublicLayout><Home /></PublicLayout>} />
                     <Route path="/media" element={<PublicLayout showHomeContent={false}><Media /></PublicLayout>} />

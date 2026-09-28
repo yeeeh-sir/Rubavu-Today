@@ -158,14 +158,17 @@ export default function DailyTaskCard({ writePath = "/employee/create" }) {
           </div>
           <div>
             <p className="text-xs font-black uppercase tracking-[0.2em] text-blue-200">
-              Igikorwa cy'umunsi
+              Daily Performance
             </p>
             <h3 className="mt-1 text-xl font-black sm:text-2xl">
-              Inkuru {target} kuri 24h
+              Summary for today (target: {target} per day)
             </h3>
             <p className="mt-1 flex items-center gap-1.5 text-xs text-blue-100">
               <CalendarClock className="h-3.5 w-3.5" />
               {cycle?.startDay} — {cycle?.endDay}
+            </p>
+            <p className="mt-2 text-xs text-blue-100">
+              Only newly submitted posts count. Editing or approving posts does not.
             </p>
           </div>
         </div>
@@ -184,7 +187,7 @@ export default function DailyTaskCard({ writePath = "/employee/create" }) {
       <div className="relative mt-6">
         <div className="mb-2 flex items-center justify-between text-xs text-blue-100">
           <span>
-            Zikorewe: {completed} / {target}
+            Uploaded: {completed} / {target}
           </span>
           <span className="font-bold text-white">{Math.min(progress, 100)}%</span>
         </div>

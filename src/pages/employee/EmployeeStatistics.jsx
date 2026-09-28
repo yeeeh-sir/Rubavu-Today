@@ -283,7 +283,12 @@ export default function EmployeeStatistics() {
                         {i + 1}
                       </span>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold text-slate-900">{post.title}</p>
+                        <Link
+                          to={`/employee/articles?open=${encodeURIComponent(getPostId(post))}`}
+                          className="block truncate text-left text-sm font-semibold text-slate-900 hover:text-blue-700 focus:outline-none focus-visible:underline"
+                        >
+                          {post.title}
+                        </Link>
                         <p className="text-[11px] text-slate-400">{getCategory(post)} · {formatDate(post)}</p>
                       </div>
                       <div className="flex items-center gap-1.5 text-sm font-black text-slate-700">

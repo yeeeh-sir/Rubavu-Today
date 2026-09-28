@@ -1163,11 +1163,6 @@ const Navbar = ({ showHomeContent = true }) => {
     setCurrentTime,
   ] = useState(new Date());
 
-  const [
-    isPageInitializing,
-    setIsPageInitializing,
-  ] = useState(false);
-
   const navigate =
     useNavigate();
 
@@ -1243,26 +1238,8 @@ const Navbar = ({ showHomeContent = true }) => {
   }, []);
 
   /* =====================================================
-     INITIAL LOADER
-  ===================================================== */
-
-  useEffect(() => {
-    const timer = setTimeout(
-      () => {
-        setIsPageInitializing(
-          false
-        );
-      },
-      800
-    );
-
-    return () =>
-      clearTimeout(timer);
-  }, []);
-
-  /* =====================================================
      SEARCH URL
-  ===================================================== */
+   ===================================================== */
 
   useEffect(() => {
     setSearchValue(
@@ -1810,46 +1787,13 @@ const Navbar = ({ showHomeContent = true }) => {
   );
 
   /* =====================================================
-     INITIAL PAGE LOADER
-  ===================================================== */
-
-  if (isPageInitializing && showHomeContent) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-slate-950">
-        <style>{`
-          @keyframes spinCircle {
-            from {
-              transform: rotate(0deg);
-            }
-
-            to {
-              transform: rotate(360deg);
-            }
-          }
-
-          .animate-spin-logo {
-            animation: spinCircle 1s linear infinite;
-          }
-        `}</style>
-
-        <div className="animate-spin-logo flex h-24 w-24 items-center justify-center rounded-full border-4 border-red-600 border-t-transparent bg-slate-800 p-2 shadow-2xl sm:h-32 sm:w-32">
-          <img
-            src={logo}
-            alt="Rubavu Today"
-            className="h-full w-full rounded-full object-cover"
-          />
-        </div>
-
-        <p className="mt-6 font-body text-sm font-bold uppercase tracking-[0.2em] text-slate-300">
-          {t("loading")}
-        </p>
-      </div>
-    );
-  }
-
-  /* =====================================================
      PAGE
-  ===================================================== */
+
+     No full-screen preloader here on purpose: the spinning logo blocked the
+     first paint and delayed the page for every visitor. The header logo below
+     stays, and any in-flight request falls back to the small inline skeletons
+     and spinners already used further down.
+     ===================================================== */
 
   return (
     <div className={`${showHomeContent ? "min-h-screen" : ""} bg-slate-50 text-slate-900`}>

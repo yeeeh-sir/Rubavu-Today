@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
     getEmployees,
@@ -6,6 +6,9 @@ import {
     updateEmployee,
     deleteEmployee,
     logout,
+    getPermissions,
+    getEmployeePermissions,
+    saveEmployeePermissions,
 } from "../../services/api";
 import { DashboardLayout, ModalShell, ModalHeader, ModalFooter, FormField } from "../../components/dashboard";
 import { ADMIN_NAV_SECTIONS } from "./adminNav";
@@ -18,7 +21,11 @@ function Employees() {
     const [message, setMessage] = useState("");
     const [error, setError] = useState("");
 
-    // Create
+    const [selectedEmployee, setSelectedEmployee] = useState(null);
+    const [permissionDefinitions, setPermissionDefinitions] = useState([]);
+    const [permissionMap, setPermissionMap] = useState({});
+    const [savingPermissions, setSavingPermissions] = useState(false);
+
     const [showCreate, setShowCreate] = useState(false);
     const [newName, setNewName] = useState("");
     const [newNickname, setNewNickname] = useState("");
@@ -26,7 +33,6 @@ function Employees() {
     const [newPhone, setNewPhone] = useState("");
     const [newPassword, setNewPassword] = useState("");
 
-    // Edit
     const [showEdit, setShowEdit] = useState(false);
     const [editId, setEditId] = useState(null);
     const [editName, setEditName] = useState("");
@@ -46,16 +52,45 @@ function Employees() {
         }
     };
 
+    const openPermissionPanel = async (emp) => {
+        setSelectedEmployee(emp);
+        setError("");
+        try {
+            const [permissionList, employeePermissionData] = await Promise.all([
+                getPermissions(),
+                getEmployeePermissions(emp.id),
+            ]);
+
+            const list = Array.isArray(permissionList) ? permissionList : [];
+            const enabledPermissions = Array.isArray(employeePermissionData?.permissions)
+                ? employeePermissionData.permissions
+                : [];
+
+            const nextMap = {};
+            list.forEach((permission) => {
+                const enabled = enabledPermissions.some(
+                    (entry) => entry && entry.key === permission.key && Boolean(entry.enabled)
+                );
+                nextMap[permission.key] = Boolean(enabled);
+            });
+
+            setPermissionDefinitions(list);
+            setPermissionMap(nextMap);
+        } catch (err) {
+            setError(err?.message || "Unable to load employee permissions.");
+        }
+    };
+
     useEffect(() => { load(); }, []);
 
-    const filtered = employees.filter((e) => {
+    const filtered = useMemo(() => {
         const q = search.toLowerCase();
-        return !q ||
+        return employees.filter((e) => !q ||
             (e.full_name || "").toLowerCase().includes(q) ||
             (e.nickname || "").toLowerCase().includes(q) ||
             (e.email || "").toLowerCase().includes(q) ||
-            (e.role || "").toLowerCase().includes(q);
-    });
+            (e.role || "").toLowerCase().includes(q));
+    }, [employees, search]);
 
     const handleCreate = async (e) => {
         e.preventDefault();
@@ -107,9 +142,35 @@ function Employees() {
         try {
             await deleteEmployee(id);
             setMessage("Umukozi yasibwe.");
+            if (selectedEmployee?.id === id) {
+                setSelectedEmployee(null);
+                setPermissionDefinitions([]);
+                setPermissionMap({});
+            }
             await load();
         } catch (err) {
             setError(err?.message || "Failed to delete employee.");
+        }
+    };
+
+    const handleSavePermissions = async () => {
+        if (!selectedEmployee) return;
+
+        setSavingPermissions(true);
+        setError("");
+
+        try {
+            const selectedKeys = Object.entries(permissionMap)
+                .filter(([, enabled]) => Boolean(enabled))
+                .map(([key]) => key);
+
+            await saveEmployeePermissions(selectedEmployee.id, selectedKeys);
+            setMessage(`Uburyo bw'uburenganzira bwa ${selectedEmployee.full_name || selectedEmployee.email} bwabitswe neza.`);
+            await openPermissionPanel(selectedEmployee);
+        } catch (err) {
+            setError(err?.message || "Failed to save employee permissions.");
+        } finally {
+            setSavingPermissions(false);
         }
     };
 
@@ -119,7 +180,7 @@ function Employees() {
             roleLabel="Imicungire y'ubwanditsi"
             onLogout={() => { logout(); navigate("/admin/login", { replace: true }); }}
         >
-            <div className="mx-auto max-w-6xl px-3 py-6 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-7xl px-3 py-6 sm:px-6 lg:px-8">
                 <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
                     <div>
                         <h1 className="text-xl font-black text-slate-900 sm:text-2xl">Abakozi</h1>
@@ -156,7 +217,6 @@ function Employees() {
                     </div>
                 ) : (
                     <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                        {/* Desktop table headers */}
                         <div className="hidden grid-cols-12 gap-2 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-bold uppercase tracking-wider text-slate-400 md:grid">
                             <span className="col-span-4">Izina</span>
                             <span className="col-span-3">Imeriyo</span>
@@ -181,10 +241,9 @@ function Employees() {
                                         </span>
                                     </span>
                                     <span className="col-span-2 flex justify-end gap-2">
-                                        <button onClick={() => openEdit(emp)}
-                                            className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50">Hindura</button>
-                                        <button onClick={() => handleDelete(emp.id)}
-                                            className="rounded-lg border border-red-200 px-2.5 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50">Siba</button>
+                                        <button onClick={() => openPermissionPanel(emp)} className="rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100">Permissions</button>
+                                        <button onClick={() => openEdit(emp)} className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50">Hindura</button>
+                                        <button onClick={() => handleDelete(emp.id)} className="rounded-lg border border-red-200 px-2.5 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50">Siba</button>
                                     </span>
                                 </li>
                             ))}
@@ -192,7 +251,75 @@ function Employees() {
                     </div>
                 )}
 
-                {/* Create modal */}
+                {selectedEmployee && (
+                    <div className="mt-8 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+                        <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                                <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Employee Management</p>
+                                <h2 className="text-xl font-black text-slate-900">{selectedEmployee.full_name || selectedEmployee.email}</h2>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setSelectedEmployee(null)}
+                                className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+                            >
+                                Close
+                            </button>
+                        </div>
+
+                        <div className="mb-5 grid gap-4 md:grid-cols-4">
+                            <div className="rounded-2xl bg-slate-50 p-3">
+                                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Employee</p>
+                                <p className="mt-2 text-sm font-semibold text-slate-800">{selectedEmployee.full_name || selectedEmployee.email}</p>
+                            </div>
+                            <div className="rounded-2xl bg-slate-50 p-3">
+                                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Real name</p>
+                                <p className="mt-2 text-sm font-semibold text-slate-800">{selectedEmployee.full_name || "—"}</p>
+                            </div>
+                            <div className="rounded-2xl bg-slate-50 p-3">
+                                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Nickname</p>
+                                <p className="mt-2 text-sm font-semibold text-slate-800">{selectedEmployee.nickname || "—"}</p>
+                            </div>
+                            <div className="rounded-2xl bg-slate-50 p-3">
+                                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Current role</p>
+                                <p className="mt-2 text-sm font-semibold text-slate-800">{selectedEmployee.role || "reporter"}</p>
+                            </div>
+                        </div>
+
+                        <div className="mb-4 flex items-center justify-between">
+                            <h3 className="text-lg font-bold text-slate-900">Permissions</h3>
+                            <button
+                                type="button"
+                                onClick={handleSavePermissions}
+                                disabled={savingPermissions}
+                                className="rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-bold text-white shadow-md shadow-brand-200 transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                                {savingPermissions ? "Saving..." : "Save Changes"}
+                            </button>
+                        </div>
+
+                        <div className="grid gap-3 md:grid-cols-2">
+                            {permissionDefinitions.map((permission) => (
+                                <label key={permission.key} className="flex cursor-pointer items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3 transition hover:border-blue-200 hover:bg-blue-50/40">
+                                    <input
+                                        type="checkbox"
+                                        checked={Boolean(permissionMap[permission.key])}
+                                        onChange={() => setPermissionMap((prev) => ({
+                                            ...prev,
+                                            [permission.key]: !Boolean(prev[permission.key]),
+                                        }))}
+                                        className="mt-1 h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                                    />
+                                    <div className="min-w-0 flex-1">
+                                        <p className="text-sm font-bold text-slate-800">{permission.label}</p>
+                                        <p className="mt-1 text-xs leading-5 text-slate-500">{permission.description}</p>
+                                    </div>
+                                </label>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
                 {showCreate && (
                     <ModalShell onClose={() => setShowCreate(false)} maxWidth="max-w-md">
                         <ModalHeader title="Ongera Umukozi" description="Onjera umukozi mushya." onClose={() => setShowCreate(false)} />
@@ -207,7 +334,6 @@ function Employees() {
                     </ModalShell>
                 )}
 
-                {/* Edit modal */}
                 {showEdit && (
                     <ModalShell onClose={() => setShowEdit(false)} maxWidth="max-w-md">
                         <ModalHeader title="Hindura Umukozi" description="Vugurura amakuru y'umukozi." onClose={() => setShowEdit(false)} />

@@ -1488,7 +1488,7 @@ const AdminDashboard = ({
                             <button
                                 type="button"
                                 onClick={() => navigate("/admin/radio")}
-                                className="inline-flex items-center gap-1.5 rounded-xl bg-red-600 px-2.5 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-red-700 sm:px-3"
+                                className="inline-flex items-center gap-1.5 rounded-xl bg-red-600 px-2.5 py-2 text-sm font-bold text-white shadow-sm transition duration-200 hover:-translate-y-0.5 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-200 sm:px-3"
                                 title="Gucunga Radio"
                             >
                                 <Radio className="h-4 w-4" />
@@ -1497,7 +1497,7 @@ const AdminDashboard = ({
 
                             <button
                                 onClick={() => loadPosts()}
-                                className="rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-sm font-medium text-slate-600 shadow-sm transition hover:bg-slate-50 sm:px-3"
+                                className="rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-sm font-medium text-slate-600 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-200 sm:px-3"
                                 title="Ongera ushyireho"
                             >
                                 ↻
@@ -1508,14 +1508,14 @@ const AdminDashboard = ({
 
                             <button
                                 onClick={() => navigate("/admin/change-password")}
-                                className="rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-sm font-medium text-slate-600 shadow-sm transition hover:bg-slate-50 sm:px-3"
+                                className="rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-sm font-medium text-slate-600 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-200 sm:px-3"
                             >
                                 Hindura ijambobanga
                             </button>
 
                             <button
                                 onClick={() => navigate("/admin/change-email")}
-                                className="rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-sm font-medium text-slate-600 shadow-sm transition hover:bg-slate-50 sm:px-3"
+                                className="rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-sm font-medium text-slate-600 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-200 sm:px-3"
                             >
                                 Hindura imeyili
                             </button>
@@ -1623,14 +1623,14 @@ const AdminDashboard = ({
                             <div className="items-center gap-2 flex">
                                 <button
                                     onClick={() => navigate("/admin/posts/new")}
-                                    className="rounded-xl bg-blue-600 px-2.5 py-1.5 text-xs sm:text-sm font-semibold text-white transition hover:bg-blue-700 lg:px-4"
+                                    className="rounded-xl bg-blue-600 px-2.5 py-1.5 text-xs sm:text-sm font-semibold text-white transition duration-200 hover:-translate-y-0.5 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-200 lg:px-4"
                                 >
                                     + Inkuru nshya
                                 </button>
 
                                 <button
                                     onClick={() => setShowCreateAd(true)}
-                                    className="rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs sm:text-sm font-semibold text-slate-800 transition hover:bg-slate-50 lg:px-4"
+                                    className="rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs sm:text-sm font-semibold text-slate-800 transition duration-200 hover:-translate-y-0.5 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-200 lg:px-4"
                                 >
                                     + Kwamamaza
                                 </button>

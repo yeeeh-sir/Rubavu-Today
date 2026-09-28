@@ -46,9 +46,15 @@ export function NotificationsProvider({ children }) {
 
 export function useNotifications() {
   const context = useContext(NotificationsContext);
+
   if (!context) {
-    throw new Error("useNotifications must be used inside NotificationsProvider");
+    return {
+      unreadCount: 0,
+      refresh: async () => 0,
+      setCount: () => {},
+    };
   }
+
   return context;
 }
 

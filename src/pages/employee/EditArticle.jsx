@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { getMyPosts, updatePost } from "../../services/api";
+import { getMyPostById, updatePost } from "../../services/api";
 import ArticleEditor from "../../components/article/ArticleEditor";
 import { useToast, CardSkeleton as SkeletonCard } from "../../components/employee/EmployeeUI";
 import { DEPARTMENTS } from "./employeeHelpers";
@@ -21,14 +21,16 @@ export default function EditArticle() {
       setLoading(true);
       setError("");
       try {
-        const data = await getMyPosts();
+        /* Ownership and visibility are decided by the backend; the response
+           carries the capability map for this specific post. */
+        const data = await getMyPostById(id);
+
         if (cancelled) return;
-        const posts = Array.isArray(data) ? data : [];
-        const found = posts.find((item) => String(item.id || item._id) === String(id));
-        if (!found) {
-          setError("Employees can only edit their own draft or pending posts.");
+
+        if (!data) {
+          setError("Ntitwashoboye kubona iyi nkuru.");
         } else {
-          setPost(found);
+          setPost(data);
         }
       } catch (err) {
         if (!cancelled) setError(err?.message || "Ntitwashoboye kubona iyi nkuru.");
@@ -106,16 +108,15 @@ export default function EditArticle() {
     );
   }
 
-  /* A draft or a post still waiting for review can be improved.
-     Approved and sent-back articles are locked to Admin / Chief Editor. */
-  const currentStatus = String(post?.status || "").toLowerCase();
-  const canEdit = currentStatus === "draft" || currentStatus === "pending";
+  /* The backend capability map is the source of truth for edit access. */
+  const capabilities = post?.permissions || {};
+  const canEdit = Boolean(capabilities.canEditText || capabilities.canEditImage);
 
   if (!canEdit) {
     return (
       <div className="rounded-3xl border border-amber-200 bg-amber-50 px-6 py-14 text-center">
-        <h2 className="text-lg font-bold text-slate-800">Employees can only edit their own draft or pending posts.</h2>
-        <p className="mt-2 text-sm text-slate-600">Iyi nkuru ntikiri mu miterere itegereje gusuzumwa.</p>
+        <h2 className="text-lg font-bold text-slate-800">Ntushobora guhindura iyi nkuru.</h2>
+        <p className="mt-2 text-sm text-slate-600">Uburenganzira bwawe ntibwemerera guhindura iyi nkuru.</p>
         <button
           onClick={() => navigate("/employee/articles")}
           className="mt-5 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-blue-700"
@@ -126,6 +127,7 @@ export default function EditArticle() {
     );
   }
 
+  const currentStatus = String(post?.status || "").toLowerCase();
   const isDraft = currentStatus === "draft";
 
   return (

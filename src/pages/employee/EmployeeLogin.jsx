@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useLocation, useNavigate, Link } from "react-router-dom";
 import { Mail, Lock, Eye, EyeOff, Loader2 } from "lucide-react";
 import { login as loginApi } from "../../services/api";
 import logo from "../../Rubavu.jpeg";
@@ -13,6 +13,7 @@ function AuthPage() {
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -31,7 +32,17 @@ function AuthPage() {
         localStorage.setItem("user", JSON.stringify(data.user));
       }
 
-      navigate("/employee/dashboard");
+      const requestedLocation = location.state?.from;
+      const requestedPath = typeof requestedLocation === "string"
+        ? requestedLocation
+        : requestedLocation
+          ? `${requestedLocation.pathname || ""}${requestedLocation.search || ""}${requestedLocation.hash || ""}`
+          : "";
+      const destination = requestedPath.startsWith("/employee/")
+        ? requestedPath
+        : "/employee/dashboard";
+
+      navigate(destination, { replace: true });
     } catch (err) {
       console.error("Auth Error:", err);
       const serverError =

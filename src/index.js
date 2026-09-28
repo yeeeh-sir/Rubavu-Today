@@ -12,9 +12,7 @@ document.querySelector('link[rel="apple-touch-icon"]')?.setAttribute('href', rub
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
+  <App />
 );
 
 

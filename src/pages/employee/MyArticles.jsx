@@ -11,8 +11,9 @@ import {
   Search,
   Trash2,
 } from "lucide-react";
-import { deletePost, getMyPosts } from "../../services/api";
+import { deletePost, getMyPosts, hasPermission } from "../../services/api";
 import { useToast } from "../../components/employee/EmployeeUI";
+import { useAuth } from "../../context/AuthContext";
 import { useNotifications } from "../../context/NotificationsContext";
 import { ModalShell, ModalHeader, ModalFooter } from "../../components/dashboard/Modal";
 import {
@@ -43,15 +44,47 @@ const STATUS_FILTERS = [
   { value: "rejected", label: "Zanzwe" },
 ];
 
-/* Mirrors the backend rule: an employee may keep working on their own
-   article only while it is a private draft or still waiting for review. */
-const EDITABLE_STATUSES = ["draft", "pending"];
-
-const canEditPost = (post) =>
-  EDITABLE_STATUSES.includes(String(getStatus(post) || "").toLowerCase());
-
 export default function MyArticles() {
   const toast = useToast();
+  const { user } = useAuth();
+
+  /* Action visibility comes from the backend capability map attached to every
+     post. The local fallbacks mirror the same rules and are only used for
+     posts fetched before the map existed. */
+  const canEditPost = (post) => {
+    if (post?.permissions && typeof post.permissions === "object") {
+      return Boolean(post.permissions.canEditText || post.permissions.canEditImage);
+    }
+
+    const isOwner =
+      String(post.Author || "").trim() === String(user?.full_name || user?.email || "").trim() ||
+      Number(post.author_id) === Number(user?.id) ||
+      Number(post.created_by) === Number(user?.id);
+
+    return (
+      hasPermission(user, "edit_any_post") ||
+      hasPermission(user, "edit_post_text") ||
+      hasPermission(user, "edit_post_image") ||
+      hasPermission(user, "manage_images") ||
+      (isOwner && hasPermission(user, "edit_own_posts"))
+    );
+  };
+
+  const canDeletePost = (post) => {
+    if (post?.permissions && typeof post.permissions === "object") {
+      return Boolean(post.permissions.canDelete);
+    }
+
+    const status = String(getStatus(post) || "").toLowerCase();
+    const isOwner =
+      String(post.Author || "").trim() === String(user?.full_name || user?.email || "").trim() ||
+      Number(post.author_id) === Number(user?.id) ||
+      Number(post.created_by) === Number(user?.id);
+
+    return isOwner && status !== "approved" && status !== "draft" && status !== "pending"
+      ? Boolean(user?.permissions?.delete_any_post)
+      : isOwner && status !== "approved";
+  };
   const { refresh: refreshNotifications } = useNotifications();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -150,6 +183,23 @@ export default function MyArticles() {
   const openDetails = (post) => {
     setSelected(post);
     setDetailsOpen(true);
+  };
+
+  useEffect(() => {
+    const postId = searchParams.get("open");
+    if (loading || !postId) return;
+
+    const post = posts.find((item) => String(getPostId(item)) === postId);
+    if (post) openDetails(post);
+  }, [loading, posts, searchParams]);
+
+  const closeDetails = () => {
+    setDetailsOpen(false);
+    if (searchParams.has("open")) {
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.delete("open");
+      setSearchParams(nextParams, { replace: true });
+    }
   };
 
   if (loading) {
@@ -270,7 +320,13 @@ export default function MyArticles() {
                             )}
                           </div>
                           <div className="min-w-0">
-                            <p className="max-w-md truncate text-sm font-semibold text-slate-900">{post.title}</p>
+                            <button
+                              type="button"
+                              onClick={() => openDetails(post)}
+                              className="block max-w-md truncate text-left text-sm font-semibold text-slate-900 hover:text-blue-700 focus:outline-none focus-visible:underline"
+                            >
+                              {post.title}
+                            </button>
                             <p className="mt-0.5 text-xs text-slate-400">
                               {post.summary ? String(post.summary).slice(0, 60) : getCategory(post)}
                               {post.summary ? "…" : ""}
@@ -311,7 +367,7 @@ export default function MyArticles() {
                               <Pencil className="h-4 w-4" />
                             </Link>
                           )}
-                          {getStatus(post) !== "approved" && (
+                          {canDeletePost(post) && (
                             <button
                               onClick={() => setDeleteTarget(post)}
                               title="Kuraho"
@@ -340,7 +396,13 @@ export default function MyArticles() {
                           <div className="flex h-full w-full items-center justify-center text-slate-300"><FileText className="h-4 w-4" /></div>
                         )}
                       </div>
-                      <p className="truncate text-sm font-semibold text-slate-900">{post.title}</p>
+                      <button
+                        type="button"
+                        onClick={() => openDetails(post)}
+                        className="truncate text-left text-sm font-semibold text-slate-900 hover:text-blue-700 focus:outline-none focus-visible:underline"
+                      >
+                        {post.title}
+                      </button>
                     </div>
                     <EmployeeStatusBadge status={getStatus(post)} size="xs" />
                   </div>
@@ -356,7 +418,7 @@ export default function MyArticles() {
                         <Pencil className="h-3.5 w-3.5" /> Hindura
                       </Link>
                     )}
-                    {getStatus(post) !== "approved" && (
+                    {canDeletePost(post) && (
                       <button onClick={() => setDeleteTarget(post)} className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-red-50 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-100">
                         <Trash2 className="h-3.5 w-3.5" /> Kuraho
                       </button>
@@ -407,7 +469,8 @@ export default function MyArticles() {
       <PostDetailsModal
         open={detailsOpen}
         post={selected}
-        onClose={() => setDetailsOpen(false)}
+        onClose={closeDetails}
+        canEditPost={canEditPost}
       />
 
       <ConfirmModal
@@ -425,7 +488,7 @@ export default function MyArticles() {
   );
 }
 
-function PostDetailsModal({ open, post, onClose }) {
+function PostDetailsModal({ open, post, onClose, canEditPost }) {
   if (!open || !post) return null;
 
   const rejection = String(post.rejection_reason || "").trim();

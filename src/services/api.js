@@ -1054,8 +1054,57 @@ export async function getChiefEditorDashboard() {
   return getDashboard();
 }
 
-export async function getMyPosts() {
-  return request("/api/my-posts");
+/* Employee post list. Pass `{ scope: "all" }` to request the full article
+   list; the backend silently falls back to the employee's own posts unless
+   the admin granted "View All Posts", so visibility is never widened by the
+   client. Each returned post carries a `permissions` capability map produced
+   by the same rules the backend authorises against. */
+export async function getMyPosts({ scope, page, limit, search, status, category } = {}) {
+  const params = new URLSearchParams();
+
+  if (scope) params.set("scope", scope);
+  if (page) params.set("page", String(page));
+  if (limit) params.set("limit", String(limit));
+  if (search) params.set("search", search);
+  if (status) params.set("status", status);
+  if (category) params.set("category", category);
+
+  const qs = params.toString();
+
+  return request(qs ? `/api/my-posts?${qs}` : "/api/my-posts");
+}
+
+export async function getMyPostById(id) {
+  return request(`/api/my-posts/${id}`);
+}
+
+/* True when the signed-in user holds an explicit employee permission.
+   Admin and Chief Editor bypass every per-employee grant. */
+export function hasPermission(user, permissionKey) {
+  if (!user || !permissionKey) return false;
+
+  const roleType = String(user.role_type || "").toLowerCase();
+  if (roleType === "admin" || roleType === "chief_editor") return true;
+  if (roleType !== "employee") return false;
+
+  const key = String(permissionKey).trim();
+  const permissions = user.permissions;
+
+  if (Array.isArray(permissions)) {
+    return permissions.some(
+      (value) => String(value).trim() === key || String(value).trim() === key.replace(/_/g, " ")
+    );
+  }
+
+  if (permissions && typeof permissions === "object") {
+    return Boolean(
+      permissions[key] ||
+        permissions[key.replace(/_/g, " ")] ||
+        permissions[key.replace(/_/g, "-")]
+    );
+  }
+
+  return false;
 }
 
 export async function getDailyTaskState() {
@@ -1214,6 +1263,26 @@ export async function commitCommentReaction(commentId, action, deviceId) {
 
 export async function getEmployees() {
   return request("/api/employees");
+}
+
+export async function getPermissions() {
+  return request("/api/permissions");
+}
+
+export async function getEmployeePermissions(employeeId) {
+  return request(`/api/admin/employees/${employeeId}/permissions`);
+}
+
+export async function saveEmployeePermissions(employeeId, permissionKeys) {
+  return request(`/api/admin/employees/${employeeId}/permissions`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      permissions: Array.isArray(permissionKeys) ? permissionKeys : [],
+    }),
+  });
 }
 
 export async function getEmployeeById(id) {
@@ -1703,6 +1772,8 @@ const api = {
   getDashboard,
   getChiefEditorDashboard,
   getMyPosts,
+  getMyPostById,
+  hasPermission,
 
   getDailyTaskState,
   getMyPerformance,
