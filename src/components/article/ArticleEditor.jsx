@@ -14,6 +14,10 @@ import {
 } from "lucide-react";
 import { validateImageFile } from "./ImageUploader";
 import ArticlePreview from "./ArticlePreview";
+import {
+  AMAKURU_DEPARTMENTS,
+  isAmakuruCategory,
+} from "../../utils/amakuruDepartments";
 
 let itemIdCounter = 0;
 const nextId = () => `item-${Date.now()}-${itemIdCounter++}`;
@@ -92,6 +96,9 @@ const ArticleEditor = ({
   const [category, setCategory] = useState(
     initial?.category || categories[0]?.name || "Amakuru"
   );
+  const [amakuruDepartment, setAmakuruDepartment] = useState(
+    initial?.amakuru_department || ""
+  );
   const [youtubeUrl, setYoutubeUrl] = useState(
     initial?.youtube_url || initial?.youtubeUrl || ""
   );
@@ -140,6 +147,8 @@ const ArticleEditor = ({
     categories && categories.length > 0
       ? categories
       : [{ name: "Amakuru" }];
+
+  const isAmakuru = isAmakuruCategory(category);
 
   const paragraphText = sections
     .filter((s) => s.type === "paragraph" && s.text && s.text.trim())
@@ -295,6 +304,7 @@ const ArticleEditor = ({
 
     fd.append("title", title.trim());
     fd.append("category", category || "Amakuru");
+    fd.append("amakuru_department", isAmakuru ? amakuruDepartment : "");
     fd.append("description", paragraphText.slice(0, 400));
 
     if (headerImage?.file) {
@@ -371,6 +381,10 @@ const ArticleEditor = ({
     }
     if (!paragraphText) {
       setFormError("Andika inkuru yawe mbere yo gutanga.");
+      return;
+    }
+    if (isAmakuru && !amakuruDepartment) {
+      setFormError("Hitamo Amakuru Department mbere yo gutanga inkuru.");
       return;
     }
     if (headerImage?.error) {
@@ -477,6 +491,30 @@ const ArticleEditor = ({
               ))}
             </select>
           </div>
+
+          {isAmakuru && (
+            <div>
+              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-700">
+                Amakuru Department <span className="text-red-600">*</span>
+              </label>
+              <select
+                value={amakuruDepartment}
+                required={isAmakuru}
+                onChange={(e) => {
+                  setAmakuruDepartment(e.target.value);
+                  markDirty();
+                }}
+                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              >
+                <option value="">Hitamo ishami</option>
+                {AMAKURU_DEPARTMENTS.map((department) => (
+                  <option key={department.slug} value={department.name}>
+                    {department.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div>
             <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-700">

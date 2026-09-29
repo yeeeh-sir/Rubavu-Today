@@ -18,6 +18,7 @@ import {
   getComments,
   updatePostStatus,
 } from "../../services/api";
+import { isAmakuruCategory } from "../../utils/amakuruDepartments";
 
 import { API_ROOT as SERVER_URL } from "../../services/api";
 import LoadingScreen from "../../components/common/LoadingScreen";
@@ -331,6 +332,7 @@ export default function ChiefDashboard({ onLogout }) {
       youtube_url: post.youtube_url || post.youtubeUrl || "",
       image: post.image || post.image_url || post.imageUrl || null,
       category: post.category || "Amakuru",
+      amakuru_department: post.amakuru_department || "",
       status: post.status || post.Status || "",
       content_blocks: post.content_blocks || null,
     });
@@ -1536,12 +1538,22 @@ export default function ChiefDashboard({ onLogout }) {
 
                       <div className="mb-2 flex items-center justify-between gap-2">
 
-                        <span className="rounded-full bg-blue-50 px-2 py-1 text-[9px] font-black uppercase tracking-wide text-blue-700">
-                          {post.category ||
-                            "Amakuru"}
-                        </span>
+                        <div className="flex min-w-0 flex-wrap items-center gap-1">
 
-                        <span className="truncate text-[9px] font-semibold text-slate-400">
+                          <span className="rounded-full bg-blue-50 px-2 py-1 text-[9px] font-black uppercase tracking-wide text-blue-700">
+                            {post.category ||
+                              "Amakuru"}
+                          </span>
+
+                          {isAmakuruCategory(post.category) && post.amakuru_department ? (
+                            <span className="truncate rounded-full bg-red-50 px-2 py-1 text-[9px] font-black uppercase tracking-wide text-red-700">
+                              {post.amakuru_department}
+                            </span>
+                          ) : null}
+
+                        </div>
+
+                        <span className="shrink-0 truncate text-[9px] font-semibold text-slate-400">
                           {formatDate(
                             post
                           )}

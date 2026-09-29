@@ -216,6 +216,8 @@ function AppRoutes() {
             <Suspense fallback={null}>
                 <Routes>
                     <Route path="/" element={<PublicLayout><Home /></PublicLayout>} />
+                    <Route path="/amakuru" element={<PublicLayout showHomeContent={false}><Home /></PublicLayout>} />
+                    <Route path="/amakuru/:departmentSlug" element={<PublicLayout showHomeContent={false}><Home /></PublicLayout>} />
                     <Route path="/media" element={<PublicLayout showHomeContent={false}><Media /></PublicLayout>} />
                     <Route path="/radio" element={<PublicLayout showHomeContent={false}><RadioPage /></PublicLayout>} />
                     <Route path="/post/:id/*" element={<PublicLayout showHomeContent={false}><PostDetails /></PublicLayout>} />

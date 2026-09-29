@@ -311,3 +311,16 @@ a {
 .font-masthead {
   font-family: 'Source Sans 3', Inter, system-ui, sans-serif;
 }
+
+/* Horizontal rail (Amakuru sub-departments): keep the swipe scrolling but
+   drop the visual scrollbar chrome. */
+.scrollbar-hide-x {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scrollbar-hide-x::-webkit-scrollbar {
+  display: none;
+  width: none;
+  height: none;
+}

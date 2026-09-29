@@ -109,6 +109,8 @@ export const normalizePost = (post) => ({
 
   category: post.category || "",
 
+  amakuru_department: post.amakuru_department || null,
+
   description: post.description || "",
 
   summary:
@@ -907,6 +909,10 @@ const buildPostFormData = (postData) => {
       "category",
       postData.category
     );
+  }
+
+  if (postData.amakuru_department !== undefined) {
+    formData.append("amakuru_department", postData.amakuru_department || "");
   }
 
   if (postData.description !== undefined) {

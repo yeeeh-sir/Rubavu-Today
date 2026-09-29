@@ -5,8 +5,14 @@ import { SiteSEO } from "../components/SEO/SEO";
 import { getArticleUrl } from "../utils/slug";
 import { useLanguage } from "../context/LanguageContext";
 import AdBanner from "../components/common/AdBanner";
+import AmakuruDepartmentNav from "../components/common/AmakuruDepartmentNav";
 import OptimizedImage from "../components/common/OptimizedImage";
 import { RESOLUTION_WIDTHS } from "../utils/images";
+import {
+  filterAmakuruPosts,
+  getAmakuruDepartmentBySlug,
+  isAmakuruCategory,
+} from "../utils/amakuruDepartments";
 
 
 const formatDate = (dateStr, language) => {
@@ -29,6 +35,14 @@ const Home = () => {
   const [mediaSearch, setMediaSearch] = useState("");
   const location = useLocation();
   const { language, t } = useLanguage();
+  const pathSegments = location.pathname.split("/").filter(Boolean);
+  const isAmakuruPage = pathSegments[0] === "amakuru";
+  const selectedDepartment = isAmakuruPage
+    ? getAmakuruDepartmentBySlug(pathSegments[1] || "")
+    : null;
+  const selectedCategory = isAmakuruPage
+    ? "Amakuru"
+    : new URLSearchParams(location.search).get("category") || "";
 
 
 
@@ -74,22 +88,20 @@ const Home = () => {
     setQuery(nextQuery);
     setVisibleCount(16);
 
-    if (isMediaPage || nextCategory || nextQuery) {
+    if (isMediaPage || nextCategory || nextQuery || isAmakuruPage) {
       setShowMedia(false);
     } else if (!nextCategory && !nextQuery && !location.pathname.includes("/post/")) {
       setShowMedia(true);
     }
-  }, [location.search, location.pathname]);
+  }, [location.search, location.pathname, isAmakuruPage]);
 
   const filteredPosts = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return posts;
-    return posts.filter((post) =>
-      [post.title, post.summary, post.content, post.category].some(
-        (item) => item && item.toString().toLowerCase().includes(q)
-      )
-    );
-  }, [posts, query]);
+    return filterAmakuruPosts(posts, {
+      category: selectedCategory,
+      department: selectedDepartment?.name,
+      query,
+    });
+  }, [posts, query, selectedCategory, selectedDepartment]);
 
 
   const orderedPosts = useMemo(() => {
@@ -155,6 +167,9 @@ const Home = () => {
   const PostCard = ({ post }) => {
     const articleHref = getArticleUrl(post);
     const imageUrl = post.image || "https://images.unsplash.com/photo-1495020689067-958852a7765e?auto=format&fit=crop&w=1200&q=80";
+    const categoryLabel = isAmakuruCategory(post.category) && post.amakuru_department
+      ? `${post.category} · ${post.amakuru_department}`
+      : post.category;
 
     return (
       <Link to={articleHref} className="group block h-full">
@@ -179,7 +194,7 @@ const Home = () => {
           </div>
 
           <div className="flex min-w-0 flex-1 flex-col px-2.5 py-2.5 sm:px-3 sm:py-3">
-            {post.category && <span className="mb-0.5 truncate text-[8px] font-bold uppercase tracking-wider text-red-600">{post.category}</span>}
+            {categoryLabel && <span className="mb-0.5 truncate text-[8px] font-bold uppercase tracking-wider text-red-600">{categoryLabel}</span>}
 
             <h4 className="break-words font-masthead text-[12px] font-extrabold leading-tight text-slate-900 transition-colors group-hover:text-red-600 sm:text-[13px]">
               {post.title}
@@ -300,9 +315,22 @@ const Home = () => {
 
   return (
     <div className="min-h-screen emotional-gradient-bg text-black flex flex-col font-body selection:bg-red-600 selection:text-white">
-      <SiteSEO />
+      <SiteSEO
+        title={selectedDepartment ? `${selectedDepartment.name} - Rubavu Today` : isAmakuruPage ? "Amakuru - Rubavu Today" : undefined}
+        description={selectedDepartment
+          ? `Amakuru ya ${selectedDepartment.name} agezweho kuri Rubavu Today.`
+          : isAmakuruPage
+            ? "Amakuru yose yo mu karere ka Rubavu n'ibindi, harimo politiki, ubuzima, ikoranabuhanga n'andi mashami."
+            : undefined}
+        canonicalPath={isAmakuruPage
+          ? selectedDepartment
+            ? `/amakuru/${selectedDepartment.slug}`
+            : "/amakuru"
+          : "/"}
+      />
       <main className="flex-grow">
         <section className="max-w-7xl mx-auto px-3 xs:px-4 sm:px-6 pt-2 pb-2">
+          {isAmakuruPage && <AmakuruDepartmentNav />}
           {loading ? null : error ? (
             /* Error State */
             <div className="bg-red-50 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] p-6 max-w-lg mx-auto text-center my-12">
@@ -353,7 +381,9 @@ const Home = () => {
             <div className="space-y-6">
 
               <SectionHeader
-                title={query.trim() ? (language === "rw" ? "Ibyavuye mu gushakisha" : t("search")) : ""}
+                title={query.trim()
+                  ? (language === "rw" ? "Ibyavuye mu gushakisha" : t("search"))
+                  : selectedCategory || ""}
               />
 
               <div className="grid grid-cols-1 gap-5 lg:grid-cols-[280px_minmax(0,1fr)] lg:items-start lg:gap-6">

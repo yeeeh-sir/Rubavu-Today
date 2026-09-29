@@ -43,6 +43,7 @@ import AuthorProfileTrigger from "../../components/common/AuthorProfileTrigger";
 import ArticleEditor from "../../components/article/ArticleEditor";
 import OptimizedImage from "../../components/common/OptimizedImage";
 import { RESOLUTION_WIDTHS } from "../../utils/images";
+import { isAmakuruCategory } from "../../utils/amakuruDepartments";
 import { MessageSquare, Eye, EyeOff, ChevronDown, ChevronRight, Radio } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -722,6 +723,7 @@ const AdminDashboard = ({
             youtube_url: post.youtube_url || "",
             image: post.image || null,
             category: post.category || DEPARTMENTS[0].name,
+            amakuru_department: post.amakuru_department || "",
             status: post.status || "",
             content_blocks: post.content_blocks || null,
         });
@@ -3402,6 +3404,12 @@ const PostCard = ({
                         {post.category || "Amakuru"}
                     </span>
 
+                    {isAmakuruCategory(post.category) && post.amakuru_department && (
+                        <span className="max-w-full truncate rounded-md bg-red-50 px-2 py-1 text-[9px] font-bold uppercase tracking-wide text-red-700 sm:text-[10px]">
+                            {post.amakuru_department}
+                        </span>
+                    )}
+
                     {post.priority && (
                         <span className="shrink-0 rounded-md bg-red-50 px-2 py-1 text-[9px] font-bold uppercase text-red-600 sm:text-[10px]">
                             Igihitamwo
@@ -3829,6 +3837,12 @@ const PostDetailModal = ({
                         <span className="rounded-full bg-blue-50 px-3 py-1.5 text-xs font-black text-blue-700">
                             {post.category || "Amakuru"}
                         </span>
+
+                        {isAmakuruCategory(post.category) && post.amakuru_department && (
+                            <span className="rounded-full bg-red-50 px-3 py-1.5 text-xs font-black text-red-700">
+                                {post.amakuru_department}
+                            </span>
+                        )}
                     </div>
 
                     <h2 className="text-2xl font-black leading-tight text-slate-900 sm:text-4xl">

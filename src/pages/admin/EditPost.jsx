@@ -60,7 +60,7 @@ function EditPost() {
             navigate(`/admin/posts/${id}/view`, { replace: true });
         } catch (err) {
             console.error("[EditPost] Failed:", err);
-            alert(err.message || "Hari ikosa ryabaye mu kwihindura inkuru.");
+            alert(err.message || "Hari ikosa ryabaye mu guhindura inkuru.");
         } finally {
             setSaving(false);
         }

@@ -1183,6 +1183,11 @@ const Navbar = ({ showHomeContent = true }) => {
       "category"
     );
 
+    if (location.pathname === "/amakuru" || location.pathname.startsWith("/amakuru/")) {
+      setActiveCategory("Amakuru");
+      return;
+    }
+
     if (
       category &&
       DEPARTMENTS.some(
@@ -1199,7 +1204,7 @@ const Navbar = ({ showHomeContent = true }) => {
         "All"
       );
     }
-  }, [params]);
+  }, [location.pathname, params]);
 
   const [
     searchValue,
@@ -1726,8 +1731,8 @@ const Navbar = ({ showHomeContent = true }) => {
 
       navigate(
         {
-          pathname: "/",
-          search: nextSearch,
+          pathname: category === "Amakuru" ? "/amakuru" : "/",
+          search: category === "Amakuru" ? "" : nextSearch,
         },
         {
           replace: true,

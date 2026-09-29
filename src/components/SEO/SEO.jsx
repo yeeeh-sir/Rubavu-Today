@@ -43,7 +43,12 @@ function cleanDescription(text) {
     .slice(0, 200);
 }
 
-export function SiteSEO() {
+export function SiteSEO({
+  title = SITE_NAME,
+  description = DEFAULT_DESCRIPTION,
+  canonicalPath = "/",
+}) {
+  const canonicalUrl = `${SITE_URL}${canonicalPath.startsWith("/") ? canonicalPath : `/${canonicalPath}`}`;
   const orgLd = {
     "@context": "https://schema.org",
     "@type": "Organization",
@@ -72,26 +77,26 @@ export function SiteSEO() {
   return (
     <Helmet>
       <html lang={DEFAULT_LANG} />
-      <title>{SITE_NAME}</title>
-      <meta name="description" content={DEFAULT_DESCRIPTION} />
-      <link rel="canonical" href={SITE_URL} />
+      <title>{title}</title>
+      <meta name="description" content={description} />
+      <link rel="canonical" href={canonicalUrl} />
       <link rel="icon" href={`${SITE_URL}/favicon.ico`} sizes="any" />
       <link rel="icon" type="image/png" sizes="32x32" href={`${SITE_URL}/favicon-32x32.png`} />
       <link rel="icon" type="image/png" sizes="48x48" href={`${SITE_URL}/favicon-48x48.png`} />
       <link rel="apple-touch-icon" sizes="192x192" href={`${SITE_URL}/favicon-192x192.png`} />
 
       <meta property="og:type" content="website" />
-      <meta property="og:title" content={SITE_NAME} />
-      <meta property="og:description" content={DEFAULT_DESCRIPTION} />
+      <meta property="og:title" content={title} />
+      <meta property="og:description" content={description} />
       <meta property="og:image" content={DEFAULT_IMAGE} />
       <meta property="og:image:secure_url" content={DEFAULT_IMAGE} />
-      <meta property="og:url" content={SITE_URL} />
+      <meta property="og:url" content={canonicalUrl} />
       <meta property="og:site_name" content={SITE_NAME} />
       <meta property="og:locale" content={DEFAULT_LOCALE} />
 
       <meta name="twitter:card" content="summary_large_image" />
-      <meta name="twitter:title" content={SITE_NAME} />
-      <meta name="twitter:description" content={DEFAULT_DESCRIPTION} />
+      <meta name="twitter:title" content={title} />
+      <meta name="twitter:description" content={description} />
       <meta name="twitter:image" content={DEFAULT_IMAGE} />
 
       <script type="application/ld+json">{JSON.stringify(orgLd)}</script>
@@ -191,7 +196,14 @@ export function ArticleSEO({ post }) {
       )}
       <meta property="article:author" content={authorName} />
       {post.category && (
-        <meta property="article:section" content={post.category} />
+        <meta
+          property="article:section"
+          content={
+            String(post.category).trim().toLowerCase() === "amakuru" && post.amakuru_department
+              ? `${post.category} - ${post.amakuru_department}`
+              : post.category
+          }
+        />
       )}
 
       <meta name="twitter:card" content="summary_large_image" />

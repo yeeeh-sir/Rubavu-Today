@@ -1016,6 +1016,9 @@ function Employee() {
 
                       {post.category ||
                         "General"}
+                      {post.category === "Amakuru" && post.amakuru_department
+                        ? ` · ${post.amakuru_department}`
+                        : ""}
 
                     </span>
 

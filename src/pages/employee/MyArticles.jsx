@@ -337,6 +337,9 @@ export default function MyArticles() {
                       <td className="px-4 py-3.5">
                         <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold ${DEPARTMENT_COLORS[getCategory(post)] || "bg-slate-100 text-slate-600"}`}>
                           {DEPARTMENT_ICONS[getCategory(post)] || "📰"} {getCategory(post)}
+                          {getCategory(post) === "Amakuru" && post.amakuru_department
+                            ? ` · ${post.amakuru_department}`
+                            : ""}
                         </span>
                       </td>
                       <td className="px-4 py-3.5">
