@@ -559,6 +559,7 @@ function buildRadioPreviewHtml(image) {
 <meta property="og:url" content="${canonical}" />
 <meta property="og:site_name" content="${SITE_NAME}" />
 <meta property="og:image" content="${escapeHtml(image)}" />
+<meta property="og:image:url" content="${escapeHtml(image)}" />
 <meta property="og:image:secure_url" content="${escapeHtml(image)}" />
 <meta property="og:image:type" content="image/png" />
 <meta property="og:image:alt" content="${title}" />
@@ -567,6 +568,9 @@ function buildRadioPreviewHtml(image) {
 <meta name="twitter:title" content="${title}" />
 <meta name="twitter:description" content="${description}" />
 <meta name="twitter:image" content="${escapeHtml(image)}" />
+<meta name="twitter:image:src" content="${escapeHtml(image)}" />
+<meta name="twitter:image:alt" content="${title}" />
+<meta name="twitter:url" content="${canonical}" />
 </head>
 <body><main><img src="${escapeHtml(image)}" alt="${title}" /><h1>${title}</h1><p>${description}</p></main></body>
 </html>`;

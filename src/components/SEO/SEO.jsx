@@ -91,6 +91,7 @@ export function SiteSEO({
       <meta property="og:title" content={title} />
       <meta property="og:description" content={description} />
       <meta property="og:image" content={shareImage} />
+      <meta property="og:image:url" content={shareImage} />
       <meta property="og:image:secure_url" content={shareImage} />
       <meta property="og:image:alt" content={title} />
       <meta property="og:url" content={canonicalUrl} />
@@ -101,6 +102,9 @@ export function SiteSEO({
       <meta name="twitter:title" content={title} />
       <meta name="twitter:description" content={description} />
       <meta name="twitter:image" content={shareImage} />
+      <meta name="twitter:image:src" content={shareImage} />
+      <meta name="twitter:image:alt" content={title} />
+      <meta name="twitter:url" content={canonicalUrl} />
 
       <script type="application/ld+json">{JSON.stringify(orgLd)}</script>
       <script type="application/ld+json">{JSON.stringify(websiteLd)}</script>

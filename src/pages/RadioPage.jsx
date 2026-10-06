@@ -7,6 +7,7 @@ import {
   Mail,
   MessageCircle,
   Pause,
+  Phone,
   Play,
   Send,
   Share2,
@@ -18,6 +19,8 @@ import { useLanguage } from "../context/LanguageContext";
 import { SiteSEO } from "../components/SEO/SEO";
 import { Link } from "react-router-dom";
 import radioLogo from "../Rubavu Today Radio.png";
+
+const RADIO_SHARE_URL = "https://www.rubavutoday.com/radio";
 
 function RadioPage() {
   const [shareMessage, setShareMessage] = useState("");
@@ -41,7 +44,7 @@ function RadioPage() {
 
   const playingNow = currentItem;
   const playableItem = currentItem || queue[0];
-  const radioShareUrl = new URL("/radio", window.location.origin).toString();
+  const radioShareUrl = RADIO_SHARE_URL;
   const pageDescription = rw
     ? "Amakuru, ibiganiro, imyidagaduro, umuziki n'izindi porogaramu zo muri Rubavu."
     : "News, discussions, entertainment, music and more from across Rubavu.";
@@ -109,6 +112,8 @@ function RadioPage() {
       `RubavuToday Radio - ${pageDescription} ${radioShareUrl}`
     )}`;
     const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(radioShareUrl)}`;
+    const linkedInUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(radioShareUrl)}`;
+    const redditUrl = `https://www.reddit.com/submit?url=${encodeURIComponent(radioShareUrl)}&title=${encodeURIComponent("RubavuToday Radio")}`;
     const xUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(radioShareUrl)}&text=${encodeURIComponent(`RubavuToday Radio - ${pageDescription}`)}`;
     const telegramUrl = `https://t.me/share/url?url=${encodeURIComponent(radioShareUrl)}&text=${encodeURIComponent(`RubavuToday Radio - ${pageDescription}`)}`;
     const emailUrl = `mailto:?subject=${encodeURIComponent("RubavuToday Radio")}&body=${encodeURIComponent(`${pageDescription} ${radioShareUrl}`)}`;
@@ -248,12 +253,23 @@ function RadioPage() {
                       </p>
                       <div className="grid grid-cols-2 gap-2">
                         <a href={whatsAppUrl} target="_blank" rel="noopener noreferrer" onClick={() => setShareMenuOpen(false)} className="inline-flex min-h-11 min-w-0 items-center gap-2 border border-slate-700 px-2 text-xs font-semibold leading-tight hover:border-emerald-500 hover:text-emerald-300">
-                          <MessageCircle className="h-4 w-4 shrink-0 text-emerald-400" aria-hidden="true" />
+                          <span className="relative grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[#25D366] text-white" aria-hidden="true">
+                            <MessageCircle className="h-5 w-5" />
+                            <Phone className="absolute h-2 w-2" />
+                          </span>
                           <span className="min-w-0">WhatsApp</span>
                         </a>
                         <a href={facebookUrl} target="_blank" rel="noopener noreferrer" onClick={() => setShareMenuOpen(false)} className="inline-flex min-h-11 min-w-0 items-center gap-2 border border-slate-700 px-2 text-xs font-semibold leading-tight hover:border-blue-500 hover:text-blue-300">
                           <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[#1877F2] text-sm font-black text-white" aria-hidden="true">f</span>
                           <span className="min-w-0">Facebook</span>
+                        </a>
+                        <a href={linkedInUrl} target="_blank" rel="noopener noreferrer" onClick={() => setShareMenuOpen(false)} className="inline-flex min-h-11 min-w-0 items-center gap-2 border border-slate-700 px-2 text-xs font-semibold leading-tight hover:border-sky-500 hover:text-sky-300">
+                          <span className="grid h-5 w-5 shrink-0 place-items-center rounded-sm bg-[#0A66C2] text-[10px] font-black text-white" aria-hidden="true">in</span>
+                          <span className="min-w-0">LinkedIn</span>
+                        </a>
+                        <a href={redditUrl} target="_blank" rel="noopener noreferrer" onClick={() => setShareMenuOpen(false)} className="inline-flex min-h-11 min-w-0 items-center gap-2 border border-slate-700 px-2 text-xs font-semibold leading-tight hover:border-orange-500 hover:text-orange-300">
+                          <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[#FF4500] text-white" aria-hidden="true"><MessageCircle className="h-3 w-3" /></span>
+                          <span className="min-w-0">Reddit</span>
                         </a>
                         <a href={xUrl} target="_blank" rel="noopener noreferrer" onClick={() => setShareMenuOpen(false)} className="inline-flex min-h-11 min-w-0 items-center gap-2 border border-slate-700 px-2 text-xs font-semibold leading-tight hover:border-slate-400 hover:text-white">
                           <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-white text-xs font-black text-black" aria-hidden="true">X</span>
