@@ -522,9 +522,70 @@ ${contentHtml}
 </html>`;
 }
 
+async function getRadioLogoUrl(requestUrl) {
+  try {
+    const response = await fetch(new URL("/asset-manifest.json", requestUrl));
+    if (!response.ok) return LOGO_URL;
+    const manifest = await response.json();
+    const entry = Object.entries(manifest.files || {}).find(([source]) => {
+      try {
+        return decodeURIComponent(source).endsWith("/Rubavu Today Radio.png");
+      } catch (error) {
+        return false;
+      }
+    });
+    return entry?.[1] ? new URL(entry[1], requestUrl).toString() : LOGO_URL;
+  } catch (error) {
+    return LOGO_URL;
+  }
+}
+
+function buildRadioPreviewHtml(image) {
+  const title = "RubavuToday Radio";
+  const description =
+    "News, discussions, entertainment, music and more from across Rubavu.";
+  const canonical = `${SITE_URL}/radio`;
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>${title} | ${SITE_NAME}</title>
+<meta name="description" content="${description}" />
+<link rel="canonical" href="${canonical}" />
+<meta property="og:type" content="website" />
+<meta property="og:title" content="${title}" />
+<meta property="og:description" content="${description}" />
+<meta property="og:url" content="${canonical}" />
+<meta property="og:site_name" content="${SITE_NAME}" />
+<meta property="og:image" content="${escapeHtml(image)}" />
+<meta property="og:image:secure_url" content="${escapeHtml(image)}" />
+<meta property="og:image:type" content="image/png" />
+<meta property="og:image:alt" content="${title}" />
+<meta property="og:locale" content="rw_RW" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="${title}" />
+<meta name="twitter:description" content="${description}" />
+<meta name="twitter:image" content="${escapeHtml(image)}" />
+</head>
+<body><main><img src="${escapeHtml(image)}" alt="${title}" /><h1>${title}</h1><p>${description}</p></main></body>
+</html>`;
+}
+
 export default async function handler(request) {
   try {
     const url = new URL(request.url);
+    if (url.searchParams.get("type") === "radio") {
+      const image = await getRadioLogoUrl(request.url);
+      return new Response(buildRadioPreviewHtml(image), {
+        status: 200,
+        headers: {
+          "Content-Type": "text/html; charset=utf-8",
+          "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400",
+        },
+      });
+    }
+
     const slug = String(url.searchParams.get("slug") || "")
       .replace(/\.html$/i, "")
       .trim()

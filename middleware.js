@@ -13,7 +13,8 @@ const RESERVED_PATH_RE =
   /^\/(admin|dashboard|employee|chief|chief-editor|profile|login|signin|signup)(\/|$)|\/api\/|\/sitemap\.xml$|\.(json|ico|png|jpe?g|svg|webp|gif|css|js|map|txt|xml|webmanifest|woff2?|ttf)$/i;
 
 const PUBLIC_ROUTE_RE =
-  /^\/(about|contact|privacy-policy|terms|media)(\/|$)/i;
+  /^\/(about|contact|privacy-policy|terms|media|radio)(\/|$)/i;
+const RADIO_ROUTE_RE = /^\/radio\/?$/i;
 
 function cleanSlug(value) {
   return String(value || "")
@@ -67,6 +68,10 @@ export default async function middleware(request) {
         }
         return next();
       }
+    }
+
+    if (RADIO_ROUTE_RE.test(pathname) && CRAWLER_RE.test(ua)) {
+      return rewrite(new URL("/api/og?type=radio", request.url));
     }
 
     if (!isReserved && !PUBLIC_ROUTE_RE.test(pathname) && CRAWLER_RE.test(ua)) {

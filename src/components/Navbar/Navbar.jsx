@@ -1775,17 +1775,31 @@ const Navbar = ({ showHomeContent = true }) => {
   );
 
   const radioControl = (
-    <div className="relative">
+    <div className="relative flex items-center gap-1">
+      <Link
+        to="/radio"
+        aria-label="RubavuToday Radio"
+        title="RubavuToday Radio"
+        className={`flex h-8 w-8 items-center justify-center gap-1.5 px-0 py-0 font-body text-[11px] font-black uppercase tracking-[0.1em] transition sm:h-auto sm:w-auto sm:px-4 sm:py-3 ${radioIsLive ? "bg-red-600 text-white hover:bg-red-700" : "text-slate-300 hover:bg-slate-800 hover:text-white"}`}
+      >
+        <RadioIcon className={`h-3.5 w-3.5 ${radioIsLive ? "text-red-200" : "text-slate-400"}`} />
+        <span className="hidden sm:inline">RubavuToday Radio</span>
+      </Link>
       <button
         type="button"
         onClick={() => setIsRadioMenuOpen((previous) => !previous)}
         aria-expanded={isRadioMenuOpen}
-        aria-label="RubavuToday Radio"
-        title="RubavuToday Radio"
-        className={`flex h-9 w-9 items-center justify-center gap-1.5 px-0 py-0 font-body text-[11px] font-black uppercase tracking-[0.1em] transition sm:h-auto sm:w-auto sm:px-4 sm:py-3 ${radioIsLive ? "bg-red-600 text-white hover:bg-red-700" : "text-slate-300 hover:bg-slate-800 hover:text-white"}`}
+        aria-label="Radio playback controls"
+        title="Radio playback controls"
+        className="grid h-8 w-8 place-items-center text-slate-300 transition hover:bg-slate-800 hover:text-white"
       >
-        <RadioIcon className={`h-3.5 w-3.5 ${radioIsLive ? "text-red-200" : "text-slate-400"}`} />
-        <span className="hidden sm:inline">RubavuToday Radio</span>
+        {radioIsLoading ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : radioIsPlaying ? (
+          <Pause className="h-4 w-4 fill-current" />
+        ) : (
+          <Play className="ml-0.5 h-4 w-4 fill-current" />
+        )}
       </button>
       {radioDropdown}
     </div>
@@ -1989,9 +2003,9 @@ const Navbar = ({ showHomeContent = true }) => {
               )
             }
             aria-label="Rubavu Today Ahabanza"
-            className="group flex max-w-[58%] items-center justify-center gap-2 outline-none sm:max-w-none sm:gap-3"
+            className="group absolute left-1/2 right-auto flex max-w-[calc(100%-8rem)] -translate-x-1/2 items-center justify-center gap-1 outline-none max-[310px]:left-12 max-[310px]:right-32 max-[310px]:translate-x-0 sm:static sm:w-auto sm:max-w-none sm:translate-x-0 sm:gap-3"
           >
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-red-600 bg-white shadow-xl transition duration-300 group-hover:scale-105 sm:h-[62px] sm:w-[62px] md:h-[68px] md:w-[68px]">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-red-600 bg-white shadow-xl transition duration-300 group-hover:scale-105 sm:h-[62px] sm:w-[62px] md:h-[68px] md:w-[68px]">
               <img
                 src={logo}
                 alt="Rubavu Today"
@@ -1999,7 +2013,7 @@ const Navbar = ({ showHomeContent = true }) => {
               />
             </div>
 
-            <span className="font-post-title whitespace-nowrap text-[18px] font-black leading-none tracking-tight text-white sm:text-2xl md:text-3xl lg:text-4xl">
+            <span className="min-w-0 flex-1 break-words text-center font-post-title text-sm font-black leading-tight text-white sm:flex-none sm:whitespace-nowrap sm:text-2xl md:text-3xl lg:text-4xl">
               Rubavu Today
             </span>
           </button>
@@ -2012,28 +2026,25 @@ const Navbar = ({ showHomeContent = true }) => {
 
 
 
-          <div className="absolute right-12 flex sm:hidden">
+          <div className="absolute right-2 flex items-center gap-0 sm:hidden">
             {radioControl}
+            <button
+              type="button"
+              onClick={() =>
+                setIsMenuOpen(
+                  (previous) =>
+                    !previous
+                )
+              }
+              aria-label="Ibice"
+              aria-expanded={
+                isMenuOpen
+              }
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-700 bg-slate-900 font-body text-sm font-bold text-slate-200 transition hover:bg-slate-800"
+            >
+              <span aria-hidden="true">☰</span>
+            </button>
           </div>
-
-          <button
-            type="button"
-            onClick={() =>
-              setIsMenuOpen(
-                (previous) =>
-                  !previous
-              )
-            }
-            aria-label="Ibice"
-            aria-expanded={
-              isMenuOpen
-            }
-            className="absolute right-2 flex h-9 items-center justify-center rounded-full border border-slate-700 bg-slate-900 px-2.5 font-body text-[10px] font-bold uppercase tracking-wider text-slate-200 transition hover:bg-slate-800 sm:hidden"
-          >
-            <span className="mr-1.5 text-sm" aria-hidden="true">
-              ☰
-            </span>
-          </button>
         </div>
 
 

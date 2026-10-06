@@ -11,7 +11,7 @@ import { getYouTubeEmbedUrl } from "../utils/video";
 import { useLanguage, translateCategory } from "../context/LanguageContext";
 import OptimizedImage from "../components/common/OptimizedImage";
 import { RESOLUTION_WIDTHS, isCloudinaryUrl } from "../utils/images";
-import { isAmakuruCategory } from "../utils/amakuruDepartments";
+import { isAmakuruCategory, getAmakuruDepartmentSlug } from "../utils/amakuruDepartments";
 import AuthorProfilePopup, {
   PROFILE_POPUP_EVENT,
   getAuthorKey,
@@ -983,13 +983,25 @@ export default function PostDetails() {
             <div className="mx-auto max-w-[820px]">
 
               {/* HEADLINE — the strongest element on the page */}
-              {post.category && (
-                <p className="mb-2 font-body text-[10px] font-bold uppercase tracking-wider text-red-700 sm:text-xs">
-                  {translateCategory(post.category, language)}
-                  {isAmakuruCategory(post.category) && post.amakuru_department
-                    ? ` · ${post.amakuru_department}`
-                    : ""}
-                </p>
+              {(post.category || post.amakuru_department) && (
+                <div className="mb-3 flex flex-wrap items-center gap-2">
+                  {post.category && (
+                    <p className="font-body text-[10px] font-bold uppercase tracking-wider text-red-700 sm:text-xs">
+                      {translateCategory(post.category, language)}
+                    </p>
+                  )}
+
+                  {/* Amakuru sub-department: a branded badge that doubles as a
+                      link back to the department's article list. */}
+                  {isAmakuruCategory(post.category) && post.amakuru_department ? (
+                    <Link
+                      to={`/amakuru/${getAmakuruDepartmentSlug(post.amakuru_department)}`}
+                      className="inline-flex items-center gap-1 rounded-full border border-red-600 bg-red-600 px-2.5 py-1 font-body text-[10px] font-bold uppercase tracking-wider text-white transition-colors duration-150 hover:bg-red-700 sm:text-[11px]"
+                    >
+                      {post.amakuru_department}
+                    </Link>
+                  ) : null}
+                </div>
               )}
               <h1 className="font-post-title text-xl font-black leading-[1.12] tracking-tight text-slate-950 sm:text-2xl lg:text-3xl">
                 {post.title}
@@ -1185,11 +1197,13 @@ export default function PostDetails() {
                   </div>
 
                   <figcaption className="mt-2 flex items-center justify-between gap-3">
-                    <span className="font-body text-[10px] font-medium uppercase tracking-wider text-slate-400">
+                    <span className="flex min-w-0 flex-wrap items-center gap-1.5 font-body text-[10px] font-medium uppercase tracking-wider text-slate-400">
                       {translateCategory(post.category, language)}
-                      {isAmakuruCategory(post.category) && post.amakuru_department
-                        ? ` · ${post.amakuru_department}`
-                        : ""}
+                      {isAmakuruCategory(post.category) && post.amakuru_department ? (
+                        <span className="rounded-full border border-slate-300 bg-white px-1.5 py-0.5 font-bold text-slate-500">
+                          {post.amakuru_department}
+                        </span>
+                      ) : null}
                     </span>
                     <button
                       type="button"

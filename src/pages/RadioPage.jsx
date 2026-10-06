@@ -1,27 +1,27 @@
-import React from "react";
+import React, { useState } from "react";
 import {
-  ExternalLink,
+  ArrowLeft,
+  Check,
+  Copy,
   Loader2,
+  Mail,
+  MessageCircle,
   Pause,
   Play,
-  Radio,
+  Send,
+  Share2,
   Volume2,
   VolumeX,
 } from "lucide-react";
 import { useRadio } from "../context/RadioContext";
 import { useLanguage } from "../context/LanguageContext";
-import { getYouTubeThumbnail } from "../utils/youtube";
 import { SiteSEO } from "../components/SEO/SEO";
-
-const formatTime = (seconds) => {
-  if (!Number.isFinite(seconds) || seconds <= 0) return "0:00";
-  const total = Math.floor(seconds);
-  const minutes = Math.floor(total / 60);
-  const secs = total % 60;
-  return `${minutes}:${String(secs).padStart(2, "0")}`;
-};
+import { Link } from "react-router-dom";
+import radioLogo from "../Rubavu Today Radio.png";
 
 function RadioPage() {
+  const [shareMessage, setShareMessage] = useState("");
+  const [shareMenuOpen, setShareMenuOpen] = useState(false);
   const { language } = useLanguage();
   const rw = language === "rw";
   const {
@@ -32,102 +32,161 @@ function RadioPage() {
     error,
     volume,
     isMuted,
-    currentTime,
-    duration,
     togglePlay,
     playItem,
     setVolume,
     toggleMute,
-    seekTo,
     hasLoadedRadio,
   } = useRadio();
 
   const playingNow = currentItem;
-  const showProgress = Number.isFinite(duration) && duration > 0;
-  const percent =
-    showProgress && duration > 0
-      ? Math.min(100, (currentTime / duration) * 100)
-      : 0;
+  const playableItem = currentItem || queue[0];
+  const radioShareUrl = new URL("/radio", window.location.origin).toString();
+  const pageDescription = rw
+    ? "Amakuru, ibiganiro, imyidagaduro, umuziki n'izindi porogaramu zo muri Rubavu."
+    : "News, discussions, entertainment, music and more from across Rubavu.";
+  const statusText = error
+    ? rw ? "Ntibibashije gukina" : "Unavailable"
+    : isLoading
+      ? rw ? "Birimo guhuza..." : "Connecting..."
+      : isPlaying
+        ? rw ? "Uri kumva" : "Playing"
+        : !hasLoadedRadio
+          ? rw ? "Birimo kugenzura..." : "Checking availability..."
+          : playableItem
+            ? rw ? "Yiteguye kumvwa" : "Ready to play"
+            : rw ? "Ntibiri gukorera ubu" : "Offline";
+  const statusColor = error
+    ? "text-red-400"
+    : isPlaying
+      ? "text-emerald-400"
+      : isLoading || !hasLoadedRadio
+        ? "text-amber-300"
+        : "text-slate-400";
+
+    const copyRadioLink = async () => {
+      try {
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(radioShareUrl);
+        } else {
+          const linkInput = document.createElement("textarea");
+          linkInput.value = radioShareUrl;
+          linkInput.setAttribute("readonly", "");
+          linkInput.style.position = "fixed";
+          linkInput.style.opacity = "0";
+          document.body.appendChild(linkInput);
+          linkInput.select();
+          const copied = document.execCommand("copy");
+          linkInput.remove();
+          if (!copied) throw new Error("Clipboard unavailable");
+        }
+        setShareMenuOpen(false);
+        setShareMessage(rw ? "Ihuza ryakoporowe." : "Radio link copied.");
+      } catch {
+        setShareMessage(rw ? "Ntibyashobotse gukoporora ihuza." : "Could not copy the radio link.");
+      }
+    };
+
+    const shareRadio = async () => {
+      if (!navigator.share) {
+        await copyRadioLink();
+        return;
+      }
+      try {
+        await navigator.share({
+          title: "RubavuToday Radio",
+          text: pageDescription,
+          url: radioShareUrl,
+        });
+        setShareMenuOpen(false);
+        setShareMessage("");
+      } catch (shareError) {
+        if (shareError.name !== "AbortError") await copyRadioLink();
+      }
+    };
+
+    const whatsAppUrl = `https://wa.me/?text=${encodeURIComponent(
+      `RubavuToday Radio - ${pageDescription} ${radioShareUrl}`
+    )}`;
+    const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(radioShareUrl)}`;
+    const xUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(radioShareUrl)}&text=${encodeURIComponent(`RubavuToday Radio - ${pageDescription}`)}`;
+    const telegramUrl = `https://t.me/share/url?url=${encodeURIComponent(radioShareUrl)}&text=${encodeURIComponent(`RubavuToday Radio - ${pageDescription}`)}`;
+    const emailUrl = `mailto:?subject=${encodeURIComponent("RubavuToday Radio")}&body=${encodeURIComponent(`${pageDescription} ${radioShareUrl}`)}`;
 
   return (
     <>
-      <SiteSEO />
-      <section className="mx-auto max-w-5xl px-4 py-8 sm:py-12">
-        <header className="mb-8">
-          <div className="flex items-center gap-3">
-            <span className="relative flex h-3 w-3">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-75" />
-              <span className="relative inline-flex h-3 w-3 rounded-full bg-red-500" />
-            </span>
-            <h1 className="font-masthead text-2xl font-extrabold uppercase tracking-tight text-slate-900 sm:text-3xl">
-              Rubavu Today Radio
-            </h1>
+      <SiteSEO
+        title="RubavuToday Radio"
+        description={pageDescription}
+        canonicalPath="/radio"
+        image={radioLogo}
+      />
+      <section className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
+        <header className="mb-6 flex flex-col items-center gap-3 border-b border-slate-200 pb-5 text-center">
+          <div className="flex w-full min-w-0 flex-col items-center gap-2">
+            <img
+              src={radioLogo}
+              alt="RubavuToday Radio"
+              className="h-14 w-14 shrink-0 object-contain sm:h-16 sm:w-16"
+            />
+            <div className="min-w-0">
+              <h1 className="break-words font-masthead text-xl font-extrabold uppercase tracking-tight text-red-700 sm:text-2xl">
+                RubavuToday Radio
+              </h1>
+              <p className="mx-auto mt-1 max-w-2xl break-words text-sm leading-relaxed text-slate-700">
+                {pageDescription}
+              </p>
+            </div>
           </div>
-          <p className="mt-2 max-w-2xl text-sm text-slate-500 sm:text-base">
-            {rw
-              ? "Tegeka amatwi, usome amakuru mu gihe umenyesha Rubavu imwe n'umwe."
-              : "Tune in and keep reading — the latest Rubavu news, live from our studio."}
-          </p>
+          <Link
+            to="/"
+            className="inline-flex min-h-9 max-w-full items-center justify-center gap-2 border border-red-200 px-3 py-1.5 text-center text-sm font-bold leading-snug text-red-700 transition hover:border-red-600 hover:bg-red-50 hover:text-red-800"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            {rw ? "Garuka ku makuru" : "Back to Rubavu Today"}
+          </Link>
         </header>
 
-        <div className="overflow-hidden rounded-3xl border border-slate-800 bg-slate-950 text-white shadow-2xl">
-          <div className="flex flex-col gap-6 p-6 sm:p-8 md:flex-row md:items-center md:gap-8">
-            <div className="relative flex h-40 w-full shrink-0 overflow-hidden rounded-2xl bg-slate-900 sm:h-44 md:w-56">
-              {playingNow?.thumbnail || getYouTubeThumbnail(playingNow?.youtube_url) ? (
-                <img
-                  src={playingNow.thumbnail || getYouTubeThumbnail(playingNow?.youtube_url)}
-                  alt={playingNow.title || "Radio program"}
-                  loading="lazy"
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center">
-                  <Radio className="h-16 w-16 text-slate-700" />
-                </div>
-              )}
+        <div className="rounded-3xl border border-slate-800 bg-slate-950 text-white shadow-2xl">
+          <div className="flex flex-col gap-6 p-4 sm:p-8 md:flex-row md:items-center md:gap-8">
+            <div className="relative flex h-40 w-full shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white sm:h-44 md:w-56">
+              <img src={radioLogo} alt="RubavuToday Radio" className="h-28 w-28 object-contain" />
             </div>
 
             <div className="min-w-0 flex-1">
               <p className="font-body text-[10px] font-extrabold uppercase tracking-[0.2em] text-red-400">
-                {rw ? "Urwego ruri gukorera" : "Now on air"}
+                {rw ? "Porogaramu iriho" : "Current program"}
               </p>
-              <h2 className="mt-1 font-masthead text-xl font-extrabold leading-tight text-white sm:text-2xl">
+              <h2 className="mt-1 break-words font-masthead text-xl font-extrabold leading-tight text-white sm:text-2xl">
                 {playingNow?.title || "Rubavu Today Radio"}
               </h2>
               {playingNow?.description && (
-                <p className="mt-2 line-clamp-3 text-sm text-slate-300">
+                <p className="mt-2 break-words text-sm leading-relaxed text-slate-300">
                   {playingNow.description}
                 </p>
               )}
-              <p
-                className={`mt-3 text-sm font-semibold ${
-                  error
-                    ? "text-red-400"
-                    : isLoading
-                      ? "text-slate-400"
-                      : isPlaying
-                        ? "text-emerald-400"
-                        : "text-slate-400"
-                }`}
-              >
-                {error
-                  ? error
-: isLoading
-                        ? rw
-                          ? "Birimo byoherezwa..."
-                          : "Loading..."
-                        : isPlaying
-                      ? rw
-                        ? "Uri kumva..."
-                        : "Now playing"
-                      : rw
-                        ? "Kanda kugira wumve"
-                        : "Press play to listen"}
-              </p>
+              <div className="mt-3 flex min-w-0 items-center gap-3">
+                <p className={`min-w-0 break-words text-sm font-semibold leading-relaxed ${statusColor}`} role="status" aria-live="polite">
+                  {statusText}{error ? `: ${error}` : ""}
+                </p>
+                <div
+                  className={`radio-waveform ${isPlaying ? "is-playing" : ""}`}
+                  aria-hidden="true"
+                >
+                  <span className="h-2" style={{ animationDelay: "0ms" }} />
+                  <span className="h-4" style={{ animationDelay: "100ms" }} />
+                  <span className="h-3" style={{ animationDelay: "200ms" }} />
+                  <span className="h-5" style={{ animationDelay: "300ms" }} />
+                  <span className="h-3" style={{ animationDelay: "400ms" }} />
+                  <span className="h-4" style={{ animationDelay: "500ms" }} />
+                  <span className="h-2" style={{ animationDelay: "600ms" }} />
+                </div>
+              </div>
 
-              <div className="mt-5 flex flex-wrap items-center gap-4">
+              <div className="mt-5 flex flex-wrap items-center gap-4 sm:gap-6">
                 <button
-                  onClick={togglePlay}
+                  onClick={() => (currentItem ? togglePlay() : playableItem && playItem(playableItem))}
+                  disabled={!playableItem || isLoading}
                   className="inline-flex items-center gap-3 rounded-full bg-red-600 px-6 py-3 font-body text-sm font-extrabold uppercase tracking-wider text-white shadow-lg shadow-red-900/30 transition hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-400"
                 >
                   {isLoading ? (
@@ -167,133 +226,111 @@ function RadioPage() {
                   </span>
                 </div>
 
-                {playingNow?.youtube_url && (
-                  <a
-                    href={playingNow.youtube_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-300 underline-offset-4 transition hover:text-red-400 hover:underline"
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setShareMenuOpen((open) => !open)}
+                    className="inline-flex min-h-11 items-center gap-2 border border-slate-600 px-3 text-xs font-bold text-slate-100 transition hover:border-red-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-red-400"
+                    aria-label={rw ? "Sangira RubavuToday Radio" : "Share RubavuToday Radio"}
+                    aria-expanded={shareMenuOpen}
+                    aria-controls="radio-share-options"
                   >
-                    <ExternalLink className="h-3.5 w-3.5" />
-                    {rw ? "Reba kuri YouTube" : "Source on YouTube"}
-                  </a>
+                    <Share2 className="h-4 w-4" />
+                    {rw ? "Sangira" : "Share"}
+                  </button>
+                  {shareMenuOpen && (
+                    <div
+                      id="radio-share-options"
+                      className="absolute left-0 top-full z-30 mt-2 max-h-[70vh] w-[min(88vw,20rem)] overflow-y-auto border border-slate-700 bg-slate-900 p-3 text-white shadow-xl xl:bottom-0 xl:left-full xl:top-auto xl:mt-0 xl:ml-2"
+                    >
+                      <p className="mb-2 text-xs font-bold uppercase text-slate-300">
+                        {rw ? "Sangira kuri" : "Share on"}
+                      </p>
+                      <div className="grid grid-cols-2 gap-2">
+                        <a href={whatsAppUrl} target="_blank" rel="noopener noreferrer" onClick={() => setShareMenuOpen(false)} className="inline-flex min-h-11 min-w-0 items-center gap-2 border border-slate-700 px-2 text-xs font-semibold leading-tight hover:border-emerald-500 hover:text-emerald-300">
+                          <MessageCircle className="h-4 w-4 shrink-0 text-emerald-400" aria-hidden="true" />
+                          <span className="min-w-0">WhatsApp</span>
+                        </a>
+                        <a href={facebookUrl} target="_blank" rel="noopener noreferrer" onClick={() => setShareMenuOpen(false)} className="inline-flex min-h-11 min-w-0 items-center gap-2 border border-slate-700 px-2 text-xs font-semibold leading-tight hover:border-blue-500 hover:text-blue-300">
+                          <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[#1877F2] text-sm font-black text-white" aria-hidden="true">f</span>
+                          <span className="min-w-0">Facebook</span>
+                        </a>
+                        <a href={xUrl} target="_blank" rel="noopener noreferrer" onClick={() => setShareMenuOpen(false)} className="inline-flex min-h-11 min-w-0 items-center gap-2 border border-slate-700 px-2 text-xs font-semibold leading-tight hover:border-slate-400 hover:text-white">
+                          <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-white text-xs font-black text-black" aria-hidden="true">X</span>
+                          <span className="min-w-0">X</span>
+                        </a>
+                        <a href={telegramUrl} target="_blank" rel="noopener noreferrer" onClick={() => setShareMenuOpen(false)} className="inline-flex min-h-11 min-w-0 items-center gap-2 border border-slate-700 px-2 text-xs font-semibold leading-tight hover:border-sky-500 hover:text-sky-300">
+                          <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-sky-500 text-white" aria-hidden="true"><Send className="h-3 w-3" /></span>
+                          <span className="min-w-0">Telegram</span>
+                        </a>
+                        <a href={emailUrl} onClick={() => setShareMenuOpen(false)} className="inline-flex min-h-11 min-w-0 items-center gap-2 border border-slate-700 px-2 text-xs font-semibold leading-tight hover:border-amber-400 hover:text-amber-200">
+                          <Mail className="h-4 w-4 shrink-0 text-amber-300" aria-hidden="true" />
+                          <span className="min-w-0">Email</span>
+                        </a>
+                        <button type="button" onClick={shareRadio} className="inline-flex min-h-11 min-w-0 items-center gap-2 border border-slate-700 px-2 text-xs font-semibold leading-tight hover:border-red-400 hover:text-red-300">
+                          <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-red-600 text-white" aria-hidden="true"><Share2 className="h-3 w-3" /></span>
+                          <span className="min-w-0">{rw ? "Izindi porogaramu" : "More apps"}</span>
+                        </button>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={copyRadioLink}
+                        className="mt-2 inline-flex min-h-11 w-full items-center gap-2 border border-slate-700 px-2 text-xs font-semibold hover:border-slate-400"
+                      >
+                        {shareMessage.includes("copied") || shareMessage.includes("yakoporowe") ? (
+                          <Check className="h-4 w-4 text-emerald-400" />
+                        ) : (
+                          <Copy className="h-4 w-4" />
+                        )}
+                        {rw ? "Koporora ihuza" : "Copy radio link"}
+                      </button>
+                    </div>
+                  )}
+                </div>
+                {shareMessage && (
+                  <p className="w-full text-xs text-slate-300" role="status" aria-live="polite">
+                    {shareMessage}
+                  </p>
                 )}
+
               </div>
             </div>
           </div>
-
-          {showProgress && (
-            <div className="flex items-center gap-3 px-6 pb-6 sm:px-8 sm:pb-8">
-              <span className="text-[11px] tabular-nums text-slate-400">
-                {formatTime(currentTime)}
-              </span>
-              <input
-                type="range"
-                min="0"
-                max={Math.floor(duration) || 1}
-                step="1"
-                value={Math.min(duration, currentTime)}
-                onChange={(e) => seekTo(e.target.value)}
-                style={{ backgroundSize: `${percent}% 100%` }}
-                className="radio-range flex-1 accent-red-600"
-                aria-label="Seek radio stream"
-              />
-              <span className="text-[11px] tabular-nums text-slate-400">
-                {formatTime(duration)}
-              </span>
-            </div>
-          )}
         </div>
 
-        <div className="mt-10">
-          <h2 className="font-masthead text-lg font-extrabold uppercase tracking-tight text-slate-900">
-            {rw ? "Ibizakurikira" : "Up next"}
-          </h2>
-          <p className="mt-1 text-sm text-slate-500">
-            {rw
-              ? "Andi makuru y'urubuga rwa radio."
-              : "More programs from the Rubavu Today radio queue."}
-          </p>
+        <style>{`
+          .radio-waveform {
+            display: flex;
+            height: 1.5rem;
+            flex: none;
+            align-items: center;
+            gap: 3px;
+          }
 
-          <div className="mt-5 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-            {!hasLoadedRadio ? (
-              <p className="px-5 py-10 text-center text-sm text-slate-400">
-                {rw ? "Birimo byoherezwa..." : "Loading radio..."}
-              </p>
-            ) : queue.length === 0 ? (
-              <div className="px-5 py-10 text-center">
-                <Radio className="mx-auto h-10 w-10 text-slate-300" />
-                <p className="mt-3 text-sm font-semibold text-slate-600">
-                  {rw
-                    ? "Nta radio iri gukorera muri iki gihe."
-                    : "No live radio is currently available."}
-                </p>
-              </div>
-            ) : (
-              <ul className="divide-y divide-slate-100">
-                {queue.map((item, index) => {
-                  const isNowPlaying = playingNow && item.id === playingNow.id;
-                  return (
-                    <li key={item.id} className="flex items-center gap-4 px-4 py-4 sm:px-5">
-                      <span className="w-8 shrink-0 text-center font-masthead text-sm font-extrabold text-slate-400">
-                        {item.queue_order || index + 1}
-                      </span>
-                      <div className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-xl bg-slate-100">
-                        {item.thumbnail || getYouTubeThumbnail(item.youtube_url) ? (
-                          <img
-                            src={item.thumbnail || getYouTubeThumbnail(item.youtube_url)}
-                            alt={item.title || "Radio program"}
-                            loading="lazy"
-                            className="h-full w-full object-cover"
-                          />
-                        ) : (
-                          <Radio className="h-5 w-5 text-slate-400" />
-                        )}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-bold text-slate-900">
-                          {item.title || "Untitled program"}
-                        </p>
-                        {item.description && (
-                          <p className="truncate text-xs text-slate-400">
-                            {item.description}
-                          </p>
-                        )}
-                      </div>
-                      <div className="flex shrink-0 items-center gap-2">
-                        {isNowPlaying ? (
-                          <span
-                            className={`rounded-full px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider ${
-                              isPlaying
-                                ? "bg-red-50 text-red-600"
-                                : "bg-slate-100 text-slate-500"
-                            }`}
-                          >
-                            {rw ? "Iri gukorera" : "Now playing"}
-                          </span>
-                        ) : (
-                          <button
-                            onClick={() => playItem(item)}
-                            className="inline-flex items-center gap-1.5 rounded-lg bg-slate-950 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-white transition hover:bg-red-600"
-                          >
-                            <Play className="h-3.5 w-3.5 fill-current" />
-                            {rw ? "Kumva" : "Play"}
-                          </button>
-                        )}
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </div>
-        </div>
+          .radio-waveform span {
+            width: 3px;
+            border-radius: 9999px;
+            background: #f87171;
+            transform: scaleY(0.35);
+            transform-origin: center;
+          }
 
-        <p className="mt-8 text-xs text-slate-400">
-          {rw
-            ? "Rubavu Today Radio ikoresha amakuru atangwa neza kandi yemewe. Inkuru zose z'urubuga zikomeza gukina hakoreshejwe uburyo bwa YouTube buboneye."
-            : "Rubavu Today Radio broadcasts content owned or licensed by Rubavu Today. Playback uses the official YouTube embedded player; the YouTube link for each program opens the original source video in your browser."}
-        </p>
+          .radio-waveform.is-playing span {
+            animation: radio-wave 650ms ease-in-out infinite alternate;
+          }
+
+          @keyframes radio-wave {
+            from { transform: scaleY(0.3); }
+            to { transform: scaleY(1); }
+          }
+
+          @media (prefers-reduced-motion: reduce) {
+            .radio-waveform.is-playing span {
+              animation: none;
+              transform: scaleY(0.7);
+            }
+          }
+        `}</style>
       </section>
     </>
   );

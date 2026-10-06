@@ -47,8 +47,10 @@ export function SiteSEO({
   title = SITE_NAME,
   description = DEFAULT_DESCRIPTION,
   canonicalPath = "/",
+  image = DEFAULT_IMAGE,
 }) {
   const canonicalUrl = `${SITE_URL}${canonicalPath.startsWith("/") ? canonicalPath : `/${canonicalPath}`}`;
+  const shareImage = getAbsoluteImageUrl(image);
   const orgLd = {
     "@context": "https://schema.org",
     "@type": "Organization",
@@ -88,8 +90,9 @@ export function SiteSEO({
       <meta property="og:type" content="website" />
       <meta property="og:title" content={title} />
       <meta property="og:description" content={description} />
-      <meta property="og:image" content={DEFAULT_IMAGE} />
-      <meta property="og:image:secure_url" content={DEFAULT_IMAGE} />
+      <meta property="og:image" content={shareImage} />
+      <meta property="og:image:secure_url" content={shareImage} />
+      <meta property="og:image:alt" content={title} />
       <meta property="og:url" content={canonicalUrl} />
       <meta property="og:site_name" content={SITE_NAME} />
       <meta property="og:locale" content={DEFAULT_LOCALE} />
@@ -97,7 +100,7 @@ export function SiteSEO({
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content={title} />
       <meta name="twitter:description" content={description} />
-      <meta name="twitter:image" content={DEFAULT_IMAGE} />
+      <meta name="twitter:image" content={shareImage} />
 
       <script type="application/ld+json">{JSON.stringify(orgLd)}</script>
       <script type="application/ld+json">{JSON.stringify(websiteLd)}</script>
