@@ -2,6 +2,10 @@
   command = "npm run build"
   publish = "build"
 
+[[edge_functions]]
+  function = "radio-og"
+  path = "/radio"
+
 [[redirects]]
   from = "/api/*"
   to = "https://rubavu-today-backend.onrender.com/api/:splat"
