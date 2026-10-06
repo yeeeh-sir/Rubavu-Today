@@ -21,6 +21,8 @@ import { Link } from "react-router-dom";
 import radioLogo from "../Rubavu Today Radio.png";
 
 const RADIO_SHARE_URL = "https://www.rubavutoday.com/radio";
+const RADIO_SOCIAL_DESCRIPTION =
+  "Amakuru, ibiganiro, imyidagaduro, umuziki n'izindi porogaramu zo muri Rubavu.";
 
 function RadioPage() {
   const [shareMessage, setShareMessage] = useState("");
@@ -122,9 +124,9 @@ function RadioPage() {
     <>
       <SiteSEO
         title="RubavuToday Radio"
-        description={pageDescription}
+        description={RADIO_SOCIAL_DESCRIPTION}
         canonicalPath="/radio"
-        image={radioLogo}
+        image="/Rubavu-Today-Radio.png"
       />
       <section className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
         <header className="mb-6 flex flex-col items-center gap-3 border-b border-slate-200 pb-5 text-center">

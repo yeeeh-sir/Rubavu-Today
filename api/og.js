@@ -522,28 +522,10 @@ ${contentHtml}
 </html>`;
 }
 
-async function getRadioLogoUrl(requestUrl) {
-  try {
-    const response = await fetch(new URL("/asset-manifest.json", requestUrl));
-    if (!response.ok) return LOGO_URL;
-    const manifest = await response.json();
-    const entry = Object.entries(manifest.files || {}).find(([source]) => {
-      try {
-        return decodeURIComponent(source).endsWith("/Rubavu Today Radio.png");
-      } catch (error) {
-        return false;
-      }
-    });
-    return entry?.[1] ? new URL(entry[1], requestUrl).toString() : LOGO_URL;
-  } catch (error) {
-    return LOGO_URL;
-  }
-}
-
 function buildRadioPreviewHtml(image) {
   const title = "RubavuToday Radio";
   const description =
-    "News, discussions, entertainment, music and more from across Rubavu.";
+    "Amakuru, ibiganiro, imyidagaduro, umuziki n'izindi porogaramu zo muri Rubavu.";
   const canonical = `${SITE_URL}/radio`;
   return `<!DOCTYPE html>
 <html lang="en">
@@ -580,7 +562,7 @@ export default async function handler(request) {
   try {
     const url = new URL(request.url);
     if (url.searchParams.get("type") === "radio") {
-      const image = await getRadioLogoUrl(request.url);
+      const image = `${SITE_URL}/Rubavu-Today-Radio.png`;
       return new Response(buildRadioPreviewHtml(image), {
         status: 200,
         headers: {

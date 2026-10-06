@@ -15,6 +15,39 @@ const RESERVED_PATH_RE =
 const PUBLIC_ROUTE_RE =
   /^\/(about|contact|privacy-policy|terms|media|radio)(\/|$)/i;
 const RADIO_ROUTE_RE = /^\/radio\/?$/i;
+const RADIO_TITLE = "RubavuToday Radio";
+const RADIO_DESCRIPTION =
+  "Amakuru, ibiganiro, imyidagaduro, umuziki n'izindi porogaramu zo muri Rubavu.";
+const RADIO_IMAGE = `${SITE_URL}/Rubavu-Today-Radio.png`;
+
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function radioPreviewResponse() {
+  const title = escapeHtml(RADIO_TITLE);
+  const description = escapeHtml(RADIO_DESCRIPTION);
+  const canonical = `${SITE_URL}/radio`;
+  const image = escapeHtml(RADIO_IMAGE);
+  const html = `<!doctype html>
+<html lang="rw"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${title}</title><meta name="description" content="${description}"><link rel="canonical" href="${canonical}">
+<meta property="og:title" content="${title}"><meta property="og:description" content="${description}"><meta property="og:image" content="${image}"><meta property="og:image:url" content="${image}"><meta property="og:image:secure_url" content="${image}"><meta property="og:image:type" content="image/png"><meta property="og:image:alt" content="${title}"><meta property="og:url" content="${canonical}"><meta property="og:type" content="website"><meta property="og:site_name" content="Rubavu Today"><meta property="og:locale" content="rw_RW">
+<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${title}"><meta name="twitter:description" content="${description}"><meta name="twitter:image" content="${image}"><meta name="twitter:image:src" content="${image}"><meta name="twitter:image:alt" content="${title}"><meta name="twitter:url" content="${canonical}">
+</head><body><h1>${title}</h1><p>${description}</p><img src="${image}" alt="${title}"></body></html>`;
+  return new Response(html, {
+    headers: {
+      "Content-Type": "text/html; charset=utf-8",
+      "Cache-Control": "public, max-age=0, s-maxage=300, stale-while-revalidate=600",
+      Vary: "User-Agent",
+    },
+  });
+}
 
 function cleanSlug(value) {
   return String(value || "")
@@ -71,7 +104,7 @@ export default async function middleware(request) {
     }
 
     if (RADIO_ROUTE_RE.test(pathname) && CRAWLER_RE.test(ua)) {
-      return rewrite(new URL("/api/og?type=radio", request.url));
+      if (request.method === "GET") return radioPreviewResponse();
     }
 
     if (!isReserved && !PUBLIC_ROUTE_RE.test(pathname) && CRAWLER_RE.test(ua)) {

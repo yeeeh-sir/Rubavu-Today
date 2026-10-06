@@ -2,7 +2,8 @@ const SITE_NAME = "Rubavu Today";
 const SITE_URL = "https://www.rubavutoday.com";
 const RADIO_TITLE = "RubavuToday Radio";
 const RADIO_DESCRIPTION =
-  "News, discussions, entertainment, music and more from across Rubavu.";
+  "Amakuru, ibiganiro, imyidagaduro, umuziki n'izindi porogaramu zo muri Rubavu.";
+const RADIO_IMAGE = `${SITE_URL}/Rubavu-Today-Radio.png`;
 const CRAWLER_RE =
   /(whatsapp|facebookexternalhit|facebot|twitterbot|linkedinbot|telegrambot|discordbot|slackbot|pinterest)/i;
 
@@ -13,28 +14,6 @@ function escapeHtml(value) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
-}
-
-async function getRadioLogoUrl(requestUrl) {
-  try {
-    const response = await fetch(new URL("/asset-manifest.json", requestUrl));
-    if (!response.ok) return `${SITE_URL}/Rubavu.jpeg`;
-
-    const manifest = await response.json();
-    const logo = Object.entries(manifest.files || {}).find(([source]) => {
-      try {
-        return decodeURIComponent(source).endsWith("/Rubavu Today Radio.png");
-      } catch {
-        return false;
-      }
-    });
-
-    return logo?.[1]
-      ? new URL(logo[1], requestUrl).toString()
-      : `${SITE_URL}/Rubavu.jpeg`;
-  } catch {
-    return `${SITE_URL}/Rubavu.jpeg`;
-  }
 }
 
 function buildRadioPreviewHtml(imageUrl) {
@@ -79,8 +58,7 @@ export default async function radioOg(request, context) {
     return context.next();
   }
 
-  const imageUrl = await getRadioLogoUrl(request.url);
-  return new Response(buildRadioPreviewHtml(imageUrl), {
+  return new Response(buildRadioPreviewHtml(RADIO_IMAGE), {
     headers: {
       "Content-Type": "text/html; charset=utf-8",
       "Cache-Control": "public, max-age=0, must-revalidate",

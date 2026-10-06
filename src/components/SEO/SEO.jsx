@@ -51,6 +51,12 @@ export function SiteSEO({
 }) {
   const canonicalUrl = `${SITE_URL}${canonicalPath.startsWith("/") ? canonicalPath : `/${canonicalPath}`}`;
   const shareImage = getAbsoluteImageUrl(image);
+  const shareImageType = shareImage
+    .split("?")[0]
+    .toLowerCase()
+    .endsWith(".png")
+    ? "image/png"
+    : "image/jpeg";
   const orgLd = {
     "@context": "https://schema.org",
     "@type": "Organization",
@@ -94,6 +100,7 @@ export function SiteSEO({
       <meta property="og:image:url" content={shareImage} />
       <meta property="og:image:secure_url" content={shareImage} />
       <meta property="og:image:alt" content={title} />
+      <meta property="og:image:type" content={shareImageType} />
       <meta property="og:url" content={canonicalUrl} />
       <meta property="og:site_name" content={SITE_NAME} />
       <meta property="og:locale" content={DEFAULT_LOCALE} />
