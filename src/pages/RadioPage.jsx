@@ -1,18 +1,14 @@
 import React, { useState } from "react";
 import {
   ArrowLeft,
+  ArrowUpRight,
   Check,
   Copy,
-  Loader2,
   Mail,
   MessageCircle,
-  Pause,
   Phone,
-  Play,
   Send,
   Share2,
-  Volume2,
-  VolumeX,
 } from "lucide-react";
 import { useRadio } from "../context/RadioContext";
 import { useLanguage } from "../context/LanguageContext";
@@ -30,45 +26,15 @@ function RadioPage() {
   const { language } = useLanguage();
   const rw = language === "rw";
   const {
-    queue,
+    stationPageUrl,
     currentItem,
-    isPlaying,
-    isLoading,
-    error,
-    volume,
-    isMuted,
-    togglePlay,
-    playItem,
-    setVolume,
-    toggleMute,
-    hasLoadedRadio,
   } = useRadio();
 
   const playingNow = currentItem;
-  const playableItem = currentItem || queue[0];
   const radioShareUrl = RADIO_SHARE_URL;
   const pageDescription = rw
     ? "Amakuru, ibiganiro, imyidagaduro, umuziki n'izindi porogaramu zo muri Rubavu."
     : "News, discussions, entertainment, music and more from across Rubavu.";
-  const statusText = error
-    ? rw ? "Ntibibashije gukina" : "Unavailable"
-    : isLoading
-      ? rw ? "Birimo guhuza..." : "Connecting..."
-      : isPlaying
-        ? rw ? "Uri kumva" : "Playing"
-        : !hasLoadedRadio
-          ? rw ? "Birimo kugenzura..." : "Checking availability..."
-          : playableItem
-            ? rw ? "Yiteguye kumvwa" : "Ready to play"
-            : rw ? "Ntibiri gukorera ubu" : "Offline";
-  const statusColor = error
-    ? "text-red-400"
-    : isPlaying
-      ? "text-emerald-400"
-      : isLoading || !hasLoadedRadio
-        ? "text-amber-300"
-        : "text-slate-400";
-
     const copyRadioLink = async () => {
       try {
         if (navigator.clipboard?.writeText) {
@@ -172,66 +138,29 @@ function RadioPage() {
                   {playingNow.description}
                 </p>
               )}
-              <div className="mt-3 flex min-w-0 items-center gap-3">
-                <p className={`min-w-0 break-words text-sm font-semibold leading-relaxed ${statusColor}`} role="status" aria-live="polite">
-                  {statusText}{error ? `: ${error}` : ""}
-                </p>
-                <div
-                  className={`radio-waveform ${isPlaying ? "is-playing" : ""}`}
-                  aria-hidden="true"
-                >
-                  <span className="h-2" style={{ animationDelay: "0ms" }} />
-                  <span className="h-4" style={{ animationDelay: "100ms" }} />
-                  <span className="h-3" style={{ animationDelay: "200ms" }} />
-                  <span className="h-5" style={{ animationDelay: "300ms" }} />
-                  <span className="h-3" style={{ animationDelay: "400ms" }} />
-                  <span className="h-4" style={{ animationDelay: "500ms" }} />
-                  <span className="h-2" style={{ animationDelay: "600ms" }} />
-                </div>
+              <div className="mt-3">
+                <span className="inline-flex items-center gap-2 rounded-full bg-red-600/15 px-3 py-1 text-xs font-black tracking-wider text-red-300" role="status" aria-label="Radio live">
+                  <span className="h-2 w-2 animate-pulse rounded-full bg-red-500" aria-hidden="true" />
+                  LIVE
+                </span>
               </div>
 
               <div className="mt-5 flex flex-wrap items-center gap-4 sm:gap-6">
-                <button
-                  onClick={() => (currentItem ? togglePlay() : playableItem && playItem(playableItem))}
-                  disabled={!playableItem || isLoading}
-                  className="inline-flex items-center gap-3 rounded-full bg-red-600 px-6 py-3 font-body text-sm font-extrabold uppercase tracking-wider text-white shadow-lg shadow-red-900/30 transition hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-400"
-                >
-                  {isLoading ? (
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                  ) : isPlaying ? (
-                    <Pause className="h-5 w-5 fill-current" />
-                  ) : (
-                    <Play className="h-5 w-5 fill-current" />
-                  )}
-                  {isPlaying ? (rw ? "Hagarika" : "Pause") : rw ? "Kumva" : "Play"}
-                </button>
-
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={toggleMute}
-                    className="text-slate-300 transition hover:text-white"
-                    aria-label={isMuted ? "Unmute" : "Mute"}
+                {stationPageUrl ? (
+                  <a
+                    href={stationPageUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex min-h-11 items-center gap-2 rounded-md bg-red-600 px-5 py-3 text-sm font-extrabold text-white transition hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-400"
                   >
-                    {isMuted || volume === 0 ? (
-                      <VolumeX className="h-5 w-5" />
-                    ) : (
-                      <Volume2 className="h-5 w-5" />
-                    )}
-                  </button>
-                  <input
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.05"
-                    value={isMuted ? 0 : volume}
-                    onChange={(e) => setVolume(e.target.value)}
-                    className="radio-range w-24 accent-red-600 sm:w-36"
-                    aria-label="Radio volume"
-                  />
-                  <span className="w-9 text-xs tabular-nums text-slate-400">
-                    {Math.round((isMuted ? 0 : volume) * 100)}%
-                  </span>
-                </div>
+                    {rw ? "Fungura Radio" : "Listen on GoCast"}
+                    <ArrowUpRight className="h-4 w-4" />
+                  </a>
+                ) : (
+                  <p className="w-full text-sm text-slate-300" role="status">
+                    {rw ? "Ihuza rya radio ntirashyirwaho ubu." : "The GoCast station link is not configured yet."}
+                  </p>
+                )}
 
                 <div className="relative">
                   <button
@@ -316,39 +245,6 @@ function RadioPage() {
           </div>
         </div>
 
-        <style>{`
-          .radio-waveform {
-            display: flex;
-            height: 1.5rem;
-            flex: none;
-            align-items: center;
-            gap: 3px;
-          }
-
-          .radio-waveform span {
-            width: 3px;
-            border-radius: 9999px;
-            background: #f87171;
-            transform: scaleY(0.35);
-            transform-origin: center;
-          }
-
-          .radio-waveform.is-playing span {
-            animation: radio-wave 650ms ease-in-out infinite alternate;
-          }
-
-          @keyframes radio-wave {
-            from { transform: scaleY(0.3); }
-            to { transform: scaleY(1); }
-          }
-
-          @media (prefers-reduced-motion: reduce) {
-            .radio-waveform.is-playing span {
-              animation: none;
-              transform: scaleY(0.7);
-            }
-          }
-        `}</style>
       </section>
     </>
   );

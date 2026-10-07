@@ -48,6 +48,7 @@ export function RadioProvider({ children }) {
   const mountedRef = useRef(true);
 
   const [queue, setQueue] = useState([]);
+  const [stationPageUrl, setStationPageUrl] = useState("");
   const [currentItem, setCurrentItem] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -298,6 +299,7 @@ export function RadioProvider({ children }) {
         if (cancelled) return;
         const items = Array.isArray(data?.items) ? data.items : [];
         setQueue(items);
+        setStationPageUrl(data?.stationPageUrl || "");
         if (data?.nowPlaying) {
           setCurrentItem((prev) => prev || data.nowPlaying);
         }
@@ -309,6 +311,18 @@ export function RadioProvider({ children }) {
     return () => {
       cancelled = true;
     };
+  }, []);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      getRadio()
+        .then((data) => {
+          if (!mountedRef.current) return;
+          setStationPageUrl(data?.stationPageUrl || "");
+        })
+        .catch(() => { });
+    }, 30000);
+    return () => clearInterval(timer);
   }, []);
 
   const playItem = useCallback(
@@ -399,6 +413,7 @@ export function RadioProvider({ children }) {
       if (!mountedRef.current) return;
       const items = Array.isArray(data?.items) ? data.items : [];
       setQueue(items);
+      setStationPageUrl(data?.stationPageUrl || "");
       setCurrentItem((prev) => prev || (data?.nowPlaying || null));
       setHasLoadedRadio(true);
     } catch {
@@ -407,6 +422,7 @@ export function RadioProvider({ children }) {
 
   const value = {
     queue,
+    stationPageUrl,
     currentItem,
     isPlaying,
     isLoading,

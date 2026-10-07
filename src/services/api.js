@@ -1599,6 +1599,18 @@ export async function getAdminRadio() {
   return request("/api/admin/radio");
 }
 
+export async function getAdminRadioSettings() {
+  return request("/api/admin/radio/settings");
+}
+
+export async function saveAdminRadioSettings(stationPageUrl) {
+  return request("/api/admin/radio/settings", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ station_page_url: stationPageUrl }),
+  });
+}
+
 export async function addRadioItem(itemData) {
   return request("/api/admin/radio", {
     method: "POST",

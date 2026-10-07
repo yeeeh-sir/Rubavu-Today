@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, Link } from "react-router-dom";
+import { ArrowUpRight } from "lucide-react";
 import { getPosts, getAdvertisements } from "../services/api";
 import { SiteSEO } from "../components/SEO/SEO";
 import { getArticleUrl } from "../utils/slug";
@@ -8,6 +9,8 @@ import AdBanner from "../components/common/AdBanner";
 import AmakuruDepartmentNav from "../components/common/AmakuruDepartmentNav";
 import OptimizedImage from "../components/common/OptimizedImage";
 import { RESOLUTION_WIDTHS } from "../utils/images";
+import { useRadio } from "../context/RadioContext";
+import radioLogo from "../Rubavu Today Radio.png";
 import {
   filterAmakuruPosts,
   getAmakuruDepartmentBySlug,
@@ -23,6 +26,45 @@ const formatDate = (dateStr, language) => {
     month: "short",
     year: "numeric",
   });
+};
+
+const HomeRadioSection = () => {
+  const { stationPageUrl } = useRadio();
+
+  return (
+    <section className="mb-3 overflow-hidden rounded-lg border border-slate-800 bg-slate-950 text-white shadow-sm sm:mb-4">
+      <div className="grid grid-cols-[2.75rem_minmax(0,1fr)_auto] items-center gap-2 p-2.5 sm:grid-cols-[3rem_minmax(0,1fr)_auto] sm:gap-3 sm:p-3">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-white p-1 sm:h-12 sm:w-12">
+          <img src={radioLogo} alt="RubavuToday Radio" className="h-full w-full object-contain" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <h2 className="font-masthead text-sm font-black text-white sm:text-base">RubavuToday Radio</h2>
+            <span className="inline-flex items-center gap-1 rounded-full bg-red-600/20 px-1.5 py-0.5 text-[8px] font-black tracking-wider text-red-300">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-500" aria-hidden="true" />
+              LIVE
+            </span>
+          </div>
+          <p className="mt-0.5 max-w-3xl text-[10px] leading-snug text-slate-300 sm:text-xs">
+            Amakuru, ibiganiro, imyidagaduro, umuziki n'izindi porogaramu zo muri Rubavu.
+          </p>
+        </div>
+        {stationPageUrl ? (
+          <a
+            href={stationPageUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex min-h-8 max-w-24 shrink-0 items-center justify-center gap-1 rounded bg-red-600 px-2 py-1.5 text-center text-[9px] font-extrabold leading-tight text-white transition hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-300 sm:max-w-none sm:gap-1.5 sm:px-3 sm:text-xs"
+          >
+            Listen Live / Fungura Radio
+            <ArrowUpRight className="h-3 w-3 shrink-0 sm:h-3.5 sm:w-3.5" />
+          </a>
+        ) : (
+          <span className="text-[10px] text-slate-400" role="status">Radio link is not configured</span>
+        )}
+      </div>
+    </section>
+  );
 };
 
 const Home = () => {
@@ -43,6 +85,7 @@ const Home = () => {
   const selectedCategory = isAmakuruPage
     ? "Amakuru"
     : new URLSearchParams(location.search).get("category") || "";
+  const showHomeRadio = location.pathname === "/";
 
 
 
@@ -329,6 +372,11 @@ const Home = () => {
           : "/"}
       />
       <main className="flex-grow">
+        {showHomeRadio && (
+          <div className="max-w-7xl mx-auto px-3 pt-4 xs:px-4 sm:px-6 sm:pt-5">
+            <HomeRadioSection />
+          </div>
+        )}
         <section className="max-w-7xl mx-auto px-3 xs:px-4 sm:px-6 pt-2 pb-2">
           {isAmakuruPage && <AmakuruDepartmentNav />}
           {loading ? null : error ? (

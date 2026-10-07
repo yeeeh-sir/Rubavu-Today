@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
     getAdminRadio,
+    getAdminRadioSettings,
+    saveAdminRadioSettings,
     addRadioItem,
     updateRadioItem,
     deleteRadioItem,
@@ -21,6 +23,9 @@ function RadioManagement() {
     const [error, setError] = useState("");
     const [message, setMessage] = useState("");
     const [busyId, setBusyId] = useState(null);
+    const [stationPageUrl, setStationPageUrl] = useState("");
+    const [settingsLoading, setSettingsLoading] = useState(true);
+    const [settingsSaving, setSettingsSaving] = useState(false);
 
     const [showCreate, setShowCreate] = useState(false);
     const [newTitle, setNewTitle] = useState("");
@@ -49,6 +54,61 @@ function RadioManagement() {
     };
 
     useEffect(() => { load(); }, []);
+
+    useEffect(() => {
+        let cancelled = false;
+        getAdminRadioSettings()
+            .then((data) => {
+                if (!cancelled) {
+                    setStationPageUrl(data?.station_page_url || "");
+                }
+            })
+            .catch((err) => {
+                if (!cancelled) setError(err?.message || "Unable to load radio settings.");
+            })
+            .finally(() => {
+                if (!cancelled) setSettingsLoading(false);
+            });
+        return () => { cancelled = true; };
+    }, []);
+
+    const handleSaveStreamUrl = async (e) => {
+        e.preventDefault();
+        setError("");
+        setMessage("");
+        const isValidHttpsUrl = (value) => {
+            try {
+                const parsedUrl = new URL(value.trim());
+                return parsedUrl.protocol === "https:" && Boolean(parsedUrl.hostname) && !parsedUrl.username && !parsedUrl.password;
+            } catch {
+                return false;
+            }
+        };
+        const parsedStationUrl = (() => {
+            try {
+                return new URL(stationPageUrl.trim());
+            } catch {
+                return null;
+            }
+        })();
+        const isGoCastStationPageUrl = parsedStationUrl &&
+            (parsedStationUrl.hostname.toLowerCase() === "gocast.fm" || parsedStationUrl.hostname.toLowerCase().endsWith(".gocast.fm")) &&
+            /^\/station(?:\/|$)/i.test(parsedStationUrl.pathname);
+        if (!isValidHttpsUrl(stationPageUrl) || !isGoCastStationPageUrl) {
+            setError("Shyiramo ihuza rya HTTPS ryemewe.");
+            return;
+        }
+        setSettingsSaving(true);
+        try {
+            const data = await saveAdminRadioSettings(stationPageUrl.trim());
+            setStationPageUrl(data?.station_page_url || "");
+            setMessage("Link ya Radio yabitswe neza.");
+        } catch (err) {
+            setError(err?.message || "Failed to save the radio link.");
+        } finally {
+            setSettingsSaving(false);
+        }
+    };
 
     const resetCreate = () => {
         setNewTitle(""); setNewDesc(""); setNewYoutube("");
@@ -193,6 +253,33 @@ function RadioManagement() {
                         + Ongera programe
                     </button>
                 </div>
+
+                <section className="mb-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+                    <h2 className="text-base font-black text-slate-900 sm:text-lg">Radio Stream Settings</h2>
+                    <form onSubmit={handleSaveStreamUrl} className="mt-4 flex flex-col items-stretch gap-3 sm:flex-row sm:items-end">
+                        <label className="min-w-0 flex-1 text-sm font-semibold text-slate-700">
+                            GoCast Station URL
+                            <input
+                                type="url"
+                                required
+                                value={stationPageUrl}
+                                onChange={(e) => setStationPageUrl(e.target.value)}
+                                disabled={settingsLoading || settingsSaving}
+                                placeholder="Paste the GoCast station URL"
+                                className="form-input mt-1.5"
+                            />
+                        </label>
+                        <div className="flex justify-end sm:shrink-0">
+                            <button
+                                type="submit"
+                                disabled={settingsLoading || settingsSaving}
+                                className="w-full rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-bold text-white shadow-md shadow-brand-200 transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+                            >
+                                Bika Link ya Radio
+                            </button>
+                        </div>
+                    </form>
+                </section>
 
                 {message && (
                     <p className="mb-4 rounded-xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">✓ {message}</p>
