@@ -25,7 +25,16 @@ import {
 } from "../../services/api";
 
 import SearchBar from "../SearchBar/SearchBar";
-import { Loader2, Pause, Play, Radio as RadioIcon, Volume2, VolumeX } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  Pause,
+  Play,
+  Radio as RadioIcon,
+  Volume2,
+  VolumeX,
+} from "lucide-react";
 import { useRadio } from "../../context/RadioContext";
 import AdBanner from "../common/AdBanner";
 import OptimizedImage from "../common/OptimizedImage";
@@ -33,6 +42,8 @@ import { getArticleUrl } from "../../utils/slug";
 import { formatRelativeTime } from "../../utils/time";
 import { useLanguage, translateCategory } from "../../context/LanguageContext";
 import { RESOLUTION_WIDTHS, getCloudinaryUrl, isCloudinaryUrl } from "../../utils/images";
+import { getYouTubeEmbedUrl } from "../../utils/video";
+import { getYouTubeThumbnail } from "../../utils/youtube";
 
 
 
@@ -89,6 +100,11 @@ const normalizeDepartment = (value) => {
     (department) => department.name.toLowerCase() === category
   )?.name || String(value || "").trim();
 };
+
+const getPostDepartmentLabel = (post, language) =>
+  normalizeDepartment(post?.category) === "Amakuru" && post?.amakuru_department
+    ? post.amakuru_department
+    : translateCategory(post?.category, language);
 
 
 
@@ -504,7 +520,7 @@ const SocialLinks = ({ compact = false }) => {
 
   return (
     <div
-      className={`flex items-center [&_svg]:h-5 [&_svg]:w-5 ${compact
+      className={`flex items-center [&_svg]:h-4 [&_svg]:w-4 ${compact
         ? "gap-2"
         : "gap-2 sm:gap-3"
         }`}
@@ -518,8 +534,8 @@ const SocialLinks = ({ compact = false }) => {
           aria-label={social.name}
           className={`
             flex
-            h-10
-            w-10
+            h-9
+            w-9
             items-center
             justify-center
             rounded-full
@@ -564,8 +580,8 @@ const PORTAL_FALLBACK_IMAGE =
   "https://images.unsplash.com/photo-1495020689067-958852a7765e?auto=format&fit=crop&w=900&q=80";
 
 const NewsSectionHeading = ({ title }) => (
-  <div className="mb-4">
-    <h2 className="font-post-title text-lg font-black uppercase tracking-tight text-slate-950 sm:text-xl">
+  <div className="mb-2 border-l-[3px] border-[#B3261E] pl-2">
+    <h2 className="news-section-heading !text-sm leading-tight font-post-title uppercase tracking-tight">
       {title}
     </h2>
   </div>
@@ -585,13 +601,35 @@ const TimeText = ({ date, className = "" }) => {
   );
 };
 
-const FeaturedStory = ({ post, matchedPostId, postRefs }) => {
+const FeaturedStory = ({ posts = [], matchedPostId, postRefs, language }) => {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+
+  useEffect(() => {
+    setActiveIndex(0);
+  }, [posts.length]);
+
+  useEffect(() => {
+    if (posts.length < 2 || isPaused || prefersReducedMotion()) return undefined;
+
+    const interval = window.setInterval(() => {
+      if (!document.hidden) {
+        setActiveIndex((current) => (current + 1) % posts.length);
+      }
+    }, 8000);
+
+    return () => window.clearInterval(interval);
+  }, [posts.length, isPaused]);
+
+  if (!posts.length) return null;
+
+  const post = posts[activeIndex % posts.length];
   if (!post) return null;
 
   const postId = getPostId(post);
-
-  const animation =
-    prefersReducedMotion() ? "none" : "portal-rise 0.5s ease-out both";
+  const moveFeatured = (direction) => {
+    setActiveIndex((current) => (current + direction + posts.length) % posts.length);
+  };
 
   return (
     <article
@@ -604,12 +642,20 @@ const FeaturedStory = ({ post, matchedPostId, postRefs }) => {
         ? "ring-4 ring-yellow-300"
         : "ring-1 ring-slate-200"
         }`}
-      style={{ animation }}
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+      onFocus={() => setIsPaused(true)}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) {
+          setIsPaused(false);
+        }
+      }}
     >
       <div className="h-1.5 w-full bg-red-600" />
 
-      <Link to={getArticleUrl(post)} className="block">
-        <div className="relative aspect-[16/11] overflow-hidden bg-slate-100 sm:aspect-[16/9]">
+      <div key={postId} className={`relative ${prefersReducedMotion() ? "" : "featured-story-enter"}`}>
+        <Link to={getArticleUrl(post)} className="block">
+        <div className="relative aspect-[16/10] overflow-hidden bg-slate-100 sm:aspect-[16/9]">
           {post.image ? (
             <OptimizedImage
               src={post.image}
@@ -632,11 +678,33 @@ const FeaturedStory = ({ post, matchedPostId, postRefs }) => {
           )}
 
         </div>
-      </Link>
+        </Link>
 
-      <div className="bg-slate-950 px-5 py-4 sm:px-7 sm:py-5">
+        {posts.length > 1 && (
+          <>
+            <button
+              type="button"
+              onClick={() => moveFeatured(-1)}
+              aria-label={language === "rw" ? "Inkuru ibanza" : "Previous featured story"}
+              className="absolute left-3 top-1/2 z-10 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full border border-white/60 bg-slate-950/75 text-white shadow-lg backdrop-blur-sm transition hover:bg-[#B3261E] focus:outline-none focus:ring-2 focus:ring-white sm:left-4 sm:h-12 sm:w-12"
+            >
+              <ChevronLeft className="h-6 w-6" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              onClick={() => moveFeatured(1)}
+              aria-label={language === "rw" ? "Inkuru ikurikira" : "Next featured story"}
+              className="absolute right-3 top-1/2 z-10 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full border border-white/60 bg-slate-950/75 text-white shadow-lg backdrop-blur-sm transition hover:bg-[#B3261E] focus:outline-none focus:ring-2 focus:ring-white sm:right-4 sm:h-12 sm:w-12"
+            >
+              <ChevronRight className="h-6 w-6" aria-hidden="true" />
+            </button>
+          </>
+        )}
+      </div>
+
+      <div key={`title-${postId}`} className={`bg-slate-950 px-4 py-3 sm:px-6 sm:py-4 ${prefersReducedMotion() ? "" : "featured-story-enter"}`}>
         <Link to={getArticleUrl(post)}>
-          <h2 className="break-words font-post-title text-2xl font-bold leading-tight tracking-tight text-white transition-colors group-hover:text-red-300 sm:text-3xl">
+          <h2 className="news-headline-featured break-words font-post-title text-2xl font-bold leading-tight tracking-tight text-white transition-colors group-hover:text-red-300 sm:text-[1.875rem]">
             {post.title}
           </h2>
         </Link>
@@ -646,6 +714,7 @@ const FeaturedStory = ({ post, matchedPostId, postRefs }) => {
 };
 
 const ImportantStory = ({ post, matchedPostId, postRefs }) => {
+  const { language } = useLanguage();
   if (!post) return null;
 
   const postId = getPostId(post);
@@ -657,14 +726,14 @@ const ImportantStory = ({ post, matchedPostId, postRefs }) => {
           postRefs.current[postId] = element;
         }
       }}
-      className={`group flex h-fit self-start flex-col overflow-hidden rounded-xl border bg-white shadow-sm transition-colors hover:bg-slate-50 hover:shadow-md ${matchedPostId === postId
+      className={`group flex h-full flex-col overflow-hidden rounded-xl border bg-white shadow-sm transition-colors hover:bg-slate-50 hover:shadow-md ${matchedPostId === postId
         ? "border-yellow-300 bg-yellow-50 ring-2 ring-yellow-300"
         : "border-slate-200"
         }`}
     >
       <Link
         to={getArticleUrl(post)}
-        className="order-1 relative block aspect-[16/10] w-full shrink-0 overflow-hidden bg-slate-100 sm:h-[150px] sm:aspect-auto"
+        className="order-1 relative block aspect-[16/10] w-full shrink-0 overflow-hidden bg-slate-100 sm:h-[132px] sm:aspect-auto"
       >
         <div className="h-full overflow-hidden">
           {post.image ? (
@@ -687,20 +756,20 @@ const ImportantStory = ({ post, matchedPostId, postRefs }) => {
         </div>
       </Link>
 
-      <div className="order-2 min-h-0 flex-1 px-2.5 py-2.5 sm:px-3 sm:py-3">
+      <div className="order-2 flex min-h-0 flex-1 flex-col px-2 py-2 sm:px-2.5 sm:py-2.5">
         {post.category && (
-          <span className="mb-1 block truncate font-body text-[8px] font-bold uppercase tracking-[0.14em] text-red-600">
-            {post.category}
+          <span className="news-category mb-1 block truncate font-body uppercase tracking-[0.14em]">
+            {getPostDepartmentLabel(post, language)}
           </span>
         )}
 
-        <Link to={getArticleUrl(post)}>
-          <h3 className="break-words font-post-title text-sm font-bold leading-snug tracking-tight text-balance text-slate-950 transition-colors group-hover:text-red-600 sm:text-base">
+        <Link to={getArticleUrl(post)} className="mt-1">
+          <h3 className="news-headline-card line-clamp-4 break-words font-post-title text-base font-bold leading-snug tracking-tight text-balance text-slate-950 transition-colors group-hover:text-red-600 sm:text-lg">
             {post.title}
           </h3>
         </Link>
 
-        <TimeText date={getPostDate(post)} className="mt-2 font-body text-[8px] font-medium text-slate-400" />
+        <TimeText date={getPostDate(post)} className="news-meta mt-auto pt-2 font-body" />
       </div>
 
     </article>
@@ -708,6 +777,7 @@ const ImportantStory = ({ post, matchedPostId, postRefs }) => {
 };
 
 const CompactCard = ({ post, matchedPostId, postRefs, variant = "default" }) => {
+  const { language } = useLanguage();
   if (!post) return null;
 
   const postId = getPostId(post);
@@ -719,14 +789,14 @@ const CompactCard = ({ post, matchedPostId, postRefs, variant = "default" }) => 
           postRefs.current[postId] = element;
         }
       }}
-      className={`group flex self-start flex-col overflow-hidden rounded-xl border bg-white shadow-sm transition-colors hover:bg-slate-50 hover:shadow-md ${variant === "large" ? "min-h-[280px] sm:min-h-[320px]" : "min-h-[250px] sm:min-h-[280px]"} ${matchedPostId === postId
+      className={`group flex h-full flex-col overflow-hidden rounded-xl border bg-white shadow-sm transition-colors hover:bg-slate-50 hover:shadow-md ${variant === "large" ? "min-h-[250px] sm:min-h-[280px]" : "min-h-[220px] sm:min-h-[245px]"} ${matchedPostId === postId
         ? "border-yellow-300 bg-yellow-50 ring-2 ring-yellow-300"
         : "border-slate-200"
         }`}
     >
       <Link
         to={getArticleUrl(post)}
-        className={`order-1 relative block w-full shrink-0 overflow-hidden bg-slate-100 ${variant === "large" ? "aspect-[16/10] sm:h-[190px] sm:aspect-auto" : "aspect-[16/10] sm:h-[150px] sm:aspect-auto"}`}
+        className={`order-1 relative block w-full shrink-0 overflow-hidden bg-slate-100 ${variant === "large" ? "aspect-[16/10] sm:h-[165px] sm:aspect-auto" : "aspect-[16/10] sm:h-[130px] sm:aspect-auto"}`}
       >
         {post.image ? (
           <OptimizedImage
@@ -747,14 +817,18 @@ const CompactCard = ({ post, matchedPostId, postRefs, variant = "default" }) => 
         )}
       </Link>
 
-      <div className="order-2 min-h-0 flex-1 px-2.5 py-2.5 sm:px-3 sm:py-3">
-        <TimeText date={getPostDate(post)} className="font-body text-[8px] font-medium uppercase tracking-wider text-slate-400" />
-
-        <Link to={getArticleUrl(post)}>
-          <h3 className={`mt-1 break-words font-post-title leading-tight tracking-tight text-balance text-slate-950 transition-colors group-hover:text-red-600 ${variant === "large" ? "text-base font-bold sm:text-base" : "text-sm font-bold sm:text-sm"}`}>
+      <div className="order-2 flex min-h-0 flex-1 flex-col px-2 py-2 sm:px-2.5 sm:py-2.5">
+        {post.category && (
+          <span className="news-category mb-1 block truncate font-body uppercase tracking-[0.14em]">
+            {getPostDepartmentLabel(post, language)}
+          </span>
+        )}
+        <Link to={getArticleUrl(post)} className="mt-1">
+          <h3 className={`news-headline-card line-clamp-4 break-words font-post-title leading-tight tracking-tight text-balance text-slate-950 transition-colors group-hover:text-red-600 ${variant === "large" ? "text-lg font-bold sm:text-xl" : "text-base font-bold sm:text-lg"}`}>
             {post.title}
           </h3>
         </Link>
+        <TimeText date={getPostDate(post)} className="news-meta mt-auto pt-2 font-body uppercase tracking-wider" />
       </div>
     </article>
   );
@@ -764,7 +838,7 @@ const CompactCard = ({ post, matchedPostId, postRefs, variant = "default" }) => 
 const LatestWidget = ({ posts = [], postRefs }) => {
   const { t } = useLanguage();
   const latest = useMemo(
-    () => [...posts].sort((a, b) => getTime(b) - getTime(a)),
+    () => [...posts].sort((a, b) => getTime(b) - getTime(a)).slice(0, 6),
     [posts]
   );
 
@@ -772,71 +846,55 @@ const LatestWidget = ({ posts = [], postRefs }) => {
 
   return (
     <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-      <div className="flex items-center gap-2 border-b-2 border-slate-900 px-4 py-3">
-        <span className="h-4 w-1.5 rounded-sm bg-red-600" />
-        <h3 className="font-post-title text-sm font-black uppercase tracking-tight text-slate-950">
+      <div className="flex items-center gap-1.5 border-b-2 border-slate-900 px-3 py-2">
+        <span className="h-3.5 w-1 rounded-sm bg-red-600" />
+        <h3 className="news-section-heading !text-sm leading-tight font-post-title uppercase tracking-tight">
           {t("latestNews")}
         </h3>
       </div>
-      <style>{`
-        @keyframes latestNewsScroll {
-          from { transform: translate3d(0, 0, 0); }
-          to { transform: translate3d(0, -100%, 0); }
-        }
-        .latest-news-scroll {
-          animation: latestNewsScroll 42s linear infinite;
-          will-change: transform;
-          backface-visibility: hidden;
-        }
-      `}</style>
-      <div className="h-[280px] w-full overflow-hidden sm:h-[360px]">
-        <div
-          className="latest-news-scroll divide-y divide-slate-100"
-          style={{ animationDuration: `${Math.max(42, latest.length * 8)}s` }}
-        >
-          {latest.map((post) => {
-            const postId = getPostId(post);
+      <div className="divide-y divide-slate-100">
+        {latest.map((post) => {
+          const postId = getPostId(post);
 
-            return (
-              <Link
-                key={postId}
-                to={getArticleUrl(post)}
-                ref={(element) => {
-                  if (postRefs && postId) postRefs.current[postId] = element;
-                }}
-                className="group flex items-center gap-3 p-3 transition hover:bg-slate-50"
-              >
-                <div className="h-14 w-20 shrink-0 overflow-hidden rounded-md bg-slate-100">
-                  {post.image ? (
-                    <OptimizedImage
-                      src={post.image}
-                      alt={post.title || "Inkuru"}
-                      widths={RESOLUTION_WIDTHS.THUMB}
-                      sizes="80px"
-                      className="h-full w-full object-cover"
-                      loading="lazy"
-                      decoding="async"
-                      onError={(event) => {
-                        event.currentTarget.onerror = null;
-                        event.currentTarget.src = PORTAL_FALLBACK_IMAGE;
-                      }}
-                    />
-                  ) : (
-                    <div className="h-full w-full bg-slate-100" />
-                  )}
-                </div>
-                <div className="min-w-0">
-                  <h4 className="break-words text-[12px] font-bold leading-snug text-slate-950 transition-colors group-hover:text-red-600">
-                    {post.title}
-                  </h4>
-                  <p className="mt-1">
-                    <TimeText date={getPostDate(post)} className="font-body text-[9px] font-medium text-slate-400" />
-                  </p>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
+          return (
+            <Link
+              key={postId}
+              to={getArticleUrl(post)}
+              ref={(element) => {
+                if (postRefs && postId) postRefs.current[postId] = element;
+              }}
+              className="group flex items-center gap-2 p-2 transition hover:bg-slate-50"
+            >
+              <div className="h-10 w-14 shrink-0 overflow-hidden rounded-md bg-slate-100">
+                {post.image ? (
+                  <OptimizedImage
+                    src={post.image}
+                    alt={post.title || "Inkuru"}
+                    widths={RESOLUTION_WIDTHS.THUMB}
+                    sizes="56px"
+                    className="h-full w-full object-cover"
+                    loading="lazy"
+                    decoding="async"
+                    onError={(event) => {
+                      event.currentTarget.onerror = null;
+                      event.currentTarget.src = PORTAL_FALLBACK_IMAGE;
+                    }}
+                  />
+                ) : (
+                  <div className="h-full w-full bg-slate-100" />
+                )}
+              </div>
+              <div className="min-w-0">
+                <h4 className="news-headline-card line-clamp-2 break-words text-[11px] font-bold leading-tight text-slate-950 transition-colors group-hover:text-red-600">
+                  {post.title}
+                </h4>
+                <p className="mt-0.5">
+                  <TimeText date={getPostDate(post)} className="news-meta font-body" />
+                </p>
+              </div>
+            </Link>
+          );
+        })}
       </div>
     </section>
   );
@@ -869,7 +927,7 @@ const CategorySection = ({
             <Link
               key={getPostId(post)}
               to={getArticleUrl(post)}
-              className="group flex items-center gap-4 px-4 py-3.5 transition hover:bg-slate-50"
+              className="group flex items-center gap-3 px-3 py-2.5 transition hover:bg-slate-50"
             >
               <span
                 className={`shrink-0 font-post-title text-lg font-black ${index < 3 ? "text-red-600" : "text-slate-300"
@@ -879,10 +937,10 @@ const CategorySection = ({
               </span>
 
               <div className="min-w-0 flex-1">
-                <h4 className="break-words text-sm font-bold leading-snug text-slate-950 transition-colors group-hover:text-red-600">
+                <h4 className="news-headline-card break-words text-sm font-bold leading-snug text-slate-950 transition-colors group-hover:text-red-600">
                   {post.title}
                 </h4>
-                <p className="mt-1 font-body text-[9px] font-medium text-slate-400">
+                <p className="news-meta mt-1 font-body">
                   {translateCategory(post.category, language)}
                 </p>
               </div>
@@ -899,20 +957,24 @@ const CategorySection = ({
       <section>
         {heading}
 
-        <div className={`grid grid-cols-1 gap-4 ${posts.length > 2 ? "sm:grid-cols-3 sm:gap-3" : "sm:grid-cols-2 sm:gap-3"}`}>
-          {posts.slice(0, 4).map((post, index) => (
-            <div
-              key={getPostId(post)}
-              className={index === 0 && posts.length > 2 ? "sm:col-span-2" : ""}
-            >
-              <CompactCard
-                post={post}
-                variant={index === 0 ? "large" : "default"}
-                matchedPostId={matchedPostId}
-                postRefs={postRefs}
-              />
-            </div>
-          ))}
+        <div className={`grid grid-cols-1 items-stretch gap-3 ${posts.length > 2 ? "sm:grid-cols-3 sm:gap-2.5" : "sm:grid-cols-2 sm:gap-2.5"}`}>
+          {posts.slice(0, 4).map((post, index) => {
+            const wideCard = posts.length > 2 && (index === 0 || index === 3);
+
+            return (
+              <div
+                key={getPostId(post)}
+                className={`h-full ${wideCard ? "sm:col-span-2" : ""}`}
+              >
+                <CompactCard
+                  post={post}
+                  variant={wideCard ? "large" : "default"}
+                  matchedPostId={matchedPostId}
+                  postRefs={postRefs}
+                />
+              </div>
+            );
+          })}
         </div>
       </section>
     );
@@ -922,7 +984,7 @@ const CategorySection = ({
     <section>
       {heading}
 
-      <div className={`grid grid-cols-1 gap-4 ${posts.length > 2 ? "sm:grid-cols-3 sm:gap-3" : "sm:grid-cols-2 sm:gap-3"}`}>
+      <div className={`grid grid-cols-1 items-stretch gap-3 ${posts.length > 2 ? "sm:grid-cols-3 sm:gap-2.5" : "sm:grid-cols-2 sm:gap-2.5"}`}>
         {posts.slice(0, 3).map((post) => (
           <CompactCard
             key={getPostId(post)}
@@ -964,9 +1026,6 @@ const NewsPostsLayout = ({
     [posts]
   );
 
-  if (!sortedNewest.length) return null;
-
-  const featured = sortedNewest[0];
   const isFilteredView = activeCategory !== "All";
 
   const categorySections = isFilteredView
@@ -978,10 +1037,26 @@ const NewsPostsLayout = ({
         (p) => normalizeDepartment(p.category) === name
       ),
     })).filter((section) => section.posts.length > 0);
+  const archiveCandidates = sortedNewest.slice(4);
+  const [archiveSlideIndex, setArchiveSlideIndex] = useState(0);
+  const archiveStories = archiveCandidates.length
+    ? Array.from(
+      { length: Math.min(4, archiveCandidates.length) },
+      (_, offset) => archiveCandidates[(archiveSlideIndex + offset) % archiveCandidates.length]
+    )
+    : [];
+  const videoPosts = sortedNewest
+    .filter((post) => getYouTubeEmbedUrl(post.youtube_url))
+    .slice(0, 6);
+  const [selectedVideoId, setSelectedVideoId] = useState("");
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
+  const selectedVideo = videoPosts.find((post) => getPostId(post) === selectedVideoId) || videoPosts[0];
+
+  if (!sortedNewest.length) return null;
 
   const renderSidebar = () => (
     <aside className="min-w-0 lg:col-span-4">
-      <div className="space-y-4 lg:sticky lg:top-36">
+      <div className="space-y-3 lg:sticky lg:top-36">
         <AdSlot ad={advertisements[3]} size="rectangle" />
         <LatestWidget
           posts={sortedNewest}
@@ -995,14 +1070,14 @@ const NewsPostsLayout = ({
   /* Filtered category view (a nav link was clicked) — compact grid + sidebar. */
   if (isFilteredView) {
     return (
-      <div className="grid grid-cols-1 gap-7 lg:grid-cols-12">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
         <main className="min-w-0 lg:col-span-8">
-          <div className="mb-5 flex items-end justify-between border-b-2 border-slate-900 pb-3">
+          <div className="mb-4 flex items-end justify-between border-b-2 border-slate-900 pb-2.5">
             <div>
-              <p className="mb-1 font-body text-[9px] font-bold uppercase tracking-[0.2em] text-red-600">
+              <p className="news-category mb-1 font-body uppercase tracking-[0.2em]">
                 {language === "rw" ? "Icyiciro cy'amakuru" : "News department"}
               </p>
-              <h1 className="font-post-title text-2xl font-black uppercase tracking-tight text-slate-950 sm:text-3xl">
+              <h1 className="news-section-heading font-post-title uppercase tracking-tight">
                 {translateCategory(activeCategory, language)}
               </h1>
             </div>
@@ -1011,7 +1086,7 @@ const NewsPostsLayout = ({
             </span>
           </div>
 
-          <div className="grid grid-cols-1 items-start gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 items-start gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {sortedNewest.map((post) => (
               <React.Fragment key={getPostId(post)}>
                 <CompactCard
@@ -1032,22 +1107,24 @@ const NewsPostsLayout = ({
   }
 
   return (
-    <div className="grid grid-cols-1 gap-7 lg:grid-cols-12">
-      <main className="min-w-0 space-y-3 lg:col-span-8">
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
+        <main className="min-w-0 space-y-2.5 lg:col-span-8">
         {/* FEATURED NEWS */}
         <section>
           <NewsSectionHeading title={t("featuredNews")} />
 
           <FeaturedStory
-            post={featured}
+            posts={sortedNewest}
             matchedPostId={matchedPostId}
             postRefs={postRefs}
+            language={language}
           />
         </section>
 
         {/* OTHER RECENT STORIES */}
         <section>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-3 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-2.5 lg:grid-cols-4">
             {sortedNewest.slice(1, 5).map((post) => (
               <ImportantStory
                 key={getPostId(post)}
@@ -1066,7 +1143,7 @@ const NewsPostsLayout = ({
         <AdSlot ad={advertisements[1]} size="728x90" />
 
         {/* CATEGORY SECTIONS */}
-        <div className="space-y-0">
+        <div id="home-category-sections" className="space-y-0">
           {categorySections.map((section) => (
             <CategorySection
               key={section.name}
@@ -1081,9 +1158,215 @@ const NewsPostsLayout = ({
 
         {/* PRE-FOOTER AD */}
         <AdSlot ad={advertisements[2]} size="728x90" />
-      </main>
+        </main>
 
-      {renderSidebar()}
+        {renderSidebar()}
+      </div>
+
+      {videoPosts.length > 0 && (
+        <section className="overflow-hidden bg-[#20252B] px-4 py-7 text-white shadow-sm sm:px-6 sm:py-9 lg:px-8">
+          <div className="mx-auto max-w-7xl">
+            <div className="mb-5 flex items-end justify-between gap-4 sm:mb-6">
+              <div>
+                <p className="mb-1 font-body text-[9px] font-bold uppercase tracking-[0.2em] text-red-400">
+                  {language === "rw" ? "Video & Amakuru" : "Live & Video"}
+                </p>
+                <h2 className="font-post-title text-xl font-extrabold leading-tight tracking-tight text-white sm:text-2xl">
+                  Rubavu Today TV
+                </h2>
+              </div>
+              <Link
+                to="/media"
+                className="shrink-0 font-body text-[10px] font-bold text-slate-300 transition-colors hover:text-white sm:text-xs"
+              >
+                {language === "rw" ? "Reba videwo →" : "Browse videos →"}
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+              <div className="min-w-0 lg:col-span-7">
+                <div className="overflow-hidden border border-white/10 bg-[#171B20] shadow-lg">
+                  <div className="relative aspect-video overflow-hidden bg-black">
+                    {isVideoPlaying && selectedVideo && getYouTubeEmbedUrl(selectedVideo.youtube_url) ? (
+                      <iframe
+                        src={`${getYouTubeEmbedUrl(selectedVideo.youtube_url)}&autoplay=1`}
+                        title={selectedVideo.title || "Rubavu Today video"}
+                        className="absolute inset-0 h-full w-full"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        allowFullScreen
+                      />
+                    ) : (
+                      <>
+                        <OptimizedImage
+                          src={selectedVideo ? (getYouTubeThumbnail(selectedVideo.youtube_url) || selectedVideo.image || PORTAL_FALLBACK_IMAGE) : PORTAL_FALLBACK_IMAGE}
+                          alt={selectedVideo?.title || "Rubavu Today video"}
+                          widths={RESOLUTION_WIDTHS.HERO}
+                          sizes="(max-width: 1024px) 100vw, 58vw"
+                          loading="lazy"
+                          decoding="async"
+                          className="h-full w-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setIsVideoPlaying(true)}
+                          aria-label={language === "rw" ? "Kina videwo" : "Play video"}
+                          className="absolute inset-0 grid place-items-center bg-slate-950/15 transition hover:bg-slate-950/30 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
+                        >
+                          <span className="grid h-14 w-14 place-items-center rounded-full bg-red-700 text-white shadow-xl transition-transform hover:scale-105 sm:h-16 sm:w-16">
+                            <Play className="ml-1 h-6 w-6 fill-current sm:h-7 sm:w-7" aria-hidden="true" />
+                          </span>
+                        </button>
+                      </>
+                    )}
+                  </div>
+                  {selectedVideo && (
+                    <div className="border-t border-white/10 px-4 py-3 sm:px-5">
+                      <span className="font-body text-[9px] font-bold uppercase tracking-[0.16em] text-red-300">
+                        {getPostDepartmentLabel(selectedVideo, language)}
+                      </span>
+                      <Link
+                        to={getArticleUrl(selectedVideo)}
+                        className="mt-1 block font-post-title text-base font-bold leading-snug text-white transition-colors hover:text-red-200 sm:text-lg"
+                      >
+                        {selectedVideo.title}
+                      </Link>
+                      <TimeText
+                        date={getPostDate(selectedVideo)}
+                        className="mt-2 block font-body text-[10px] text-slate-400"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="min-w-0 divide-y divide-white/10 border border-white/10 bg-white/[0.04] lg:col-span-5">
+                {videoPosts.map((video) => {
+                  const active = getPostId(video) === getPostId(selectedVideo);
+                  const thumbnail = getYouTubeThumbnail(video.youtube_url) || video.image || PORTAL_FALLBACK_IMAGE;
+
+                  return (
+                    <button
+                      key={getPostId(video)}
+                      type="button"
+                      onClick={() => {
+                        setSelectedVideoId(getPostId(video));
+                        setIsVideoPlaying(false);
+                      }}
+                      aria-pressed={active}
+                      className={`group flex w-full items-center gap-3 p-3 text-left transition sm:p-3.5 ${active ? "bg-white/10" : "hover:bg-white/[0.08]"}`}
+                    >
+                      <span className="relative h-14 w-24 shrink-0 overflow-hidden bg-slate-800 sm:h-[68px] sm:w-28">
+                        <OptimizedImage
+                          src={thumbnail}
+                          alt=""
+                          widths={RESOLUTION_WIDTHS.THUMB}
+                          sizes="112px"
+                          loading="lazy"
+                          decoding="async"
+                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        />
+                        <span className="absolute inset-0 grid place-items-center bg-black/20">
+                          <span className="grid h-7 w-7 place-items-center rounded-full bg-red-700 text-white">
+                            <Play className="ml-0.5 h-3.5 w-3.5 fill-current" aria-hidden="true" />
+                          </span>
+                        </span>
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="line-clamp-2 block font-post-title text-xs font-bold leading-snug text-white transition-colors group-hover:text-red-200 sm:text-sm">
+                          {video.title}
+                        </span>
+                        <TimeText
+                          date={getPostDate(video)}
+                          className="mt-1.5 block font-body text-[10px] text-slate-400"
+                        />
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {archiveStories.length > 0 && (
+        <section className="overflow-hidden bg-[#20252B] px-4 py-7 text-white shadow-sm sm:px-6 sm:py-9 lg:px-8">
+          <div className="mx-auto max-w-7xl">
+            <div className="mb-5 flex items-end justify-between gap-4 border-b border-white/15 pb-3 sm:mb-6">
+              <div>
+                <p className="mb-1 font-body text-[9px] font-bold uppercase tracking-[0.22em] text-red-400">
+                  {language === "rw" ? "Ububiko" : "Archive"}
+                </p>
+                <h2 className="font-post-title text-xl font-extrabold leading-tight tracking-tight text-white sm:text-2xl">
+                  {language === "rw" ? "Inkuru zatoranyijwe" : "Selected stories"}
+                </h2>
+              </div>
+              <div className="flex shrink-0 items-center gap-2">
+                {archiveCandidates.length > 4 && (
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setArchiveSlideIndex((index) => (
+                        index - 1 + archiveCandidates.length
+                      ) % archiveCandidates.length)}
+                      aria-label={language === "rw" ? "Inkuru zabanje" : "Previous stories"}
+                      className="grid h-8 w-8 place-items-center rounded-full border border-white/20 text-slate-200 transition hover:border-white hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-red-300"
+                    >
+                      <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setArchiveSlideIndex((index) => (
+                        index + 1
+                      ) % archiveCandidates.length)}
+                      aria-label={language === "rw" ? "Inkuru zikurikira" : "Next stories"}
+                      className="grid h-8 w-8 place-items-center rounded-full border border-white/20 text-slate-200 transition hover:border-white hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-red-300"
+                    >
+                      <ChevronRight className="h-4 w-4" aria-hidden="true" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 lg:gap-4">
+              {archiveStories.map((post) => (
+                <Link
+                  key={getPostId(post)}
+                  to={getArticleUrl(post)}
+                  className="group min-w-0 animate-[homeMediaSlideUp_420ms_cubic-bezier(0.2,0.7,0.2,1)_both]"
+                >
+                  <div className="relative aspect-[16/10] overflow-hidden bg-slate-800">
+                    <OptimizedImage
+                      src={post.image || PORTAL_FALLBACK_IMAGE}
+                      alt={post.title || "Rubavu Today news"}
+                      widths={RESOLUTION_WIDTHS.CARD}
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                      loading="lazy"
+                      decoding="async"
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/45 via-transparent to-transparent opacity-70 transition-opacity group-hover:opacity-100" />
+                  </div>
+
+                  <div className="pt-3">
+                    <span className="font-body text-[9px] font-bold uppercase tracking-[0.16em] text-red-300">
+                      {getPostDepartmentLabel(post, language)}
+                    </span>
+                    <h3 className="mt-1 line-clamp-3 font-post-title text-sm font-bold leading-snug text-white transition-colors group-hover:text-red-200 sm:text-base">
+                      {post.title}
+                    </h3>
+                    <TimeText
+                      date={getPostDate(post)}
+                      className="mt-2 block font-body text-[10px] text-slate-400"
+                    />
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
     </div>
   );
 };
@@ -1780,7 +2063,7 @@ const Navbar = ({ showHomeContent = true }) => {
         to="/radio"
         aria-label="RubavuToday Radio"
         title="RubavuToday Radio"
-        className={`flex h-8 w-8 items-center justify-center gap-1.5 px-0 py-0 font-body text-[11px] font-black uppercase tracking-[0.1em] transition sm:h-auto sm:w-auto sm:px-4 sm:py-3 ${radioIsLive ? "bg-red-600 text-white hover:bg-red-700" : "text-slate-300 hover:bg-slate-800 hover:text-white"}`}
+        className={`flex h-8 w-8 items-center justify-center gap-1.5 px-0 py-0 font-body text-[11px] font-black uppercase tracking-[0.1em] transition sm:h-auto sm:w-auto sm:px-3 sm:py-2 ${radioIsLive ? "bg-red-600 text-white hover:bg-red-700" : "text-slate-300 hover:bg-slate-800 hover:text-white"}`}
       >
         <RadioIcon className={`h-3.5 w-3.5 ${radioIsLive ? "text-red-200" : "text-slate-400"}`} />
         <span className="hidden sm:inline">RubavuToday Radio</span>
@@ -1817,16 +2100,6 @@ const Navbar = ({ showHomeContent = true }) => {
   return (
     <div className={`${showHomeContent ? "min-h-screen" : ""} bg-slate-50 text-slate-900`}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700;900&family=Source+Sans+3:wght@300;400;500;600;700;800;900&display=swap');
-
-        .font-post-title {
-          font-family: 'Source Sans 3', Inter, system-ui, sans-serif;
-        }
-
-        .font-body {
-          font-family: 'Source Sans 3', system-ui, sans-serif;
-        }
-
         @keyframes portal-rise {
           from {
             opacity: 0;
@@ -1871,7 +2144,7 @@ const Navbar = ({ showHomeContent = true }) => {
 
 
       <div className="relative z-30 border-b border-slate-800 bg-slate-950 font-body text-slate-300">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-3 py-2 text-[9px] uppercase tracking-[0.1em] sm:px-6 sm:text-[11px]">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-3 py-1 text-[9px] uppercase tracking-[0.1em] sm:px-6 sm:text-[10px]">
           <span className="truncate">
             Rubavu Today — {todayLabel}
           </span>
@@ -1891,8 +2164,8 @@ const Navbar = ({ showHomeContent = true }) => {
 
 
       {showHomeContent && tickerHeadlines.length > 0 && (
-        <div className="relative z-30 flex overflow-hidden border-b border-red-700 bg-red-600 font-body text-xs font-semibold text-white">
-          <div className="z-10 flex shrink-0 items-center gap-2 bg-black px-3 py-2 font-bold uppercase tracking-wider">
+        <div className="relative z-30 flex overflow-hidden border-b border-red-700 bg-red-600 font-body text-[10px] font-semibold text-white">
+          <div className="z-10 flex shrink-0 items-center gap-2 bg-black px-2 py-0.5 font-bold uppercase tracking-wider">
             <span className="h-2 w-2 animate-ping rounded-full bg-red-500" />
 
             <span className="hidden sm:inline">
@@ -1904,7 +2177,7 @@ const Navbar = ({ showHomeContent = true }) => {
             </span>
           </div>
 
-          <div className="relative flex w-full overflow-hidden whitespace-nowrap py-2">
+          <div className="relative flex w-full overflow-hidden whitespace-nowrap py-0.5">
             <div
               className="rubavu-ticker-scroll"
               style={
@@ -1949,7 +2222,7 @@ const Navbar = ({ showHomeContent = true }) => {
 
 
       <header className="sticky top-0 z-40 border-b border-slate-800 bg-slate-950 text-white shadow-xl">
-        <div className="relative mx-auto flex h-[76px] max-w-7xl items-center justify-center px-2 sm:h-[92px] sm:px-6 lg:h-[100px] lg:px-10">
+        <div className="relative mx-auto flex h-[56px] max-w-7xl items-center justify-center px-2 sm:h-[68px] sm:px-6 lg:h-[72px] lg:px-10">
 
 
 
@@ -1963,7 +2236,7 @@ const Navbar = ({ showHomeContent = true }) => {
                     !previous
                 )
               }
-              className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-700 bg-slate-900 text-slate-200 transition hover:bg-slate-800 sm:hidden"
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-700 bg-slate-900 text-slate-200 transition hover:bg-slate-800 sm:hidden"
             >
               <SearchIcon />
             </button>
@@ -2005,7 +2278,7 @@ const Navbar = ({ showHomeContent = true }) => {
             aria-label="Rubavu Today Ahabanza"
             className="group absolute left-1/2 right-auto flex max-w-[calc(100%-8rem)] -translate-x-1/2 items-center justify-center gap-1 outline-none max-[310px]:left-12 max-[310px]:right-32 max-[310px]:translate-x-0 sm:static sm:w-auto sm:max-w-none sm:translate-x-0 sm:gap-3"
           >
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-red-600 bg-white shadow-xl transition duration-300 group-hover:scale-105 sm:h-[62px] sm:w-[62px] md:h-[68px] md:w-[68px]">
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-red-600 bg-white shadow-xl transition duration-300 group-hover:scale-105 sm:h-10 sm:w-10 md:h-11 md:w-11">
               <img
                 src={logo}
                 alt="Rubavu Today"
@@ -2013,7 +2286,7 @@ const Navbar = ({ showHomeContent = true }) => {
               />
             </div>
 
-            <span className="min-w-0 flex-1 break-words text-center font-post-title text-sm font-black leading-tight text-white sm:flex-none sm:whitespace-nowrap sm:text-2xl md:text-3xl lg:text-4xl">
+            <span className="min-w-0 flex-1 break-words text-center font-post-title text-[11px] font-black leading-tight text-white sm:flex-none sm:whitespace-nowrap sm:text-lg md:text-xl lg:text-2xl">
               Rubavu Today
             </span>
           </button>
@@ -2089,7 +2362,7 @@ const Navbar = ({ showHomeContent = true }) => {
             <div className="flex items-center gap-1 rounded-none border-x border-slate-800 bg-slate-950">
               <Link
                 to="/media"
-                className="flex items-center gap-1.5 bg-slate-950 px-4 py-3 font-body text-[11px] font-black uppercase tracking-[0.1em] text-white transition hover:bg-red-600"
+                className="flex items-center gap-1.5 bg-slate-950 px-3 py-1.5 font-body text-[10px] font-black uppercase tracking-[0.1em] text-white transition hover:bg-red-600"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-3.5 w-3.5" aria-hidden="true">
                   <path d="M4.5 4.5a3 3 0 0 0-3 3v9a3 3 0 0 0 3 3h8.25a3 3 0 0 0 3-3v-9a3 3 0 0 0-3-3H4.5ZM19.94 18.75l-2.44-2.44V7.69l2.44-2.44a1.5 1.5 0 0 1 2.56 1.06v11.38a1.5 1.5 0 0 1-2.56 1.06Z" />
@@ -2114,10 +2387,10 @@ const Navbar = ({ showHomeContent = true }) => {
                         )
                       }
                       className={`
-                        px-5
-                        py-3
+                        px-3
+                        py-1.5
                         font-body
-                        text-[12px]
+                        text-[11px]
                         font-bold
                         uppercase
                         tracking-[0.1em]
@@ -2145,7 +2418,7 @@ const Navbar = ({ showHomeContent = true }) => {
             <div className="flex max-w-full items-center gap-1 overflow-x-auto px-2">
               <Link
                 to="/media"
-                className="flex shrink-0 items-center gap-1 bg-slate-950 px-4 py-3 font-body text-[10px] font-black uppercase tracking-[0.1em] text-white transition hover:bg-red-600"
+                className="flex shrink-0 items-center gap-1 bg-slate-950 px-3 py-1.5 font-body text-[9px] font-black uppercase tracking-[0.1em] text-white transition hover:bg-red-600"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-3.5 w-3.5" aria-hidden="true">
                   <path d="M4.5 4.5a3 3 0 0 0-3 3v9a3 3 0 0 0 3 3h8.25a3 3 0 0 0 3-3v-9a3 3 0 0 0-3-3H4.5ZM19.94 18.75l-2.44-2.44V7.69l2.44-2.44a1.5 1.5 0 0 1 2.56 1.06v11.38a1.5 1.5 0 0 1-2.56 1.06Z" />
@@ -2171,10 +2444,10 @@ const Navbar = ({ showHomeContent = true }) => {
                       }
                       className={`
                         shrink-0
-                        px-4
-                        py-3
+                        px-2.5
+                        py-1.5
                         font-body
-                        text-[11px]
+                        text-[10px]
                         font-bold
                         uppercase
                         ${active
@@ -2282,8 +2555,8 @@ const Navbar = ({ showHomeContent = true }) => {
 
       {showHomeContent && (
         <>
-          <main className="relative z-20 mx-auto w-full max-w-7xl px-0 pb-5 pt-6 sm:pb-6">
-            <div className="px-3 pt-5 sm:px-6 sm:pt-6 lg:px-10">
+          <main className="home-news-layout relative z-20 mx-auto w-full max-w-7xl px-0 pb-4 pt-5 sm:pb-5">
+            <div className="px-3 pt-4 sm:px-6 sm:pt-5 lg:px-10">
               {loading ? null : sortedPosts.length ===
                 0 ? (
                 <div className="py-20 text-center font-body text-slate-500">

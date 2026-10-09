@@ -1,8 +1,13 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { MapPin, Phone } from "lucide-react";
+import { ChevronLeft, ChevronRight, MapPin, Phone } from "lucide-react";
 import logo from "../../Rubavu.jpeg";
 import { DEPARTMENTS } from "../Navbar/Navbar";
+import { getPosts } from "../../services/api";
+import OptimizedImage from "../common/OptimizedImage";
+import { RESOLUTION_WIDTHS } from "../../utils/images";
+import { getArticleUrl } from "../../utils/slug";
+import { getYouTubeThumbnail } from "../../utils/youtube";
 
 const WHATSAPP_URL = "https://wa.me/250788945200";
 const WHATSAPP_DISPLAY = "+250 788 945 200";
@@ -61,8 +66,8 @@ const SOCIAL_LINKS = [
 ];
 
 const FooterHeading = ({ children }) => (
-  <h3 className="flex items-center gap-2 font-post-title text-[13px] font-black uppercase tracking-wider text-white">
-    <span aria-hidden="true" className="h-3.5 w-1 rounded-sm bg-red-600" />
+  <h3 className="flex items-center gap-1 font-post-title text-[9px] font-black uppercase tracking-wider text-white">
+    <span aria-hidden="true" className="h-2 w-0.5 rounded-sm bg-red-600" />
     {children}
   </h3>
 );
@@ -71,7 +76,7 @@ const FooterLink = ({ to, children }) => (
   <li>
     <Link
       to={to}
-      className="group inline-flex items-center gap-1.5 py-1 text-[13px] font-medium text-slate-400 transition hover:text-white"
+      className="group inline-flex items-center gap-1 py-0 text-[10px] font-medium text-slate-400 transition hover:text-white"
     >
       <span
         aria-hidden="true"
@@ -83,6 +88,41 @@ const FooterLink = ({ to, children }) => (
 );
 
 const Footer = () => {
+  const [mediaPosts, setMediaPosts] = useState([]);
+  const [mediaLoadError, setMediaLoadError] = useState("");
+  const mediaStripRef = useRef(null);
+
+  useEffect(() => {
+    let mounted = true;
+
+    getPosts()
+      .then((posts) => {
+        if (!mounted) return;
+        const recentMedia = (Array.isArray(posts) ? posts : [])
+          .filter((post) => post.image || post.youtube_url)
+          .sort((a, b) => new Date(b.createdDate || 0) - new Date(a.createdDate || 0));
+        setMediaPosts(recentMedia);
+      })
+      .catch((error) => {
+        if (mounted) {
+          setMediaLoadError(error?.message || "Could not load recent media.");
+        }
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const scrollMedia = (direction) => {
+    const strip = mediaStripRef.current;
+    if (!strip) return;
+    strip.scrollBy({
+      left: direction * strip.clientWidth * 0.8,
+      behavior: "smooth",
+    });
+  };
+
   const quickLinks = [
     { label: "Home", to: "/" },
     { label: "About Us", to: "/about" },
@@ -94,30 +134,30 @@ const Footer = () => {
 
   return (
     <footer className="bg-slate-950 text-slate-300">
-      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-10 lg:py-14">
-        <div className="grid grid-cols-1 gap-10 md:grid-cols-2 lg:grid-cols-12 lg:gap-8">
+      <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6 lg:px-10 lg:py-4">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-12 lg:gap-3">
           {/* BRAND / ABOUT */}
-          <div className="md:col-span-2 lg:col-span-5">
-            <Link to="/" className="group inline-flex items-center gap-3">
-              <span className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-red-600 bg-white shadow-lg transition duration-300 group-hover:scale-105">
+          <div className="md:col-span-2 lg:col-span-3">
+            <Link to="/" className="group inline-flex items-center gap-2">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-full border border-red-600 bg-white shadow transition duration-300 group-hover:scale-105">
                 <img
                   src={logo}
                   alt="Rubavu Today"
                   className="h-full w-full object-cover"
                 />
               </span>
-              <span className="font-post-title text-xl font-black tracking-tight text-white sm:text-2xl">
+              <span className="font-post-title text-sm font-black tracking-tight text-white sm:text-base">
                 Rubavu Today
               </span>
             </Link>
 
-            <p className="mt-4 max-w-md text-[13px] leading-relaxed text-slate-400">
+            <p className="mt-1.5 max-w-md text-[10px] leading-snug text-slate-400">
               Rubavu Today is a modern digital news platform delivering trusted
               news, stories, entertainment, sports, business and community
               updates from Rubavu and beyond.
             </p>
 
-            <div className="mt-5 flex items-center gap-2.5">
+            <div className="mt-2 flex items-center gap-1.5">
               {SOCIAL_LINKS.map((social) => (
                 <a
                   key={social.label}
@@ -125,7 +165,7 @@ const Footer = () => {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={social.label}
-                  className={`flex h-9 w-9 items-center justify-center rounded-full border border-slate-700 bg-slate-800 transition duration-300 hover:-translate-y-0.5 hover:border-red-600 ${social.color}`}
+                  className={`flex h-6 w-6 items-center justify-center rounded-full border border-slate-700 bg-slate-800 transition duration-300 hover:-translate-y-0.5 hover:border-red-600 ${social.color}`}
                 >
                   {social.icon}
                 </a>
@@ -137,7 +177,7 @@ const Footer = () => {
           <div className="lg:col-span-2">
             <FooterHeading>News Categories</FooterHeading>
 
-            <ul className="mt-4 space-y-1">
+            <ul className="mt-1.5 space-y-0">
               {DEPARTMENTS.map((department) => (
                 <FooterLink
                   key={department.name}
@@ -153,7 +193,7 @@ const Footer = () => {
           <div className="lg:col-span-2">
             <FooterHeading>Quick Links</FooterHeading>
 
-            <ul className="mt-4 space-y-1">
+            <ul className="mt-1.5 space-y-0">
               {quickLinks.map((link) => (
                 <FooterLink key={link.label} to={link.to}>
                   {link.label}
@@ -163,22 +203,22 @@ const Footer = () => {
           </div>
 
           {/* CONTACT */}
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-2">
             <FooterHeading>Contact</FooterHeading>
 
-            <ul className="mt-4 space-y-3 text-[13px]">
+            <ul className="mt-1.5 space-y-1 text-[10px]">
               <li>
                 <a
                   href={WHATSAPP_URL}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group flex items-center gap-3 text-slate-400 transition hover:text-white"
+                  className="group flex items-center gap-1.5 text-slate-400 transition hover:text-white"
                 >
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-700 bg-slate-800 text-red-500 transition group-hover:border-red-600">
-                    <Phone size={16} aria-hidden="true" />
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-slate-700 bg-slate-800 text-red-500 transition group-hover:border-red-600">
+                    <Phone size={11} aria-hidden="true" />
                   </span>
                   <span>
-                    <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                    <span className="block text-[8px] font-bold uppercase tracking-wider text-slate-500">
                       Phone / WhatsApp
                     </span>
                     <span className="font-semibold text-slate-300 group-hover:text-white">
@@ -188,12 +228,12 @@ const Footer = () => {
                 </a>
               </li>
 
-              <li className="flex items-center gap-3 text-slate-400">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-700 bg-slate-800 text-red-500">
-                  <MapPin size={16} aria-hidden="true" />
+              <li className="flex items-center gap-1.5 text-slate-400">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-slate-700 bg-slate-800 text-red-500">
+                  <MapPin size={11} aria-hidden="true" />
                 </span>
                 <span>
-                  <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                  <span className="block text-[8px] font-bold uppercase tracking-wider text-slate-500">
                     Our location
                   </span>
                   <span className="font-semibold text-slate-300">{OFFICE_LOCATION}</span>
@@ -203,9 +243,79 @@ const Footer = () => {
 
             <Link
               to="/contact"
-              className="mt-5 inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2.5 text-[12px] font-bold uppercase tracking-wider text-white transition hover:bg-red-700"
+              className="mt-2 inline-flex items-center gap-1 rounded-md bg-red-600 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider text-white transition hover:bg-red-700"
             >
               Contact Us →
+            </Link>
+          </div>
+
+          {/* RECENT PHOTOS AND VIDEOS */}
+          <div className="lg:col-span-3">
+            <div className="flex items-center justify-between gap-2">
+              <FooterHeading>Photos &amp; Videos</FooterHeading>
+              {mediaPosts.length > 3 && (
+                <div className="flex shrink-0 items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => scrollMedia(-1)}
+                    aria-label="Previous photos and videos"
+                    className="grid h-5 w-5 place-items-center rounded-full border border-slate-700 text-slate-300 transition hover:border-red-500 hover:text-white focus:outline-none focus:ring-1 focus:ring-red-400"
+                  >
+                    <ChevronLeft className="h-3 w-3" aria-hidden="true" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => scrollMedia(1)}
+                    aria-label="Next photos and videos"
+                    className="grid h-5 w-5 place-items-center rounded-full border border-slate-700 text-slate-300 transition hover:border-red-500 hover:text-white focus:outline-none focus:ring-1 focus:ring-red-400"
+                  >
+                    <ChevronRight className="h-3 w-3" aria-hidden="true" />
+                  </button>
+                </div>
+              )}
+            </div>
+            {mediaLoadError ? (
+              <p className="mt-2 text-[9px] text-slate-500">{mediaLoadError}</p>
+            ) : mediaPosts.length > 0 ? (
+              <div
+                ref={mediaStripRef}
+                className="mt-2 flex snap-x snap-mandatory gap-1 overflow-x-auto scroll-smooth"
+                style={{ scrollbarWidth: "none" }}
+              >
+                {mediaPosts.map((post) => (
+                  <Link
+                    key={post.id || post._id || post.title}
+                    to={getArticleUrl(post)}
+                    aria-label={post.title || "View photo or video"}
+                    className="group relative aspect-square w-[calc((100%-0.5rem)/3)] shrink-0 snap-start overflow-hidden rounded-sm bg-slate-800"
+                  >
+                    <OptimizedImage
+                      src={getYouTubeThumbnail(post.youtube_url) || post.image}
+                      alt=""
+                      widths={RESOLUTION_WIDTHS.THUMB}
+                      sizes="(max-width: 1024px) 28vw, 70px"
+                      loading="lazy"
+                      decoding="async"
+                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
+                    {post.youtube_url && (
+                      <span className="absolute inset-0 grid place-items-center bg-black/20 text-white">
+                        <span className="grid h-5 w-5 place-items-center rounded-full bg-red-600/90 text-[9px]" aria-hidden="true">
+                          ▶
+                        </span>
+                      </span>
+                    )}
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-2 text-[9px] text-slate-500">Recent media will appear here.</p>
+            )}
+            <Link
+              to="/media"
+              className="mt-1.5 inline-block font-body text-[8px] font-bold uppercase tracking-wide text-slate-400 transition hover:text-white"
+            >
+              View all media →
             </Link>
           </div>
         </div>
@@ -213,7 +323,7 @@ const Footer = () => {
 
       {/* BOTTOM BAR */}
       <div className="border-t border-slate-800">
-        <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-5 text-[12px] text-slate-500 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-10">
+        <div className="mx-auto flex max-w-7xl flex-col gap-1.5 px-4 py-2 text-[9px] text-slate-500 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-10">
           <p>
             © 2026 Rubavu Today. <span className="text-slate-400">All rights reserved.</span>
           </p>

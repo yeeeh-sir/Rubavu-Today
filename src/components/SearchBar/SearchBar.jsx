@@ -21,11 +21,11 @@ const SearchResultCard = ({ post, query }) => (
     <Link to={getArticleUrl(post)} className="group flex h-20 w-[min(78vw,250px)] shrink-0 flex-row overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition hover:border-red-300 hover:bg-slate-50 hover:shadow-md sm:w-[250px]">
         <div className="relative h-full w-20 shrink-0 overflow-hidden bg-slate-100">
             {post.image ? <OptimizedImage src={post.image} alt="" widths={RESOLUTION_WIDTHS.THUMB} sizes="280px" loading="lazy" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" /> : <div className="flex h-full items-center justify-center text-2xl opacity-30">📰</div>}
-            <span className="absolute bottom-1 left-1 rounded bg-red-600 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider text-white">{post.category || "Amakuru"}</span>
+            <span className="news-category news-category-inverse absolute bottom-1 left-1 rounded bg-red-600 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider text-white">{post.category || "Amakuru"}</span>
         </div>
         <div className="flex min-w-0 flex-1 flex-col justify-center px-2 py-1.5">
-            <h3 className="line-clamp-2 font-post-title text-xs font-bold leading-tight text-slate-950 group-hover:text-red-700"><Highlight text={post.title} query={query} /></h3>
-            {post.createdDate && <time className="mt-1 text-[9px] font-semibold uppercase tracking-wider text-slate-400">{formatDate(post.createdDate)}</time>}
+            <h3 className="news-headline-card line-clamp-2 font-post-title text-xs font-bold leading-tight text-slate-950 group-hover:text-red-700"><Highlight text={post.title} query={query} /></h3>
+            {post.createdDate && <time className="news-meta mt-1 font-semibold uppercase tracking-wider">{formatDate(post.createdDate)}</time>}
         </div>
     </Link>
 );
@@ -84,8 +84,8 @@ const SearchBar = ({ value, onChange, searchHistory = [], onSelectHistory, isLoa
         <div ref={dropdownRef} className="relative w-full">
             <label htmlFor="news-search" className="sr-only">{t("searchLabel")}</label>
             <div className="relative">
-                <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" aria-hidden="true" />
-                <input id="news-search" type="search" autoComplete="off" placeholder="Shakisha inkuru…" value={value} onChange={(event) => onChange(event.target.value)} onFocus={() => setIsFocused(true)} className="w-full rounded-full border border-slate-300 bg-white py-3 pl-11 pr-20 text-sm text-slate-950 shadow-sm outline-none transition focus:border-red-600 focus:ring-2 focus:ring-red-100 sm:text-base" />
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
+                <input id="news-search" type="search" autoComplete="off" placeholder="Shakisha inkuru…" value={value} onChange={(event) => onChange(event.target.value)} onFocus={() => setIsFocused(true)} className="w-full rounded-full border border-slate-300 bg-white py-2 pl-9 pr-20 text-sm text-slate-950 shadow-sm outline-none transition focus:border-red-600 focus:ring-2 focus:ring-red-100 sm:text-base" />
                 <div className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center gap-1">
                     {(isLoading || externalLoading) && <Loader2 className="h-4 w-4 animate-spin text-red-600" aria-label={t("searching")} />}
                     {value && !isLoading && <button type="button" onClick={() => onChange("")} className="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700" aria-label={t("clearSearch")}><X className="h-4 w-4" /></button>}

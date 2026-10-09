@@ -63,12 +63,12 @@ const Performance = lazy(() => import("../pages/admin/Performance"));
 const Accounts = lazy(() => import("../pages/admin/Accounts"));
 
 const PublicLayout = ({ children, showHomeContent = true }) => (
-    <>
+    <div className="public-site">
         <Navbar showHomeContent={showHomeContent} />
         {children}
         <Footer />
         <WebsiteChat />
-    </>
+    </div>
 );
 
 const LegacyEmployeeLayout = ({ children }) => (

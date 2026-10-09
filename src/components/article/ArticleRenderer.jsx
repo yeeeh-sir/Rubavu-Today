@@ -221,7 +221,7 @@ const ArticleRenderer = ({
       return elements.push(
         <p
           key={`p-${index}`}
-          className={`${clearClass} mb-6 whitespace-pre-line text-[1.0625rem] leading-[1.85] text-slate-700 sm:text-[1.125rem]`}
+          className={`${clearClass} font-body mb-6 whitespace-pre-line text-[1.0625rem] leading-[1.85] text-slate-700 sm:text-[1.125rem]`}
         >
           {formatted}
         </p>

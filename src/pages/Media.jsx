@@ -6,6 +6,7 @@ import { SiteSEO } from "../components/SEO/SEO";
 import { useLanguage } from "../context/LanguageContext";
 import OptimizedImage from "../components/common/OptimizedImage";
 import { RESOLUTION_WIDTHS, isCloudinaryUrl } from "../utils/images";
+import { ChevronDown } from "lucide-react";
 
 
 const getImageUrl = (image) => {
@@ -58,6 +59,7 @@ const Media = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [filter, setFilter] = useState("all");
+  const [visibleCount, setVisibleCount] = useState(9);
 
   useEffect(() => {
     let mounted = true;
@@ -129,11 +131,16 @@ const Media = () => {
 
   const hasVideos = gallery.some((post) => post.videos.length > 0);
   const hasPhotos = gallery.some((post) => post.images.length > 0);
+  const visiblePosts = filtered.slice(0, visibleCount);
+  const hasMorePosts = filtered.length > visibleCount;
 
   const filterBtn = (key, label) => (
     <button
       type="button"
-      onClick={() => setFilter(key)}
+      onClick={() => {
+        setFilter(key);
+        setVisibleCount(9);
+      }}
       className={`inline-flex items-center justify-center rounded-md border px-3 py-1.5 sm:px-4 sm:py-2 font-body text-[8px] xs:text-[9px] sm:text-[10px] font-black uppercase tracking-[0.14em] transition-all duration-200 ${filter === key
         ? "border-slate-900 bg-slate-950 text-white shadow-[2px_2px_0px_0px_rgba(239,68,68,1)]"
         : "border-slate-300 bg-white text-slate-700 hover:border-red-300 hover:text-red-600 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,0.08)]"
@@ -186,8 +193,9 @@ const Media = () => {
               </h3>
             </div>
           ) : (
-            <div className="mt-5 grid grid-cols-1 gap-4 xs:gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {filtered.map((post) => {
+            <>
+              <div className="mt-5 grid grid-cols-1 gap-4 xs:gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {visiblePosts.map((post) => {
                 const isVideo = post.videos.length > 0;
                 const cover = post.images[0] || null;
 
@@ -265,7 +273,21 @@ const Media = () => {
                   </article>
                 );
               })}
-            </div>
+              </div>
+              {hasMorePosts && (
+                <div className="flex justify-center pt-5">
+                  <button
+                    type="button"
+                    onClick={() => setVisibleCount((count) => count + 9)}
+                    aria-label={language === "rw" ? "Reba andi mashusho na videwo" : "Show more photos and videos"}
+                    title={language === "rw" ? "Reba andi mashusho na videwo" : "Show more photos and videos"}
+                    className="grid h-10 w-10 place-items-center rounded-full border border-slate-300 bg-white text-slate-800 shadow-sm transition hover:border-red-600 hover:bg-red-600 hover:text-white focus:outline-none focus:ring-2 focus:ring-red-200"
+                  >
+                    <ChevronDown className="h-5 w-5" aria-hidden="true" />
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </section>
       </main>

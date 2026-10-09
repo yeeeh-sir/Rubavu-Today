@@ -1,6 +1,13 @@
 import React, { useEffect, useState, useRef, useMemo } from "react";
 import { Link, useLocation, useParams, useNavigate } from "react-router-dom";
-import { ThumbsUp, ThumbsDown, ArrowRight, Loader2 } from "lucide-react";
+import {
+  ThumbsUp,
+  ThumbsDown,
+  ArrowRight,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+} from "lucide-react";
 import rubavuLogo from "../Rubavu.jpeg";
 import { API_ROOT as API_URL, getPostById, getPostBySlug, getPosts, getNextArticle, formatAuthorName, getPostAuthorNickname, commitCommentReaction } from "../services/api";
 import { ArticleSEO } from "../components/SEO/SEO";
@@ -28,6 +35,20 @@ const TimeLabel = ({ date, className = "" }) => {
     <time className={className} dateTime={date ? String(date) : undefined}>
       {text}
     </time>
+  );
+};
+
+const StoryCategoryLabel = ({ post, language }) => {
+  const isDepartmentPost = isAmakuruCategory(post?.category) && post?.amakuru_department;
+
+  return (
+    <span
+      className={isDepartmentPost
+        ? "inline-flex w-fit max-w-full items-center rounded bg-[#B3261E] px-2 py-1 font-body text-[9px] font-bold uppercase tracking-wider text-white sm:text-[10px]"
+        : "news-category font-body uppercase tracking-wider"}
+    >
+      {isDepartmentPost ? post.amakuru_department : translateCategory(post?.category, language)}
+    </span>
   );
 };
 
@@ -179,6 +200,25 @@ export default function PostDetails() {
 
 
   const imageContainerRef = useRef(null);
+  const relatedStoriesRef = useRef(null);
+  const moreStoriesRef = useRef(null);
+  const moreStoriesSectionRef = useRef(null);
+
+  const scrollStories = (storiesRef, direction) => {
+    const rail = storiesRef.current;
+    if (!rail) return;
+
+    const card = rail.querySelector("[data-story-card]");
+    const distance = card
+      ? card.getBoundingClientRect().width + 16
+      : rail.clientWidth * 0.8;
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    rail.scrollBy({
+      left: distance * direction,
+      behavior: reducedMotion ? "auto" : "smooth",
+    });
+  };
 
 
 
@@ -752,17 +792,40 @@ export default function PostDetails() {
   }, [allPosts, post]);
 
   const relatedPosts = useMemo(() => {
+    const currentDepartment = String(post?.amakuru_department || "").trim().toLowerCase();
     const currentCategory = String(post?.category || "").toLowerCase();
+    const sameDepartment = isAmakuruCategory(post?.category) && currentDepartment
+      ? sortedOthers.filter(
+        (p) =>
+          isAmakuruCategory(p.category) &&
+          String(p.amakuru_department || "").trim().toLowerCase() === currentDepartment
+      )
+      : [];
     const sameCategory = sortedOthers.filter(
       (p) =>
         String(p.category || "").toLowerCase() === currentCategory
     );
 
-    const source = sameCategory.length >= 2 ? sameCategory : sortedOthers;
+    const source = sameDepartment.length
+      ? sameDepartment
+      : sameCategory.length >= 2
+        ? sameCategory
+        : sortedOthers;
 
     return source.slice(0, 4);
   }, [sortedOthers, post]);
 
+  const hasRelatedDepartment = isAmakuruCategory(post?.category) &&
+    Boolean(post?.amakuru_department) &&
+    relatedPosts.some(
+      (p) =>
+        isAmakuruCategory(p.category) &&
+        String(p.amakuru_department || "").trim().toLowerCase() ===
+          String(post.amakuru_department).trim().toLowerCase()
+    );
+  const relatedSectionTitle = hasRelatedDepartment
+    ? (language === "rw" ? `Izindi nkuru: ${post.amakuru_department}` : `More from ${post.amakuru_department}`)
+    : t("relatedArticles");
   const moreNews = (() => {
     const relatedIds = new Set(
       relatedPosts.map((p) => String(p._id || p.id))
@@ -773,10 +836,96 @@ export default function PostDetails() {
       .slice(0, 12);
   })();
 
-  // Chronological neighbours used by the "more news" side rail.
+  // Chronological neighbours shown below the article.
   const rightSidePosts = moreNews.length
     ? moreNews
     : sortedOthers.slice(0, 6);
+
+  useEffect(() => {
+    const rail = moreStoriesRef.current;
+    const section = moreStoriesSectionRef.current;
+    if (!rail || !section || rightSidePosts.length < 2) return undefined;
+
+    const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
+    if (motionPreference.matches) return undefined;
+
+    let paused = false;
+    let advanceTimer;
+    let resumeTimer;
+
+    const scheduleAdvance = () => {
+      window.clearTimeout(advanceTimer);
+      if (paused || document.hidden) return;
+
+      advanceTimer = window.setTimeout(() => {
+        const maxScroll = rail.scrollWidth - rail.clientWidth;
+        if (maxScroll > 0) {
+          if (rail.scrollLeft >= maxScroll - 8) {
+            rail.scrollTo({ left: 0, behavior: "smooth" });
+          } else {
+            const card = rail.querySelector("[data-story-card]");
+            const step = card
+              ? card.getBoundingClientRect().width + 12
+              : rail.clientWidth * 0.8;
+            rail.scrollBy({ left: step, behavior: "smooth" });
+          }
+        }
+        scheduleAdvance();
+      }, 8000);
+    };
+
+    const pause = () => {
+      paused = true;
+      window.clearTimeout(advanceTimer);
+    };
+
+    const resume = () => {
+      paused = false;
+      scheduleAdvance();
+    };
+
+    const handlePointerDown = () => {
+      pause();
+      window.clearTimeout(resumeTimer);
+    };
+
+    const handlePointerUp = () => {
+      window.clearTimeout(resumeTimer);
+      resumeTimer = window.setTimeout(resume, 4000);
+    };
+
+    const handleFocusOut = (event) => {
+      if (!section.contains(event.relatedTarget)) resume();
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) pause();
+      else resume();
+    };
+
+    section.addEventListener("mouseenter", pause);
+    section.addEventListener("mouseleave", resume);
+    section.addEventListener("focusin", pause);
+    section.addEventListener("focusout", handleFocusOut);
+    section.addEventListener("pointerdown", handlePointerDown);
+    section.addEventListener("pointerup", handlePointerUp);
+    section.addEventListener("pointercancel", handlePointerUp);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    scheduleAdvance();
+
+    return () => {
+      window.clearTimeout(advanceTimer);
+      window.clearTimeout(resumeTimer);
+      section.removeEventListener("mouseenter", pause);
+      section.removeEventListener("mouseleave", resume);
+      section.removeEventListener("focusin", pause);
+      section.removeEventListener("focusout", handleFocusOut);
+      section.removeEventListener("pointerdown", handlePointerDown);
+      section.removeEventListener("pointerup", handlePointerUp);
+      section.removeEventListener("pointercancel", handlePointerUp);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [rightSidePosts.length]);
 
   if (loading) {
     return (
@@ -790,7 +939,7 @@ export default function PostDetails() {
               <div className="space-y-2">
                 <div className="h-4 w-28 rounded bg-slate-200" />
                 <div className="h-3 w-20 rounded bg-slate-200" />
-              </div>
+            </div>
             </div>
             <div className="h-[320px] w-full rounded-2xl bg-slate-200" />
             <div className="space-y-3">
@@ -949,44 +1098,19 @@ export default function PostDetails() {
 
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
-      <style>{`
-        .rt-article-content {
-          font-family: 'Source Sans 3', system-ui, sans-serif;
-        }
-
-        .rt-article-content p {
-          margin-bottom: 1.5rem;
-          color: #334155;
-          font-size: 1.0625rem;
-          line-height: 1.85;
-          letter-spacing: -0.003em;
-        }
-
-        @media (min-width: 640px) {
-          .rt-article-content p {
-            font-size: 1.125rem;
-          }
-        }
-
-        .rt-article-content p::first-letter {
-          -webkit-user-select: text;
-          user-select: text;
-        }
-      `}</style>
-
+    <div className="post-detail-page min-h-screen bg-slate-50 text-slate-900">
       <ArticleSEO post={post} />
 
       <div id="printable-article" className="mx-auto w-full max-w-7xl px-3 pb-12 sm:px-6">
         <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12">
           <div className="min-w-0 lg:col-span-8">
-            <div className="mx-auto max-w-[820px]">
+            <div className="mx-auto max-w-[760px]">
 
               {/* HEADLINE — the strongest element on the page */}
               {(post.category || post.amakuru_department) && (
                 <div className="mb-3 flex flex-wrap items-center gap-2">
-                  {post.category && (
-                    <p className="font-body text-[10px] font-bold uppercase tracking-wider text-red-700 sm:text-xs">
+                  {post.category && (!isAmakuruCategory(post.category) || !post.amakuru_department) && (
+                    <p className="news-category font-body uppercase tracking-wider">
                       {translateCategory(post.category, language)}
                     </p>
                   )}
@@ -996,20 +1120,20 @@ export default function PostDetails() {
                   {isAmakuruCategory(post.category) && post.amakuru_department ? (
                     <Link
                       to={`/amakuru/${getAmakuruDepartmentSlug(post.amakuru_department)}`}
-                      className="inline-flex items-center gap-1 rounded-full border border-red-600 bg-red-600 px-2.5 py-1 font-body text-[10px] font-bold uppercase tracking-wider text-white transition-colors duration-150 hover:bg-red-700 sm:text-[11px]"
+                      className="news-category news-category-inverse inline-flex items-center gap-1 rounded-full border border-red-600 bg-red-600 px-2.5 py-1 font-body uppercase tracking-wider text-white transition-colors duration-150 hover:bg-red-700"
                     >
                       {post.amakuru_department}
                     </Link>
                   ) : null}
                 </div>
               )}
-              <h1 className="font-post-title text-xl font-black leading-[1.12] tracking-tight text-slate-950 sm:text-2xl lg:text-3xl">
+              <h1 className="news-headline-featured font-post-title text-xl font-black leading-[1.12] tracking-tight text-slate-950 sm:text-2xl lg:text-3xl">
                 {post.title}
               </h1>
 
               {/* STANDFIRST */}
               {post.summary && post.summary !== post.description && (
-                <p className="mt-5 border-l-4 border-red-600 pl-4 font-post-title text-base font-medium leading-relaxed text-slate-600 sm:text-lg">
+                <p className="mt-5 border-l-4 border-red-600 pl-4 font-body text-base font-medium leading-relaxed text-slate-600 sm:text-lg">
                   {post.summary}
                 </p>
               )}
@@ -1064,7 +1188,7 @@ export default function PostDetails() {
 
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-body text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                        <span className="news-meta font-body uppercase tracking-wider">
                           {language === "rw" ? "Yanditswe Na:" : t("writtenBy")}
                         </span>
                         <span className="truncate font-body text-sm font-bold text-slate-950">
@@ -1103,11 +1227,12 @@ export default function PostDetails() {
                     onClose={() => setProfileOpen(false)}
                   />
                 </div>
+
               </div>
 
               {/* SOCIAL SHARE */}
               <div className="print:hidden mt-2 flex items-center gap-1.5">
-                <span className="text-[8px] font-bold uppercase tracking-wider text-slate-500">
+                <span className="news-meta font-body font-bold uppercase tracking-wider">
                   Share:
                 </span>
                 <div className="flex items-center gap-1">
@@ -1197,18 +1322,19 @@ export default function PostDetails() {
                   </div>
 
                   <figcaption className="mt-2 flex items-center justify-between gap-3">
-                    <span className="flex min-w-0 flex-wrap items-center gap-1.5 font-body text-[10px] font-medium uppercase tracking-wider text-slate-400">
-                      {translateCategory(post.category, language)}
+                    <span className="news-meta flex min-w-0 flex-wrap items-center gap-1.5 font-body font-medium uppercase tracking-wider">
                       {isAmakuruCategory(post.category) && post.amakuru_department ? (
-                        <span className="rounded-full border border-slate-300 bg-white px-1.5 py-0.5 font-bold text-slate-500">
+                        <span className="news-meta rounded-full border border-slate-300 bg-white px-1.5 py-0.5 font-bold text-slate-500">
                           {post.amakuru_department}
                         </span>
-                      ) : null}
+                      ) : (
+                        translateCategory(post.category, language)
+                      )}
                     </span>
                     <button
                       type="button"
                       onClick={triggerWatermarkedDownload}
-                      className="print:hidden inline-flex items-center gap-1.5 rounded border border-slate-200 bg-white px-3 py-1.5 font-body text-[10px] font-semibold text-slate-600 transition hover:border-red-200 hover:text-red-600"
+                      className="print:hidden inline-flex items-center gap-1.5 rounded border border-slate-200 bg-white px-3 py-1.5 font-body text-xs font-semibold text-slate-600 transition hover:border-red-200 hover:text-red-600"
                     >
                       {t("downloadImage")}
                     </button>
@@ -1261,13 +1387,13 @@ export default function PostDetails() {
                           </div>
 
                           <figcaption className="mt-2 flex items-center justify-between gap-3">
-                            <span className="font-body text-[10px] font-medium uppercase tracking-wider text-slate-400">
+                            <span className="news-meta font-body uppercase tracking-wider">
                               Photo {block.num} of {galleryImages.length}
                             </span>
                             <button
                               type="button"
                               onClick={() => triggerWatermarkedDownload(block.url)}
-                              className="print:hidden inline-flex items-center gap-1.5 rounded border border-slate-200 bg-white px-3 py-1.5 font-body text-[10px] font-semibold text-slate-600 transition hover:border-red-200 hover:text-red-600"
+                              className="print:hidden inline-flex items-center gap-1.5 rounded border border-slate-200 bg-white px-3 py-1.5 font-body text-xs font-semibold text-slate-600 transition hover:border-red-200 hover:text-red-600"
                             >
                               {t("downloadImage")}
                             </button>
@@ -1574,106 +1700,83 @@ export default function PostDetails() {
               {/* RELATED ARTICLES */}
               {relatedPosts.length > 0 && (
                 <section className="mt-14">
-                  <div className="mb-5 flex items-center gap-2 border-b-2 border-slate-900 pb-2">
-                    <span className="h-4 w-1.5 rounded-sm bg-red-600" />
-                    <h2 className="font-post-title text-lg font-black uppercase tracking-tight text-slate-950 sm:text-xl">
-                      {t("relatedArticles")}
-                    </h2>
+                  <div className="mb-5 flex items-center justify-between gap-3 border-b-2 border-slate-900 pb-2">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <span className="h-4 w-1.5 shrink-0 rounded-sm bg-red-600" />
+                      {hasRelatedDepartment ? (
+                        <Link
+                          to={`/amakuru/${getAmakuruDepartmentSlug(post.amakuru_department)}`}
+                          className="news-section-heading font-post-title uppercase tracking-tight transition-colors hover:text-red-700"
+                        >
+                          {relatedSectionTitle}
+                        </Link>
+                      ) : (
+                        <h2 className="news-section-heading font-post-title uppercase tracking-tight">
+                          {relatedSectionTitle}
+                        </h2>
+                      )}
+                    </div>
+                    <div className="flex shrink-0 items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => scrollStories(relatedStoriesRef, -1)}
+                        aria-label={language === "rw" ? "Inkuru zibanza" : "Previous stories"}
+                        className="grid h-9 w-9 place-items-center rounded-full border border-slate-200 bg-white text-slate-700 transition hover:border-red-300 hover:text-red-700 focus:outline-none focus:ring-2 focus:ring-red-200"
+                      >
+                        <ChevronLeft className="h-5 w-5" aria-hidden="true" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => scrollStories(relatedStoriesRef, 1)}
+                        aria-label={language === "rw" ? "Inkuru zikurikira" : "Next stories"}
+                        className="grid h-9 w-9 place-items-center rounded-full border border-slate-200 bg-white text-slate-700 transition hover:border-red-300 hover:text-red-700 focus:outline-none focus:ring-2 focus:ring-red-200"
+                      >
+                        <ChevronRight className="h-5 w-5" aria-hidden="true" />
+                      </button>
+                    </div>
                   </div>
 
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                    {relatedPosts.slice(0, 3).map((p) => (
+                  <div
+                    ref={relatedStoriesRef}
+                    role="region"
+                    className="flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth pb-3 [scrollbar-width:thin]"
+                    aria-label={t("relatedArticles")}
+                  >
+                    {relatedPosts.slice(0, 4).map((p) => (
                       <Link
                         key={p._id || p.id}
+                        data-story-card
                         to={getArticleUrl(p)}
                         onClick={openPostFull(p)}
-                        className="group flex flex-row items-center gap-4 rounded-xl border border-slate-200 bg-white p-3 shadow-sm transition hover:border-red-200 hover:shadow-md"
+                        className="group flex w-[min(82vw,320px)] shrink-0 snap-start flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-red-300 hover:shadow-md sm:w-[calc((100%-1rem)/2)] lg:w-[calc((100%-2rem)/3)]"
                       >
-                        <div className="h-20 w-24 shrink-0 overflow-hidden rounded-lg bg-slate-100 sm:h-24 sm:w-28">
-                          {p.image ? (
-                            <OptimizedImage
-                              src={getImageUrl(p.image)}
-                              alt={p.title}
-                              widths={RESOLUTION_WIDTHS.THUMB}
-                              sizes="112px"
-                              loading="lazy"
-                              decoding="async"
-                              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                            />
-                          ) : (
-                            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-200 to-slate-100 text-2xl opacity-30">
-                              ðŸ“°
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="min-w-0 flex-1">
-                          <span className="font-body text-[8px] font-bold uppercase tracking-wider text-red-600">
-                            {translateCategory(p.category, language)}
-                          </span>
-                          <h3 className="mt-1 line-clamp-3 font-post-title text-[13px] font-bold leading-snug text-slate-950 transition-colors group-hover:text-red-600 sm:text-sm">
-                            {p.title}
-                          </h3>
-                          <p className="mt-1.5">
-                            <TimeLabel
-                              date={p.createdDate || p.created_at || p.createdAt || p.date}
-                              className="font-body text-[9px] font-medium text-slate-400"
-                            />
-                          </p>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                </section>
-              )}
-
-              {/* MORE NEWS */}
-              {moreNews.length > 0 && (
-                <section className="mt-14">
-                  <div className="mb-5 flex items-center gap-2 border-b-2 border-slate-900 pb-2">
-                    <span className="h-4 w-1.5 rounded-sm bg-red-600" />
-                    <h2 className="font-post-title text-lg font-black uppercase tracking-tight text-slate-950 sm:text-xl">
-                      {language === "rw" ? "Soma n'izindi nkuru" : t("readMoreStories")}
-                    </h2>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
-                    {moreNews.map((p) => (
-                      <Link
-                        key={p._id || p.id}
-                        to={getArticleUrl(p)}
-                        onClick={openPostFull(p)}
-                        className="group flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:border-red-200 hover:shadow-md"
-                      >
-                        <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
+                        <div className="relative aspect-[16/10] w-full overflow-hidden bg-slate-100">
                           {p.image ? (
                             <OptimizedImage
                               src={getImageUrl(p.image)}
                               alt={p.title}
                               widths={RESOLUTION_WIDTHS.CARD}
-                              sizes="(max-width: 640px) 50vw, (max-width: 1280px) 33vw, 320px"
+                              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 320px"
                               loading="lazy"
                               decoding="async"
                               className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                             />
                           ) : (
-                            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-200 to-slate-100 text-2xl opacity-30">
-                              ðŸ“°
+                            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-200 to-slate-100 text-3xl opacity-50" aria-hidden="true">
+                              📰
                             </div>
                           )}
                         </div>
 
-                        <div className="flex flex-1 flex-col p-3">
-                          <span className="font-body text-[8px] font-bold uppercase tracking-wider text-red-600">
-                            {translateCategory(p.category, language)}
-                          </span>
-                          <h3 className="mt-1 line-clamp-3 font-post-title text-[13px] font-bold leading-snug text-slate-950 transition-colors group-hover:text-red-600">
+                        <div className="flex min-w-0 flex-1 flex-col p-3">
+                          <StoryCategoryLabel post={p} language={language} />
+                          <h3 className="news-headline-card mt-1 line-clamp-3 font-post-title text-slate-950 transition-colors group-hover:text-red-700">
                             {p.title}
                           </h3>
-                          <p className="pt-2">
+                          <p className="mt-auto pt-3">
                             <TimeLabel
                               date={p.createdDate || p.created_at || p.createdAt || p.date}
-                              className="font-body text-[9px] font-medium text-slate-400"
+                              className="news-meta font-body"
                             />
                           </p>
                         </div>
@@ -1682,69 +1785,152 @@ export default function PostDetails() {
                   </div>
                 </section>
               )}
+
             </div>
+
           </div>
-
-          <aside className="print:hidden min-w-0 lg:col-span-4">
-            <div className="space-y-6 lg:sticky lg:top-6">
-              {rightSidePosts.length > 0 && (
-                <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                  <div className="flex items-center gap-2 border-b-2 border-slate-900 px-4 py-3">
-                    <span className="h-4 w-1.5 rounded-sm bg-red-600" />
-                    <h2 className="font-post-title text-sm font-black uppercase tracking-tight text-slate-950">
-                      {language === "rw" ? "Izindi Nkuru" : t("otherStories")}
+        <aside className="print:hidden min-w-0 lg:col-span-4">
+          <div className="space-y-6 lg:sticky lg:top-6">
+            {relatedPosts.length > 0 && (
+              <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <div className="flex items-center gap-2 border-b-2 border-slate-900 px-4 py-3">
+                  <span className="h-4 w-1.5 rounded-sm bg-red-600" />
+                  {hasRelatedDepartment ? (
+                    <Link
+                      to={`/amakuru/${getAmakuruDepartmentSlug(post.amakuru_department)}`}
+                      className="news-section-heading font-post-title uppercase tracking-tight transition-colors hover:text-red-700"
+                    >
+                      {relatedSectionTitle}
+                    </Link>
+                  ) : (
+                    <h2 className="news-section-heading font-post-title uppercase tracking-tight">
+                      {relatedSectionTitle}
                     </h2>
-                  </div>
-
-                  <div className="divide-y divide-slate-100">
-                    {rightSidePosts.slice(0, 6).map((p) => (
-                      <Link
-                        key={p._id || p.id}
-                        to={getArticleUrl(p)}
-                        onClick={openPostFull(p)}
-                        className="group flex items-start gap-3 p-3 transition hover:bg-slate-50"
-                      >
-                        <div className="h-16 w-24 shrink-0 overflow-hidden rounded-md bg-slate-100">
-                          {p.image ? (
-                            <OptimizedImage
-                              src={getImageUrl(p.image)}
-                              alt={p.title}
-                              widths={RESOLUTION_WIDTHS.THUMB}
-                              sizes="96px"
-                              loading="lazy"
-                              decoding="async"
-                              className="h-full w-full object-cover"
-                            />
-                          ) : (
-                            <div className="flex h-full w-full items-center justify-center text-lg opacity-30">
-                              📰
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="min-w-0 flex-1">
-                          <span className="font-body text-[8px] font-bold uppercase tracking-wider text-red-600">
-                            {translateCategory(p.category, language)}
-                          </span>
-                          <h3 className="mt-1 line-clamp-3 font-post-title text-[12px] font-bold leading-snug text-slate-950 transition-colors group-hover:text-red-600">
-                            {p.title}
-                          </h3>
-                          <p className="mt-1">
-                            <TimeLabel
-                              date={p.createdDate || p.created_at || p.createdAt || p.date}
-                              className="font-body text-[9px] font-medium text-slate-400"
-                            />
-                          </p>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
+                  )}
                 </div>
-              )}
-            </div>
-          </aside>
+
+                <div className="divide-y divide-slate-100">
+                  {relatedPosts.slice(0, 4).map((p) => (
+                    <Link
+                      key={p._id || p.id}
+                      to={getArticleUrl(p)}
+                      onClick={openPostFull(p)}
+                      className="group flex items-start gap-3 p-3 transition hover:bg-slate-50"
+                    >
+                      <div className="h-16 w-24 shrink-0 overflow-hidden rounded-md bg-slate-100">
+                        {p.image ? (
+                          <OptimizedImage
+                            src={getImageUrl(p.image)}
+                            alt={p.title}
+                            widths={RESOLUTION_WIDTHS.THUMB}
+                            sizes="96px"
+                            loading="lazy"
+                            decoding="async"
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center text-lg opacity-30" aria-hidden="true">
+                            📰
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <StoryCategoryLabel post={p} language={language} />
+                        <h3 className="news-headline-card mt-1 line-clamp-3 font-post-title text-[12px] font-bold leading-snug text-slate-950 transition-colors group-hover:text-red-600">
+                          {p.title}
+                        </h3>
+                        <p className="mt-1">
+                          <TimeLabel
+                            date={p.createdDate || p.created_at || p.createdAt || p.date}
+                            className="news-meta font-body"
+                          />
+                        </p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </section>
+            )}
+          </div>
+        </aside>
         </div>
-      </div >
-    </div >
+        {rightSidePosts.length > 0 && (
+          <section ref={moreStoriesSectionRef} className="mt-14">
+            <div className="mb-5 flex items-center justify-between gap-3 border-b-2 border-slate-900 pb-2">
+              <div className="flex min-w-0 items-center gap-2">
+                <span className="h-4 w-1.5 shrink-0 rounded-sm bg-red-600" />
+                <h2 className="news-section-heading font-post-title uppercase tracking-tight">
+                  {language === "rw" ? "Izindi Nkuru" : t("otherStories")}
+                </h2>
+              </div>
+              <div className="flex shrink-0 items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => scrollStories(moreStoriesRef, -1)}
+                  aria-label={language === "rw" ? "Inkuru zibanza" : "Previous stories"}
+                  className="grid h-9 w-9 place-items-center border border-slate-200 bg-white text-slate-700 transition hover:border-red-300 hover:text-red-700 focus:outline-none focus:ring-2 focus:ring-red-200"
+                >
+                  <ChevronLeft className="h-5 w-5" aria-hidden="true" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => scrollStories(moreStoriesRef, 1)}
+                  aria-label={language === "rw" ? "Inkuru zikurikira" : "Next stories"}
+                  className="grid h-9 w-9 place-items-center border border-slate-200 bg-white text-slate-700 transition hover:border-red-300 hover:text-red-700 focus:outline-none focus:ring-2 focus:ring-red-200"
+                >
+                  <ChevronRight className="h-5 w-5" aria-hidden="true" />
+                </button>
+              </div>
+            </div>
+
+            <div
+              ref={moreStoriesRef}
+              role="region"
+              aria-label={language === "rw" ? "Izindi nkuru" : t("otherStories")}
+              className="flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth pb-3 scrollbar-hide-x"
+            >
+              {rightSidePosts.map((p) => (
+                <Link
+                  key={p._id || p.id}
+                  data-story-card
+                  to={getArticleUrl(p)}
+                  onClick={openPostFull(p)}
+                  className="group flex w-[min(78vw,280px)] shrink-0 snap-start flex-col bg-white transition sm:w-[calc((100%-1rem)/2)] lg:w-[calc((100%-3rem)/4)]"
+                >
+                  <div className="relative aspect-[16/10] w-full overflow-hidden bg-slate-100">
+                    {p.image ? (
+                      <OptimizedImage
+                        src={getImageUrl(p.image)}
+                        alt={p.title}
+                        widths={RESOLUTION_WIDTHS.CARD}
+                        sizes="(max-width: 640px) 78vw, (max-width: 1024px) 50vw, 25vw"
+                        loading="lazy"
+                        decoding="async"
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-200 to-slate-100 text-3xl opacity-50" aria-hidden="true">
+                        📰
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex min-w-0 flex-1 flex-col pt-3">
+                    <StoryCategoryLabel post={p} language={language} />
+                    <h3 className="news-headline-card line-clamp-3 font-post-title font-bold text-slate-950 transition-colors group-hover:text-red-700">
+                      {p.title}
+                    </h3>
+                    <TimeLabel
+                      date={p.createdDate || p.created_at || p.createdAt || p.date}
+                      className="news-meta mt-2 font-body"
+                    />
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
+      </div>
+    </div>
   );
 }

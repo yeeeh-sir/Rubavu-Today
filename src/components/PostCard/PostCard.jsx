@@ -132,7 +132,7 @@ const PostCard = ({ post }) => {
             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
           {post.category && (
-            <span className="absolute left-2.5 top-2.5 bg-[#B3261E] px-2 py-0.5 text-[8px] font-bold uppercase tracking-[0.12em] text-white shadow-sm">
+            <span className="news-category news-category-inverse absolute left-2.5 top-2.5 bg-[#B3261E] px-2 py-0.5 text-[8px] font-bold uppercase tracking-[0.12em] text-white shadow-sm">
               {post.category}
             </span>
           )}
@@ -141,10 +141,10 @@ const PostCard = ({ post }) => {
 
         <div className="p-4 sm:p-5">
 
-          <div className="flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-wider text-[#888780] mb-2 font-medium">
+          <div className="news-meta mb-2 flex flex-wrap items-center gap-2 uppercase tracking-wider text-[#888780]">
             <time>{published}</time>
             <span>•</span>
-            <span className="text-slate-700 bg-slate-100 px-2 py-0.5 rounded-full lowercase text-[10px]">{readTime}</span>
+            <span className="rounded-full bg-slate-100 px-2 py-0.5 lowercase text-xs text-slate-700">{readTime}</span>
             <span>•</span>
             <span className="relative flex min-w-0 items-center gap-1">
               <button
@@ -175,13 +175,13 @@ const PostCard = ({ post }) => {
           </div>
 
           <Link to={getPostSlugPath(post)}>
-            <h2 className="font-masthead mt-1 text-lg sm:text-xl font-extrabold leading-snug text-[#161616] transition group-hover:text-[#B3261E]">
+            <h2 className="news-headline-card font-masthead mt-1 text-lg sm:text-xl font-extrabold leading-snug text-[#161616] transition group-hover:text-[#B3261E]">
               {post.title}
             </h2>
           </Link>
 
 
-          <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-[#5F5E5A]">
+          <p className="news-summary mt-2 line-clamp-2 text-sm leading-relaxed text-[#5F5E5A]">
             {contentText}
           </p>
         </div>
